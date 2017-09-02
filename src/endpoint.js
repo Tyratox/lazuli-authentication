@@ -4,7 +4,7 @@ const {
 	DEFAULT_REDIRECT_URI
 } = require("lazuli-require")("lazuli-config");
 
-const piwikTracker = require("lazuli-piwik-tracker");
+const piwikTracker = require("lazuli-require")("lazuli-piwik-tracker");
 
 /**
  * Generates an express middleware/endpoint that resets a users password

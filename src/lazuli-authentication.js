@@ -2,7 +2,7 @@ const {
 	FACEBOOK_CALLBACK_PATH,
 	LOGIN_PATH,
 	GOOGLE_CALLBACK_PATH
-} = require("lazuli-config");
+} = require("lazuli-require")("lazuli-config");
 
 const {
 	loginView,
