@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: views.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: views.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const { LOCALES } = require("lazuli-require")("lazuli-config");
+const i18n = require("lazuli-require")("lazuli-i18n");
+const piwikTracker = require("lazuli-require")("lazuli-piwik-tracker");
+
+const ejs = require("ejs");
+
+/**
+ * Generates the login view express middleware
+ * @return {Function} Express middleware/endpoint that renders the login view
+ */
+module.exports.loginView = () => {
+	return (request, response, next) => {
+		ejs.renderFile(
+			__dirname + "./templates/web/Login.ejs",
+			{
+				__: string => {
+					return i18n.__({
+						phrase: string,
+						locale: request.getLocale()
+					});
+				}
+			},
+			{},
+			(err, str) => {
+				if (err) {
+					return next(err);
+				}
+
+				piwikTracker.track({
+					url: PIWIK_TRACKING_SITE_BASE_URL + request.path,
+					action_name: "Authentication/Login View",
+					urlref: request.get("Referrer"),
+					ua: PIWIK_TRACKING_USER_AGENT
+				});
+
+				response.setHeader("Content-Type", "text/html");
+				response.end(str);
+			}
+		);
+	};
+};
+
+/**
+ * Generates the oauth dialog view express middleware
+ * @return {Function} Express middleware/endpoint that renders the oauth dialog
+ */
+module.exports.oAuthDialogView = () => {
+	return (request, response, next) => {
+		ejs.renderFile(
+			__dirname + "./templates/web/OAuthDialog.ejs",
+			{
+				__: string => {
+					return i18n.__({
+						phrase: string,
+						locale: request.getLocale()
+					});
+				},
+
+				transactionID: request.oauth2.transactionID,
+				user: request.user,
+				client: request.oauth2.client,
+				trusted: request.trusted
+			},
+			{},
+			(err, str) => {
+				if (err) {
+					return next(err);
+				}
+
+				response.setHeader("Content-Type", "text/html");
+				response.end(str);
+			}
+		);
+	};
+};
+
+/**
+ * Express middleware/endpoint that renders the mail verification view
+ * @return {Function} Express middleware/endpoint that renders the mail verification view
+ */
+module.exports.mailVerificationView = () => {
+	return (request, response, next) => {
+		ejs.renderFile(
+			__dirname + "./templates/web/VerifyEmail.ejs",
+			{
+				__: string => {
+					return i18n.__({
+						phrase: string,
+						locale: request.getLocale()
+					});
+				},
+				register: request.query.register === "true" ? true : false,
+				email: request.query.email,
+				code: request.query.code
+			},
+			{},
+			(err, str) => {
+				if (err) {
+					return next(err);
+				}
+
+				piwikTracker.track({
+					url: PIWIK_TRACKING_SITE_BASE_URL + request.path,
+					action_name: "Authentication/MailVerification View",
+					urlref: request.get("Referrer"),
+					ua: PIWIK_TRACKING_USER_AGENT
+				});
+
+				response.setHeader("Content-Type", "text/html");
+				response.end(str);
+			}
+		);
+	};
+};
+
+/**
+ * Generates an express endpoint that renders the passwort reset view
+ * @return {Function} The generated express endpoint
+ */
+module.exports.passwordResetView = () => {
+	return (request, response, next) => {
+		ejs.renderFile(
+			__dirname + "./templates/web/ResetPassword.ejs",
+			{
+				__: string => {
+					return i18n.__({
+						phrase: string,
+						locale: request.getLocale()
+					});
+				},
+				email: request.query.email,
+				code: request.query.code
+			},
+			{},
+			(err, str) => {
+				if (err) {
+					return next(err);
+				}
+
+				piwikTracker.track({
+					url: PIWIK_TRACKING_SITE_BASE_URL + request.path,
+					action_name: "Authentication/PasswordReset View",
+					urlref: request.get("Referrer"),
+					ua: PIWIK_TRACKING_USER_AGENT
+				});
+
+				response.setHeader("Content-Type", "text/html");
+				response.end(str);
+			}
+		);
+	};
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOAuthClient">authenticateOAuthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOAuthBearerAuthentication">initOAuthBearerAuthentication</a></li><li><a href="global.html#initOAuthClientAuthentication">initOAuthClientAuthentication</a></li><li><a href="global.html#initOAuthServer">initOAuthServer</a></li><li><a href="global.html#initOAuthServerExchange">initOAuthServerExchange</a></li><li><a href="global.html#initOAuthServerGrant">initOAuthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.4</a> on Sat Sep 02 2017 15:26:52 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

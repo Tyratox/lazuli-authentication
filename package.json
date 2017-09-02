@@ -1,0 +1,69 @@
+{
+	"name": "lazuli-authentication",
+	"version": "1.0.0",
+	"description": "A lazuli authentication module",
+	"main": "src/lazuli-authentication.mjs",
+	"scripts": {
+		"docs": "jsdoc src -r -c jsdoc.json -R README.md -d docs",
+		"test": "ava"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/tyratox/lazuli-authentication.git"
+	},
+	"keywords": [
+		"lazuli",
+		"authentication"
+	],
+	"author": "Nico Hauser",
+	"contributors": [
+		{
+			"name": "Nico Hauser",
+			"email": "me@tyratox.ch",
+			"url": "https://tyratox.ch"
+		}
+	],
+	"license": "UNLICENSED",
+	"bugs": {
+		"url": "https://github.com/tyratox/lazuli-authentication/issues"
+	},
+	"homepage": "https://lazuli.tyratox.ch",
+	"dependencies": {
+		"ejs": "^2.5.2",
+		"express": "^4.15.4",
+		"graphql": "^0.11.1",
+		"graphql-relay": "^0.5.2",
+		"graphql-schema-utils": "^0.6.2",
+		"graphql-sequelize": "^5.4.2",
+		"joi": "^10.4.1",
+		"lazuli-require": "tyratox/lazuli-require",
+		"oauth2orize": "^1.5.1",
+		"passport": "^0.3.2",
+		"passport-facebook": "^2.1.1",
+		"passport-google-oauth": "^1.0.0",
+		"passport-http-bearer": "^1.0.1",
+		"passport-local": "^1.0.0",
+		"sequelize": "^4.7.5"
+	},
+	"peerDependencies": {
+		"lazuli-config": "tyratox/lazuli-config",
+		"lazuli-core": "tyratox/lazuli-core",
+		"lazuli-filters": "tyratox/lazuli-filters",
+		"lazuli-i18n": "tyratox/lazuli-i18n",
+		"lazuli-piwick-tacker": "tyratox/lazuli-piwik-tracker"
+	},
+	"devDependencies": {
+		"ava": "^0.22.0",
+		"babel-core": "^6.26.0",
+		"babel-preset-env": "^1.6.0",
+		"babel-register": "^6.26.0",
+		"jsdoc": "^3.5.4",
+		"lazuli-config": "tyratox/lazuli-config"
+	},
+	"ava": {
+		"require": [
+			"babel-register"
+		],
+		"babel": "inherit"
+	}
+}

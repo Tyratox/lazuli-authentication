@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/OAuthClient.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/OAuthClient.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const {
+	generateRandomString,
+	generateHash
+} = require("../utilities/CryptoUtilities.js");
+
+const { CLIENT_SECRET_LENGTH } = require("lazuli-require")("lazuli-config");
+
+const pick = require("lodash/pick");
+
+/**
+ * Generates the oauth client sequelize model
+ * @param {Object} sequelize The sequelize object to define the model on
+ * @param {Object} DataTypes Sequelize datatypes
+ */
+const OAuthClient = (sequelize, DataTypes) => {
+	let OAuthClient = sequelize.define(
+		"oauth_client",
+		{
+			name: {
+				type: DataTypes.STRING
+			},
+
+			secretHash: {
+				type: DataTypes.STRING
+			},
+
+			secretSalt: {
+				type: DataTypes.STRING
+			},
+
+			secretAlgorithm: {
+				type: DataTypes.STRING
+			},
+
+			trusted: {
+				type: DataTypes.BOOLEAN,
+				default: false
+			}
+		},
+		{
+			charset: "utf8",
+			collate: "utf8_unicode_ci"
+		}
+	);
+
+	/**
+	 * Associates this model with others
+	 * @param  {Object} models An object containing all registered database models
+	 * @return {void}
+	 */
+	OAuthClient.associate = function({
+		User,
+		OAuthCode,
+		OAuthAccessToken,
+		OAuthRedirectUri
+	}) {
+		this.belongsTo(User, {
+			as: "User",
+			foreignKey: "user_id"
+		});
+		this.hasMany(OAuthCode, {
+			as: "OAuthCodes",
+			foreignKey: "oauth_client_id",
+			onDelete: "cascade",
+			hooks: true
+		});
+		this.hasMany(OAuthAccessToken, {
+			as: "OAuthAccessTokens",
+			foreignKey: "oauth_client_id",
+			onDelete: "cascade",
+			hooks: true
+		});
+		this.hasMany(OAuthRedirectUri, {
+			as: "OAuthRedirectUris",
+			foreignKey: "oauth_client_id",
+			onDelete: "cascade",
+			hooks: true
+		});
+	};
+
+	/**
+	 * Generates a random secret
+	 * @return {String} The random secret
+	 */
+	OAuthClient.generateSecret = function() {
+		return cryptoUtilities.generateRandomString(CLIENT_SECRET_LENGTH);
+	};
+
+	/**
+	 * Sets the secret after hashing it
+	 * @param  {String} secret The secret to hash and store
+	 * @return {void}
+	 */
+	OAuthClient.prototype.setSecret = function(secret) {
+		let { hash, salt, algorithm } = cryptoUtilities.generateHash(secret);
+
+		this.set({
+			secretHash: hash,
+			secretSalt: salt,
+			secretAlgorithm: algorithm
+		});
+	};
+
+	/**
+	 * Verifies a secret
+	 * @param  {String} secret Checks whether this secret matches the stored one by hashing it with the stored salt
+	 * @return {Boolean}        Whether the secrets match
+	 */
+	OAuthClient.prototype.verifySecret = function(secret) {
+		let { hash } = cryptoUtilities.generateHash(
+			secret,
+			this.get("secretSalt"),
+			this.get("secretAlgorithm")
+		);
+
+		let {
+			hash: newHash,
+			algorithm: newAlgorithm
+		} = cryptoUtilities.generateHash(secret, this.get("secretSalt"));
+
+		if (this.get("secretHash") &amp;&amp; hash === this.get("secretHash")) {
+			if (this.get("secretAlgorithm") !== newAlgorithm) {
+				//if the algorithm changed, update the hash
+				this.set({
+					secretHash: newHash,
+					secretSalt: salt,
+					secretAlgorithm: newAlgorithm
+				});
+
+				return this.save().then(() => {
+					return true;
+				});
+			}
+			return Promise.resolve();
+		}
+		return Promise.reject();
+	};
+
+	/**
+	 * Checks whether the passed uri is stored in the model as redirectUri
+	 * @param  {String} redirectUri The redirect uri to verify
+	 * @return {Boolean}            Whether the redirect uri is registered with this object
+	 */
+	OAuthClient.prototype.verifyRedirectUri = function(redirectUri) {
+		if (!this.get("OAuthRedirectUris")) {
+			console.log(
+				"OAuthRedirectUris wasn't included in this instance of OAuthClient!"
+			);
+
+			return false;
+		}
+
+		let uris = this.get("OAuthRedirectUris").map(uri => {
+			return uri.get("uri");
+		});
+
+		for (var i = 0; i &lt; uris.length; i++) {
+			if (uris[i] === redirectUri) {
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	/**
+	 * Converts a model to a json object
+	 * @param  {Object} user The user accessing this information
+	 * @return {Object} The generated json object
+	 */
+	OAuthClient.prototype.toJSON = function(user) {
+		let client = this.get();
+
+		let json = pick(client, [
+			"id",
+			"name",
+			"trusted",
+			"createdAt",
+			"updatedAt"
+		]);
+
+		//user id
+
+		if (
+			user &amp;&amp;
+			(client.user_id === user.get("id") ||
+				user.doesHavePermission("admin.oauthClient.readOthers"))
+		) {
+			json.userId = client.user_id;
+
+			if (client.User) {
+				json.user = client.User.toJSON(options);
+			}
+
+			//redirect uris
+			json.redirectUris = [];
+
+			if (Array.isArray(client.OAuthRedirectUris)) {
+				client.OAuthRedirectUris.forEach(redirectUri => {
+					json.redirectUris.push(redirectUri.get("uri"));
+				});
+			}
+		}
+
+		return json;
+	};
+
+	return OAuthClient;
+};
+
+module.exports = OAuthClient;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOAuthClient">authenticateOAuthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOAuthBearerAuthentication">initOAuthBearerAuthentication</a></li><li><a href="global.html#initOAuthClientAuthentication">initOAuthClientAuthentication</a></li><li><a href="global.html#initOAuthServer">initOAuthServer</a></li><li><a href="global.html#initOAuthServerExchange">initOAuthServerExchange</a></li><li><a href="global.html#initOAuthServerGrant">initOAuthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#OAuthAccessToken">OAuthAccessToken</a></li><li><a href="global.html#OAuthClient">OAuthClient</a></li><li><a href="global.html#OAuthCode">OAuthCode</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#OAuthProvider">OAuthProvider</a></li><li><a href="global.html#OAuthRedirectUri">OAuthRedirectUri</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#Permission">Permission</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#User">User</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.4</a> on Sun Aug 27 2017 14:24:27 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

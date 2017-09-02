@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/oauth-access-token.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/oauth-access-token.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const {
+	generateRandomString,
+	generateHash
+} = require("../utilities/crypto-utilities.js");
+
+const { TOKEN_LENGTH, HASH_ALGORITHM, SALT_LENGTH } = require("lazuli-require")(
+	"lazuli-config"
+);
+
+const {
+	GraphQLObjectType,
+	GraphQLString,
+	GraphQLInt,
+	GraphQLNonNull,
+	GraphQLList
+} = require("graphql");
+
+const { resolver, attributeFields } = require("graphql-sequelize");
+
+// graphql-js prototypes are automatically extended
+require("graphql-schema-utils");
+
+/**
+ * Generates the oauth access token sequelize model
+ * @param {Object} eventEmitter The global event emitter
+ * @param {Object} valueFilter The global value filter object
+ * @param {Object} sequelize The sequelize object to define the model on
+ * @param {Object} DataTypes Sequelize datatypes
+ */
+module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
+	let OAuthAccessToken = sequelize.define(
+		"oauth-access-token",
+		{
+			hash: {
+				type: DataTypes.STRING
+			},
+			expires: {
+				type: DataTypes.DATE
+			}
+		},
+		{
+			charset: "utf8",
+			collate: "utf8_unicode_ci"
+		}
+	);
+
+	/**
+	 * The graphql object type for this model
+	 * @type {GraphQLObjectType}
+	 */
+	OAuthCode.graphQLType = attributeFields(OAuthAccessToken, {
+		allowNull: false
+	});
+
+	/**
+	 * Associates this model with others
+	 * @param  {Object} models An object containing all registered database models
+	 * @return {void}
+	 */
+	OAuthAccessToken.associate = function({ User, OAuthClient }) {
+		eventEmitter.emit("model.oauth-access-token.association.before", this);
+
+		this.belongsTo(User, {
+			as: "User",
+			foreignKey: "user_id"
+		});
+		this.belongsTo(OAuthClient, {
+			as: "OAuthClient",
+			foreignKey: "oauth_client_id"
+		});
+
+		eventEmitter.emit("model.oauth-access-token.association.after", this);
+
+		eventEmitter.emit(
+			"graphql.type.oauth-access-token.association.before",
+			this
+		);
+		OAuthAccessToken.graphQLType = OAuthAccessToken.graphQLType.merge(
+			new GraphQLObjectType({
+				fields: valueFilter.filterable(
+					"graphql.type.oauth-access-token.association",
+					{
+						user: {
+							type: GraphQLNonNull(User.graphQLType),
+							resolve: resolver(User)
+						},
+						oauthClient: {
+							type: GraphQLNonNull(OAuthClient.graphQLType),
+							resolve: resolver(OAuthClient)
+						}
+					}
+				)
+			})
+		);
+		eventEmitter.emit(
+			"graphql.type.oauth-access-token.association.after",
+			this
+		);
+	};
+
+	eventEmitter.addListener("model.association", OAuthAccessToken.associate);
+
+	/**
+	 * Generates a random access token string
+	 * @return {String} The generated token
+	 */
+	OAuthAccessToken.generateToken = function() {
+		let token = generateRandomString(TOKEN_LENGTH * 2);
+		//HTTP Headers can only contain ASCII and 19 specific seperators
+		//http://stackoverflow.com/questions/19028068/illegal-characters-in-http-headers
+
+		return token.replace(
+			/[^A-z0-9()&lt;>@,;:\\/"\[\]\?={}]/g,
+			parseInt(Math.random() * 10)
+		);
+	};
+
+	/**
+	 * Hashes a token (without) a salt because we couldn't determine the related user otherwise
+	 * @param  {String} token The token to hash
+	 * @return {String}       The generated hash
+	 */
+	OAuthAccessToken.hashToken = function(token) {
+		return generateHash(token, false, HASH_ALGORITHM, SALT_LENGTH).hash;
+	};
+
+	/**
+	 * Tries to find the database model based on the passed token
+	 * @param  {String} token The received access token
+	 * @return {Promise}      The sequelize find response
+	 */
+	OAuthAccessToken.findByToken = function(token) {
+		return this.findOne({ where: { hash: this.hashToken(token) } });
+	};
+
+	return OAuthAccessToken;
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOAuthClient">authenticateOAuthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOAuthBearerAuthentication">initOAuthBearerAuthentication</a></li><li><a href="global.html#initOAuthClientAuthentication">initOAuthClientAuthentication</a></li><li><a href="global.html#initOAuthServer">initOAuthServer</a></li><li><a href="global.html#initOAuthServerExchange">initOAuthServerExchange</a></li><li><a href="global.html#initOAuthServerGrant">initOAuthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.4</a> on Sat Sep 02 2017 15:26:52 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

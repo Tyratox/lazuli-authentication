@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/permission.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/permission.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const {
+	GraphQLObjectType,
+	GraphQLString,
+	GraphQLInt,
+	GraphQLNonNull
+} = require("graphql");
+
+const { resolver, attributeFields } = require("graphql-sequelize");
+
+// graphql-js prototypes are automatically extended
+require("graphql-schema-utils");
+
+/**
+  * Generates the permission sequelize model
+	* @param {Object} eventEmitter The global event emitter
+  * @param {Object} valueFilter The global value filter object
+  * @param {Object} sequelize The sequelize object to define the model on
+  * @param {Object} DataTypes Sequelize datatypes
+  */
+module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
+	let Permission = sequelize.define(
+		"permission",
+		valueFilter.filterable("model.permission.attributes", {
+			permission: {
+				type: DataTypes.STRING,
+				unique: true
+			}
+		}),
+		valueFilter.filterable("model.permission.options", {
+			charset: "utf8",
+			collate: "utf8_unicode_ci"
+		})
+	);
+
+	/**
+	 * The graphql object type for this model
+	 * @type {GraphQLObjectType}
+	 */
+	Permission.graphQLType = attributeFields(Permission, {
+		allowNull: false
+	});
+
+	/**
+	 * Associates this model with others
+	 * @param  {Object} models An object containing all registered database models
+	 * @return {void}
+	 */
+	Permission.associate = function({ User }) {
+		eventEmitter.emit("model.permission.association.before", this);
+
+		this.belongsToMany(User, {
+			as: "Users",
+			foreignKey: "permission_id",
+			otherKey: "user_id",
+			through: "permission_relations"
+		});
+
+		eventEmitter.emit("model.permission.association.after", this);
+
+		eventEmitter.emit("graphql.type.permission.association.before", this);
+
+		Permission.graphQLType = Permission.graphQLType.merge(
+			new GraphQLObjectType({
+				fields: valueFilter.filterable("graphql.type.permission.association", {
+					users: {
+						type: GraphQLNonNull(GraphQLList(GraphQLNonNull(User.graphQLType))),
+						resolve: resolver(User)
+					}
+				})
+			})
+		);
+
+		eventEmitter.emit("graphql.type.permission.association.after", this);
+	};
+
+	eventEmitter.addListener("model.association", Permission.associate);
+
+	return Permission;
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOAuthClient">authenticateOAuthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOAuthBearerAuthentication">initOAuthBearerAuthentication</a></li><li><a href="global.html#initOAuthClientAuthentication">initOAuthClientAuthentication</a></li><li><a href="global.html#initOAuthServer">initOAuthServer</a></li><li><a href="global.html#initOAuthServerExchange">initOAuthServerExchange</a></li><li><a href="global.html#initOAuthServerGrant">initOAuthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.4</a> on Sat Sep 02 2017 15:26:52 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
