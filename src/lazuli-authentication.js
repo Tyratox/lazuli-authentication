@@ -53,6 +53,7 @@ class Authentication {
 	 */
 	constructor(eventEmitter, valueFilter) {
 		valueFilter.add("model.directories", this.addModelPath);
+		valueFilter.add("graphlq.directories", this.addSchemaPath);
 
 		eventEmitter.on("model.init.after", this.modelsAfter);
 		eventEmitter.on("rest.routing", this.routing);
@@ -99,12 +100,21 @@ Authentication.prototype.modelsAfter = models => {
 };
 
 /**
- * Adds a model path in order to register the authentication related modules
+ * Adds a model path in order to register the authentication related models
  * @param {Array} paths The model paths to register
  * @return {Array} The modified paths value
  */
 Authentication.prototype.addModelPath = paths => {
 	return [...paths, path.join(__dirname, "models")];
+};
+
+/**
+ * Adds a schema path in order to register the authentication related schemas
+ * @param {Array} paths The schema paths to register
+ * @return {Array} The modified paths value
+ */
+Authentication.prototype.addSchemaPath = paths => {
+	return [...paths, path.join(__dirname, "schemas")];
 };
 
 /**
