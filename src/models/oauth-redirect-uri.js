@@ -11,6 +11,8 @@ const {
 	GraphQLList
 } = require("graphql");
 
+const Sequelize = require("sequelize");
+
 const { resolver, attributeFields } = require("graphql-sequelize");
 
 // graphql-js prototypes are automatically extended
@@ -21,9 +23,8 @@ require("graphql-schema-utils");
   * @param {Object} eventEmitter The global event emitter
   * @param {Object} valueFilter The global value filter object
   * @param {Object} sequelize The sequelize object to define the model on
-  * @param {Object} DataTypes Sequelize datatypes
   */
-module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
+module.exports = (eventEmitter, valueFilter, sequelize) => {
 	let OAuthRedirectUri = sequelize.define(
 		"oauth-redirect-uri",
 		valueFilter.filterable("model.oauth-redirect-uri.attributes", {

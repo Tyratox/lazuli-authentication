@@ -1,6 +1,6 @@
 const pick = require("lodash/pick");
 const async = require("async");
-const request = require("request-promise-native");
+const Sequelize = require("sequelize");
 
 const {
 	GraphQLObjectType,
@@ -19,8 +19,7 @@ const {
 	LOCALES,
 	TOKEN_LENGTH,
 	RESET_CODE_LIFETIME,
-	CONFIRM_TOKEN_LENGTH,
-	RESET_CODE_LIFETIME
+	CONFIRM_TOKEN_LENGTH
 } = require("lazuli-require")("lazuli-config");
 
 const { sendEmail } = require("lazuli-require")("lazuli-email");
@@ -30,58 +29,57 @@ const { sendEmail } = require("lazuli-require")("lazuli-email");
   * @param {Object} eventEmitter The global event emitter
   * @param {Object} valueFilter The global value filter object
   * @param {Object} sequelize The sequelize object to define the model on
-  * @param {Object} DataTypes Sequelize datatypes
   */
-module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
+module.exports = (eventEmitter, valueFilter, sequelize) => {
 	const User = sequelize.define(
 		"user",
 		valueFilter.filterable("model.user.attributes", {
 			nameDisplay: {
-				type: DataTypes.STRING,
+				type: Sequelize.STRING,
 				default: ""
 			},
 			nameFirst: {
-				type: DataTypes.STRING,
+				type: Sequelize.STRING,
 				default: ""
 			},
 			nameLast: {
-				type: DataTypes.STRING,
+				type: Sequelize.STRING,
 				default: ""
 			},
 			emailVerified: {
-				type: DataTypes.STRING,
+				type: Sequelize.STRING,
 				unique: true,
 				validate: {
 					isEmail: true
 				}
 			},
 			emailUnverified: {
-				type: DataTypes.STRING,
+				type: Sequelize.STRING,
 				unique: true,
 				validate: {
 					isEmail: true
 				}
 			},
 			emailVerificationCode: {
-				type: DataTypes.STRING
+				type: Sequelize.STRING
 			},
 			passwordHash: {
-				type: DataTypes.STRING
+				type: Sequelize.STRING
 			},
 			passwordSalt: {
-				type: DataTypes.STRING
+				type: Sequelize.STRING
 			},
 			passwordAlgorithm: {
-				type: DataTypes.STRING
+				type: Sequelize.STRING
 			},
 			passwordResetCode: {
-				type: DataTypes.STRING
+				type: Sequelize.STRING
 			},
 			passwordResetCodeExpirationDate: {
-				type: DataTypes.DATE
+				type: Sequelize.DATE
 			},
 			locale: {
-				type: DataTypes.STRING,
+				type: Sequelize.STRING,
 				default: "en-US",
 				validate: {
 					isIn: [LOCALES]
@@ -323,14 +321,15 @@ module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
 			emailVerified: profile.emails[0].value
 		});
 
-		let url = profile.photos[0].value;
+		/*let url = profile.photos[0].value;
 		if (url.indexOf("?sz=50") !== -1) {
 			url = url.replace("?sz=50", "?sz=500");
-		}
+		}*/
 
-		return user
-			.save()
-			.then(user => {
+		return (
+			user
+				.save()
+				/*.then(user => {
 				return request
 					.get({ uri: url, encoding: null })
 					.then(buffer => {
@@ -339,10 +338,11 @@ module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
 					.then(image => {
 						return user.setProfilePicture(image);
 					});
-			})
-			.then(() => {
-				return user.reload();
-			});
+			})*/
+				.then(() => {
+					return user.reload();
+				})
+		);
 	};
 
 	/**
@@ -362,8 +362,9 @@ module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
 			url = url.replace("?sz=50", "?sz=500");
 		}
 
-		return this.save()
-			.then(user => {
+		return (
+			this.save()
+				/*.then(user => {
 				return request
 					.get({ uri: url, encoding: null })
 					.then(buffer => {
@@ -372,10 +373,11 @@ module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
 					.then(image => {
 						return user.setProfilePicture(image);
 					});
-			})
-			.then(() => {
-				return this.reload();
-			});
+			})*/
+				.then(() => {
+					return this.reload();
+				})
+		);
 	};
 
 	/**

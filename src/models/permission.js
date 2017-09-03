@@ -1,3 +1,5 @@
+const Sequelize = require("sequelize");
+
 const {
 	GraphQLObjectType,
 	GraphQLString,
@@ -15,14 +17,13 @@ require("graphql-schema-utils");
 	* @param {Object} eventEmitter The global event emitter
   * @param {Object} valueFilter The global value filter object
   * @param {Object} sequelize The sequelize object to define the model on
-  * @param {Object} DataTypes Sequelize datatypes
   */
-module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
+module.exports = (eventEmitter, valueFilter, sequelize) => {
 	let Permission = sequelize.define(
 		"permission",
 		valueFilter.filterable("model.permission.attributes", {
 			permission: {
-				type: DataTypes.STRING,
+				type: Sequelize.STRING,
 				unique: true
 			}
 		}),

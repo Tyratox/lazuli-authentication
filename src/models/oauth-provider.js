@@ -15,6 +15,8 @@ const {
 	GraphQLList
 } = require("graphql");
 
+const Sequelize = require("sequelize");
+
 const { resolver, attributeFields } = require("graphql-sequelize");
 
 // graphql-js prototypes are automatically extended
@@ -27,21 +29,20 @@ const pick = require("lodash/pick");
  * @param {Object} eventEmitter The global event emitter
  * @param {Object} valueFilter The global value filter object
  * @param {Object} sequelize The sequelize object to define the model on
- * @param {Object} DataTypes Sequelize datatypes
  */
-module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
+module.exports = (eventEmitter, valueFilter, sequelize) => {
 	let OAuthProvider = sequelize.define(
 		"oauth-provider",
 		valueFilter.filterable("authentication-models-oauth-provider-attributes", {
 			type: {
-				type: DataTypes.ENUM,
+				type: Sequelize.ENUM,
 				values: ["google", "facebook"]
 			},
 			accessToken: {
-				type: DataTypes.STRING
+				type: Sequelize.STRING
 			},
 			refreshToken: {
-				type: DataTypes.STRING
+				type: Sequelize.STRING
 			}
 		}),
 		valueFilter.filterable("authentication-models-oauth-provider-options", {

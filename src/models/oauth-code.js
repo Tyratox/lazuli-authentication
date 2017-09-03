@@ -11,6 +11,8 @@ const {
 	GraphQLList
 } = require("graphql");
 
+const Sequelize = require("sequelize");
+
 const { resolver, attributeFields } = require("graphql-sequelize");
 
 // graphql-js prototypes are automatically extended
@@ -23,17 +25,16 @@ const { TOKEN_LENGTH } = require("lazuli-require")("lazuli-config");
  * @param {Object} eventEmitter The global event emitter
  * @param {Object} valueFilter The global value filter object
  * @param {Object} sequelize The sequelize object to define the model on
- * @param {Object} DataTypes Sequelize datatypes
  */
-module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
+module.exports = (eventEmitter, valueFilter, sequelize) => {
 	let OAuthCode = sequelize.define(
 		"oauth-code",
 		{
 			hash: {
-				type: DataTypes.STRING
+				type: Sequelize.STRING
 			},
 			expires: {
-				type: DataTypes.DATE
+				type: Sequelize.DATE
 			}
 		},
 		{

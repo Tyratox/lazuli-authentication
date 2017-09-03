@@ -14,6 +14,8 @@ const {
 	GraphQLList
 } = require("graphql");
 
+const Sequelize = require("sequelize");
+
 const { resolver, attributeFields } = require("graphql-sequelize");
 
 // graphql-js prototypes are automatically extended
@@ -26,30 +28,29 @@ const pick = require("lodash/pick");
  * @param {Object} eventEmitter The global event emitter
  * @param {Object} valueFilter The global value filter object
  * @param {Object} sequelize The sequelize object to define the model on
- * @param {Object} DataTypes Sequelize datatypes
  */
-module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
+module.exports = (eventEmitter, valueFilter, sequelize) => {
 	let OAuthClient = sequelize.define(
 		"oauth-client",
 		{
 			name: {
-				type: DataTypes.STRING
+				type: Sequelize.STRING
 			},
 
 			secretHash: {
-				type: DataTypes.STRING
+				type: Sequelize.STRING
 			},
 
 			secretSalt: {
-				type: DataTypes.STRING
+				type: Sequelize.STRING
 			},
 
 			secretAlgorithm: {
-				type: DataTypes.STRING
+				type: Sequelize.STRING
 			},
 
 			trusted: {
-				type: DataTypes.BOOLEAN,
+				type: Sequelize.BOOLEAN,
 				default: false
 			}
 		},
@@ -63,7 +64,7 @@ module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
 	 * The graphql object type for this model
 	 * @type {GraphQLObjectType}
 	 */
-	OAuthCode.graphQLType = attributeFields(OAuthClient, {
+	OAuthClient.graphQLType = attributeFields(OAuthClient, {
 		allowNull: false
 	});
 

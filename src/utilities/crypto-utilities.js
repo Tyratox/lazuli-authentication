@@ -7,7 +7,10 @@ const crypto = require("crypto");
  * @return {String} A random string of a given length
  */
 module.exports.generateRandomString = length => {
-	return crypto.randomBytes(length).toString("base64").slice(0, length);
+	return crypto
+		.randomBytes(length)
+		.toString("base64")
+		.slice(0, length);
 };
 
 /**
@@ -20,7 +23,7 @@ module.exports.generateRandomString = length => {
  * @return {Object} The hashed string, the generated salt and the
  * used hash algorithm {hash: '', salt: '', algorithm: ''}
  */
-module.expports.generateHash = (data, salt = null, algorithm, saltLength) => {
+module.exports.generateHash = (data, salt = null, algorithm, saltLength) => {
 	if (!salt && salt !== false) {
 		salt = generateRandomString(saltLength);
 	}

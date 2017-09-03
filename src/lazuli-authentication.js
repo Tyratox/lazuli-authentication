@@ -4,6 +4,8 @@ const {
 	GOOGLE_CALLBACK_PATH
 } = require("lazuli-require")("lazuli-config");
 
+const graphqlHTTP = require("express-graphql");
+
 const {
 	loginView,
 	oAuthDialogView,
@@ -39,7 +41,7 @@ const {
 	verifyMailValidation
 } = require("./validation.js");
 
-import path from "path";
+const path = require("path");
 
 /**
  * This is the authentication class which handles the registration and, of
@@ -52,11 +54,17 @@ class Authentication {
 	 * @param  {Object}   valueFilter The lazuli value filter
 	 */
 	constructor(eventEmitter, valueFilter) {
-		valueFilter.add("model.directories", this.addModelPath);
-		valueFilter.add("graphlq.directories", this.addSchemaPath);
+		this.eventEmitter = eventEmitter;
+		this.valueFilter = valueFilter;
+
+		valueFilter.add("sequelize.models", this.registerModels.bind(this));
+
+		eventEmitter.on("express.init.after", this.addPassportMiddleware);
 
 		eventEmitter.on("model.init.after", this.modelsAfter);
-		eventEmitter.on("rest.routing", this.routing);
+
+		eventEmitter.on("express.routing.graphql", this.graphQlRouting);
+		eventEmitter.on("express.routing.rest", this.restRouting);
 	}
 }
 
@@ -74,11 +82,20 @@ Authentication.prototype._oauth2Server = require("oauth2orize").createServer();
 Authentication.prototype._passport = require("passport");
 
 /**
+ * Adds all required passport middleware to the passed express server
+ * @param {Object} expressServer The express server to add the middlewares to
+ */
+Authentication.prototype.addPassportMiddleware = expressServer => {
+	expressServer.use(this._passport.initialize());
+	expressServer.use(this._passport.session());
+};
+
+/**
  * Initiates the oauth server and the passport object
  * @param  {Array} models  All registered models
  * @return {void}
  */
-Authentication.prototype.modelsAfter = models => {
+Authentication.prototype.modelsAfter = function(models) {
 	initOAuthServer(
 		this._oauth2Server,
 		this._models.OAuthClient,
@@ -99,13 +116,24 @@ Authentication.prototype.modelsAfter = models => {
 	this.isBearerAuthenticated = isBearerAuthenticated(this._passport);
 };
 
-/**
- * Adds a model path in order to register the authentication related models
- * @param {Array} paths The model paths to register
- * @return {Array} The modified paths value
- */
-Authentication.prototype.addModelPath = paths => {
-	return [...paths, path.join(__dirname, "models")];
+Authentication.prototype.registerModels = function(models, sequelize) {
+	return models.concat(
+		[
+			"oauth-access-token",
+			"oauth-client",
+			"oauth-code",
+			"oauth-provider",
+			"oauth-redirect-uri",
+			"permission",
+			"user"
+		].map(fileName => {
+			return require(path.resolve(__dirname, "models", fileName))(
+				this.eventEmitter,
+				this.valueFilter,
+				sequelize
+			);
+		})
+	);
 };
 
 /**
@@ -119,22 +147,22 @@ Authentication.prototype.addSchemaPath = paths => {
 
 /**
  * Sets up all the routing for this module
- * @param  {Object} httpServer The express server object
+ * @param  {Object} expressServer The express server object
  * @return {void}
  */
-Authentication.prototype.routing = httpServer => {
-	this._setupGetRouting(httpServer);
-	this._setupPostRouting(httpServer);
+Authentication.prototype.restRouting = function(expressServer) {
+	this._setupGetRouting(expressServer);
+	this._setupPostRouting(expressServer);
 };
 
 /**
  * Sets up all the REST 'GET' calls
  * @private
- * @param  {Object} httpServer The express server object
+ * @param  {Object} expressServer The express server object
  * @return {void}
  */
-Authentication.prototype._setupGetRouting = httpServer => {
-	httpServer.get(
+Authentication.prototype._setupGetRouting = expressServer => {
+	expressServer.get(
 		"/v1/auth/logged-in",
 		this.isBearerAuthenticated(),
 		(request, response, next) => {
@@ -145,98 +173,98 @@ Authentication.prototype._setupGetRouting = httpServer => {
 		}
 	);
 
-	httpServer.get(
+	expressServer.get(
 		"/views/login",
 		loginView(),
-		httpServer.catchInternalErrorView
+		expressServer.catchInternalErrorView
 	);
 
-	httpServer.get(
+	expressServer.get(
 		"/views/verify-email",
 		mailVerificationView(),
-		httpServer.catchInternalErrorView
+		expressServer.catchInternalErrorView
 	);
 
-	httpServer.get(
+	expressServer.get(
 		"/views/password-reset",
 		passwordResetView(),
-		httpServer.catchInternalErrorView
+		expressServer.catchInternalErrorView
 	);
 
-	httpServer.get(
+	expressServer.get(
 		"/v1/auth/facebook/login/",
 		this._passport.authenticate("facebook", { scope: ["email"] }),
-		httpServer.serializeValidationErrors()
+		expressServer.serializeValidationErrors()
 	);
 
-	httpServer.get(
+	expressServer.get(
 		FACEBOOK_CALLBACK_PATH,
 		authFacebookCallback(this._passport),
-		httpServer.serializeValidationErrors(LOGIN_PATH)
+		expressServer.serializeValidationErrors(LOGIN_PATH)
 	);
 
-	httpServer.get(
+	expressServer.get(
 		"/v1/auth/google/login/",
 		this._passport.authenticate("google", {
 			scope: ["openid profile email"]
 		}),
-		httpServer.serializeValidationErrors(LOGIN_PATH)
+		expressServer.serializeValidationErrors(LOGIN_PATH)
 	);
-	httpServer.get(
+	expressServer.get(
 		GOOGLE_CALLBACK_PATH,
 		authGoogleCallback(this._passport),
 		serializeValidationErrors(LOGIN_PATH)
 	);
 
-	httpServer.get(
+	expressServer.get(
 		"/oauth2/authorize",
 		isAuthenticated,
 		authenticateOAuthClient(),
 		checkForImmediateApproval(),
 		oAuthDialogView(),
-		httpServer.catchInternalErrorView
+		expressServer.catchInternalErrorView
 	);
 };
 
 /**
  * Sets up all the REST 'POST' calls
  * @private
- * @param  {Object} httpServer The express server object
+ * @param  {Object} expressServer The express server object
  * @return {void}
  */
-Authentication.prototype.setupPostRouting = httpServer => {
-	httpServer.post(
+Authentication.prototype.setupPostRouting = expressServer => {
+	expressServer.post(
 		"/v1/auth/local/login",
-		httpServer.validate(localLoginValidation), //Tracked in analytics
+		expressServer.validate(localLoginValidation), //Tracked in analytics
 		authLocal(this._passport),
-		httpServer.catchInternalErrorView
+		expressServer.catchInternalErrorView
 	);
 
-	httpServer.post(
+	expressServer.post(
 		"/v1/auth/init-password-reset",
-		httpServer.validate(initPasswordResetValidation),
+		expressServer.validate(initPasswordResetValidation),
 		initPasswordReset(this._models.User),
-		httpServer.catchInternalErrorView
+		expressServer.catchInternalErrorView
 	);
 
-	httpServer.post(
+	expressServer.post(
 		"/v1/auth/password-reset",
 		validate(passwordResetValidation),
 		passwordReset(this._models.User),
 		serializeValidationErrors("/views/password-reset"),
-		httpServer.catchInternalErrorView
+		expressServer.catchInternalErrorView
 	);
 
-	httpServer.post(
+	expressServer.post(
 		"/v1/auth/local/register",
-		httpServer.validate(localRegistrationValidation),
+		expressServer.validate(localRegistrationValidation),
 		registration(this._models.User),
-		httpServer.catchInternalErrorView
+		expressServer.catchInternalErrorView
 	);
 
-	httpServer.post(
+	expressServer.post(
 		"/v1/auth/local/verify-email",
-		httpServer.validate(verifyMailValidation),
+		expressServer.validate(verifyMailValidation),
 		verifyEmail(this._models.User),
 		(error, request, response, next) => {
 			if (request.body.register) {
@@ -255,23 +283,38 @@ Authentication.prototype.setupPostRouting = httpServer => {
 				);
 			}
 		},
-		httpServer.catchInternalErrorView
+		expressServer.catchInternalErrorView
 	);
 
-	httpServer.post(
+	expressServer.post(
 		"/oauth2/authorize",
 		isAuthenticated,
 		this._oauth2Server.decision(),
-		httpServer.catchInternalErrorView
+		expressServer.catchInternalErrorView
 	);
 
-	httpServer.post(
+	expressServer.post(
 		"/oauth2/token",
 		this._passport.authenticate("client-local", {
 			session: false
 		}),
 		this._oauth2Server.token(),
-		httpServer.serializeValidationErrors(LOGIN_PATH)
+		expressServer.serializeValidationErrors(LOGIN_PATH)
+	);
+};
+
+/**
+ * Sets up all the graphql routing
+ * @param  {Object} expressServer The express server on which the routes should be added
+ * @return {void}
+ */
+Authentication.prototype.graphQlRouting = expressServer => {
+	app.use(
+		"/graphql/user",
+		graphqlHTTP({
+			schema: require(path.resolve(__dirname, "schemas", "user")),
+			graphiql: true
+		})
 	);
 };
 
