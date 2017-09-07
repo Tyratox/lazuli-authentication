@@ -1,4 +1,4 @@
-//import test from "ava";
+import test from "ava";
 
 process.on("uncaughtException", console.log);
 
@@ -9,7 +9,9 @@ const Authentication = new (require("../src/lazuli-authentication"))(
 );
 
 Lazuli.init();
-//
-// test("load empty config", t => {
-// 	t.deepEqual({}, {});
-// });
+
+test("lazuli init", t => {
+	t.pass();
+});
+
+Lazuli.eventEmitter.emit("express.stop");

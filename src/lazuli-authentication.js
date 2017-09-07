@@ -59,12 +59,15 @@ class Authentication {
 
 		valueFilter.add("sequelize.models", this.registerModels.bind(this));
 
-		eventEmitter.on("express.init.after", this.addPassportMiddleware);
+		eventEmitter.on(
+			"express.init.after",
+			this.addPassportMiddleware.bind(this)
+		);
 
-		eventEmitter.on("model.init.after", this.modelsAfter);
+		eventEmitter.on("model.init.after", this.modelsAfter.bind(this));
 
-		eventEmitter.on("express.routing.graphql", this.graphQlRouting);
-		eventEmitter.on("express.routing.rest", this.restRouting);
+		eventEmitter.on("express.routing.graphql", this.graphQlRouting.bind(this));
+		eventEmitter.on("express.routing.rest", this.restRouting.bind(this));
 	}
 }
 
@@ -80,6 +83,20 @@ Authentication.prototype._oauth2Server = require("oauth2orize").createServer();
  * @type {Object}
  */
 Authentication.prototype._passport = require("passport");
+/**
+ * All models created by this module
+ * @private
+ * @type {Object}
+ */
+Authentication.prototype._models = {
+	OAuthAccessToken: "oauth-access-token",
+	OAuthClient: "oauth-client",
+	OAuthCode: "oauth-code",
+	OAuthProvider: "oauth-provider",
+	OAuthRedirectUri: "oauth-redirect-uri",
+	Permission: "permission",
+	User: "user"
+};
 
 /**
  * Adds all required passport middleware to the passed express server
@@ -117,23 +134,17 @@ Authentication.prototype.modelsAfter = function(models) {
 };
 
 Authentication.prototype.registerModels = function(models, sequelize) {
-	return models.concat(
-		[
-			"oauth-access-token",
-			"oauth-client",
-			"oauth-code",
-			"oauth-provider",
-			"oauth-redirect-uri",
-			"permission",
-			"user"
-		].map(fileName => {
-			return require(path.resolve(__dirname, "models", fileName))(
-				this.eventEmitter,
-				this.valueFilter,
-				sequelize
-			);
-		})
-	);
+	const newModels = {};
+
+	Object.keys(this._models).forEach(model => {
+		newModels[model] = require(path.resolve(
+			__dirname,
+			"models",
+			this._models[model]
+		))(this.eventEmitter, this.valueFilter, sequelize);
+	});
+
+	return Object.assign({}, models, newModels);
 };
 
 /**
@@ -161,7 +172,7 @@ Authentication.prototype.restRouting = function(expressServer) {
  * @param  {Object} expressServer The express server object
  * @return {void}
  */
-Authentication.prototype._setupGetRouting = expressServer => {
+Authentication.prototype._setupGetRouting = function(expressServer) {
 	expressServer.get(
 		"/v1/auth/logged-in",
 		this.isBearerAuthenticated(),
@@ -173,23 +184,11 @@ Authentication.prototype._setupGetRouting = expressServer => {
 		}
 	);
 
-	expressServer.get(
-		"/views/login",
-		loginView(),
-		expressServer.catchInternalErrorView
-	);
+	expressServer.get("/views/login", loginView());
 
-	expressServer.get(
-		"/views/verify-email",
-		mailVerificationView(),
-		expressServer.catchInternalErrorView
-	);
+	expressServer.get("/views/verify-email", mailVerificationView());
 
-	expressServer.get(
-		"/views/password-reset",
-		passwordResetView(),
-		expressServer.catchInternalErrorView
-	);
+	expressServer.get("/views/password-reset", passwordResetView());
 
 	expressServer.get(
 		"/v1/auth/facebook/login/",
@@ -213,16 +212,19 @@ Authentication.prototype._setupGetRouting = expressServer => {
 	expressServer.get(
 		GOOGLE_CALLBACK_PATH,
 		authGoogleCallback(this._passport),
-		serializeValidationErrors(LOGIN_PATH)
+		expressServer.serializeValidationErrors(LOGIN_PATH)
 	);
 
 	expressServer.get(
 		"/oauth2/authorize",
 		isAuthenticated,
-		authenticateOAuthClient(),
+		authenticateOAuthClient(
+			this._oauth2Server,
+			this._models.OAuthClient,
+			this._models.OAuthRedirectUri
+		),
 		checkForImmediateApproval(),
-		oAuthDialogView(),
-		expressServer.catchInternalErrorView
+		oAuthDialogView()
 	);
 };
 
@@ -232,65 +234,56 @@ Authentication.prototype._setupGetRouting = expressServer => {
  * @param  {Object} expressServer The express server object
  * @return {void}
  */
-Authentication.prototype.setupPostRouting = expressServer => {
+Authentication.prototype._setupPostRouting = function(expressServer) {
 	expressServer.post(
 		"/v1/auth/local/login",
-		expressServer.validate(localLoginValidation), //Tracked in analytics
-		authLocal(this._passport),
-		expressServer.catchInternalErrorView
+		// expressServer.validate(localLoginValidation), //Tracked in analytics
+		authLocal(this._passport)
 	);
 
 	expressServer.post(
 		"/v1/auth/init-password-reset",
-		expressServer.validate(initPasswordResetValidation),
-		initPasswordReset(this._models.User),
-		expressServer.catchInternalErrorView
+		// expressServer.validate(initPasswordResetValidation),
+		initPasswordReset(this._models.User)
 	);
 
 	expressServer.post(
 		"/v1/auth/password-reset",
-		validate(passwordResetValidation),
+		// validate(passwordResetValidation),
 		passwordReset(this._models.User),
-		serializeValidationErrors("/views/password-reset"),
-		expressServer.catchInternalErrorView
+		expressServer.serializeValidationErrors("/views/password-reset")
 	);
 
 	expressServer.post(
 		"/v1/auth/local/register",
-		expressServer.validate(localRegistrationValidation),
-		registration(this._models.User),
-		expressServer.catchInternalErrorView
+		// expressServer.validate(localRegistrationValidation),
+		registration(this._models.User)
 	);
 
 	expressServer.post(
 		"/v1/auth/local/verify-email",
-		expressServer.validate(verifyMailValidation),
+		// expressServer.validate(verifyMailValidation),
 		verifyEmail(this._models.User),
 		(error, request, response, next) => {
 			if (request.body.register) {
-				serializeValidationErrors("/views/verify-email?register=true")(
-					error,
-					request,
-					response,
-					next
-				);
+				expressServer.serializeValidationErrors(
+					"/views/verify-email?register=true"
+				)(error, request, response, next);
 			} else {
-				serializeValidationErrors("/views/verify-email")(
+				expressServer.serializeValidationErrors("/views/verify-email")(
 					error,
 					request,
 					response,
 					next
 				);
 			}
-		},
-		expressServer.catchInternalErrorView
+		}
 	);
 
 	expressServer.post(
 		"/oauth2/authorize",
 		isAuthenticated,
-		this._oauth2Server.decision(),
-		expressServer.catchInternalErrorView
+		this._oauth2Server.decision()
 	);
 
 	expressServer.post(
@@ -308,8 +301,8 @@ Authentication.prototype.setupPostRouting = expressServer => {
  * @param  {Object} expressServer The express server on which the routes should be added
  * @return {void}
  */
-Authentication.prototype.graphQlRouting = expressServer => {
-	app.use(
+Authentication.prototype.graphQlRouting = function(expressServer) {
+	expressServer.use(
 		"/graphql/user",
 		graphqlHTTP({
 			schema: require(path.resolve(__dirname, "schemas", "user")),

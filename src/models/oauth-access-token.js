@@ -30,7 +30,7 @@ require("graphql-schema-utils");
  */
 module.exports = (eventEmitter, valueFilter, sequelize) => {
 	let OAuthAccessToken = sequelize.define(
-		"oauth-access-token",
+		"oauth_access_token",
 		{
 			hash: {
 				type: Sequelize.STRING
@@ -49,9 +49,15 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	 * The graphql object type for this model
 	 * @type {GraphQLObjectType}
 	 */
-	OAuthAccessToken.graphQLType = attributeFields(OAuthAccessToken, {
-		allowNull: false
+	OAuthAccessToken.graphQLType = new GraphQLObjectType({
+		name: "oauth_access_token",
+		description: "An oauth access token",
+		fields: attributeFields(OAuthAccessToken, {
+			allowNull: false
+		})
 	});
+
+	OAuthAccessToken.graphQLType.getFields();
 
 	/**
 	 * Associates this model with others
@@ -76,17 +82,19 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 			"graphql.type.oauth-access-token.association.before",
 			this
 		);
+
 		OAuthAccessToken.graphQLType = OAuthAccessToken.graphQLType.merge(
 			new GraphQLObjectType({
+				name: "oauth_access_token",
 				fields: valueFilter.filterable(
 					"graphql.type.oauth-access-token.association",
 					{
 						user: {
-							type: GraphQLNonNull(User.graphQLType),
+							type: new GraphQLNonNull(User.graphQLType),
 							resolve: resolver(User)
 						},
 						oauthClient: {
-							type: GraphQLNonNull(OAuthClient.graphQLType),
+							type: new GraphQLNonNull(OAuthClient.graphQLType),
 							resolve: resolver(OAuthClient)
 						}
 					}
@@ -99,7 +107,10 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 		);
 	};
 
-	eventEmitter.addListener("model.association", OAuthAccessToken.associate);
+	eventEmitter.addListener(
+		"model.association",
+		OAuthAccessToken.associate.bind(OAuthAccessToken)
+	);
 
 	/**
 	 * Generates a random access token string

@@ -28,7 +28,7 @@ const { TOKEN_LENGTH } = require("lazuli-require")("lazuli-config");
  */
 module.exports = (eventEmitter, valueFilter, sequelize) => {
 	let OAuthCode = sequelize.define(
-		"oauth-code",
+		"oauth_code",
 		{
 			hash: {
 				type: Sequelize.STRING
@@ -47,8 +47,12 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	 * The graphql object type for this model
 	 * @type {GraphQLObjectType}
 	 */
-	OAuthCode.graphQLType = attributeFields(OAuthCode, {
-		allowNull: false
+	OAuthCode.graphQLType = new GraphQLObjectType({
+		name: "oauth_code",
+		description: "An oauth code",
+		fields: attributeFields(OAuthCode, {
+			allowNull: false
+		})
 	});
 
 	/**
@@ -71,13 +75,14 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 		eventEmitter.emit("graphql.type.oauth-code.association.before", this);
 		OAuthCode.graphQLType = OAuthCode.graphQLType.merge(
 			new GraphQLObjectType({
+				name: "oauth_code",
 				fields: valueFilter.filterable("graphql.type.oauth-code.association", {
 					user: {
-						type: GraphQLNonNull(User.graphQLType),
+						type: new GraphQLNonNull(User.graphQLType),
 						resolve: resolver(User)
 					},
 					oauthClient: {
-						type: GraphQLNonNull(OAuthClient.graphQLType),
+						type: new GraphQLNonNull(OAuthClient.graphQLType),
 						resolve: resolver(OAuthClient)
 					}
 				})
@@ -86,7 +91,10 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 		eventEmitter.emit("graphql.type.oauth-code.association.after", this);
 	};
 
-	eventEmitter.addListener("model.association", OAuthCode.associate);
+	eventEmitter.addListener(
+		"model.association",
+		OAuthCode.associate.bind(OAuthCode)
+	);
 
 	/**
 	 * Generates a oauth code

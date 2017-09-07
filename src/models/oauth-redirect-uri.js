@@ -26,7 +26,7 @@ require("graphql-schema-utils");
   */
 module.exports = (eventEmitter, valueFilter, sequelize) => {
 	let OAuthRedirectUri = sequelize.define(
-		"oauth-redirect-uri",
+		"oauth_redirect_uri",
 		valueFilter.filterable("model.oauth-redirect-uri.attributes", {
 			uri: {
 				type: Sequelize.STRING
@@ -42,8 +42,12 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	 * The graphql object type for this model
 	 * @type {GraphQLObjectType}
 	 */
-	OAuthRedirectUri.graphQLType = attributeFields(OAuthRedirectUri, {
-		allowNull: false
+	OAuthRedirectUri.graphQLType = new GraphQLObjectType({
+		name: "oauth_redirect_uri",
+		description: "An oauth redirect uri",
+		fields: attributeFields(OAuthRedirectUri, {
+			allowNull: false
+		})
 	});
 
 	/**
@@ -66,12 +70,13 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 
 		OAuthRedirectUri.graphQLType = OAuthRedirectUri.graphQLType.merge(
 			new GraphQLObjectType({
+				name: "oauth_redirect_uri",
 				fields: valueFilter.filterable(
 					"graphql.type.oauth-redirect-uri.association",
 					{
 						oauthClients: {
-							type: GraphQLNonNull(
-								GraphQLList(GraphQLNonNull(OAuthClient.graphQLType))
+							type: new GraphQLNonNull(
+								new GraphQLList(new GraphQLNonNull(OAuthClient.graphQLType))
 							),
 							resolve: resolver(OAuthClient)
 						}
@@ -86,7 +91,10 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 		);
 	};
 
-	eventEmitter.addListener("model.association", OAuthRedirectUri.associate);
+	eventEmitter.addListener(
+		"model.association",
+		OAuthRedirectUri.associate.bind(OAuthRedirectUri)
+	);
 
 	return OAuthRedirectUri;
 };

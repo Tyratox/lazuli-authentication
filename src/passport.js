@@ -21,7 +21,7 @@ const GoogleStrategy = require("passport-google-oauth").OAuth2Strategy;
  * @param  {Object} OAuthRedirectUri The redirect uri database model
  * @return {void}
  */
-module.exports.initOAuthClientAuthentication = (
+const initOAuthClientAuthentication = (
 	passport,
 	OAuthClient,
 	OAuthRedirectUri
@@ -59,6 +59,7 @@ module.exports.initOAuthClientAuthentication = (
 		)
 	);
 };
+module.exports.initOAuthClientAuthentication = initOAuthClientAuthentication;
 
 /**
  * Enables the local user authentication in passport
@@ -67,8 +68,8 @@ module.exports.initOAuthClientAuthentication = (
  * @param  {Object} OAuthRedirectUri The redirect uri database model
  * @return {void}
  */
-module.exports.initLocalAuthentication = (passport, User) => {
-	this._passport.use(
+const initLocalAuthentication = (passport, User) => {
+	passport.use(
 		"local",
 		new LocalStrategy((email, password, done) => {
 			User.findOne({
@@ -90,6 +91,7 @@ module.exports.initLocalAuthentication = (passport, User) => {
 		})
 	);
 };
+module.exports.initLocalAuthentication = initLocalAuthentication;
 
 /**
  * Enables the oauth bearer authentication in passport
@@ -100,7 +102,7 @@ module.exports.initLocalAuthentication = (passport, User) => {
  * @param  {Object} Permission          The permission database model
  * @return {void}
  */
-module.exports.initOAuthBearerAuthentication = (
+const initOAuthBearerAuthentication = (
 	passport,
 	OAuthAccessToken,
 	User,
@@ -171,6 +173,7 @@ module.exports.initOAuthBearerAuthentication = (
 		)
 	);
 };
+module.exports.initOAuthBearerAuthentication = initOAuthBearerAuthentication;
 
 /**
  * Enables the facebook authentication in passport
@@ -179,7 +182,7 @@ module.exports.initOAuthBearerAuthentication = (
  * @param  {Object} OAuthProvider       The oauth provider database model
  * @return {void}
  */
-module.exports.initFacebookAuthentication = (passport, User, OAuthProvider) => {
+const initFacebookAuthentication = (passport, User, OAuthProvider) => {
 	passport.use(
 		new FacebookStrategy(
 			{
@@ -229,6 +232,7 @@ module.exports.initFacebookAuthentication = (passport, User, OAuthProvider) => {
 		)
 	);
 };
+module.exports.initFacebookAuthentication = initFacebookAuthentication;
 
 /**
  * Enables the google authentication in passport
@@ -237,7 +241,7 @@ module.exports.initFacebookAuthentication = (passport, User, OAuthProvider) => {
  * @param  {Object} OAuthProvider       The oauth provider database model
  * @return {void}
  */
-module.exports.initGoogleAuthentication = (passport, User, OAuthProvider) => {
+const initGoogleAuthentication = (passport, User, OAuthProvider) => {
 	passport.use(
 		new GoogleStrategy(
 			{
@@ -286,12 +290,13 @@ module.exports.initGoogleAuthentication = (passport, User, OAuthProvider) => {
 		)
 	);
 };
+module.exports.initGoogleAuthentication = initGoogleAuthentication;
 
 /**
  * Initializes the user serialization in the passport object
  * @return {void}
  */
-module.exports.initPassportSerialization = (passport, User, Permission) => {
+const initPassportSerialization = (passport, User, Permission) => {
 	passport.serializeUser((user, done) => {
 		done(null, user.get("id"));
 	});
@@ -312,6 +317,7 @@ module.exports.initPassportSerialization = (passport, User, Permission) => {
 			.catch(done);
 	});
 };
+module.exports.initPassportSerialization = initPassportSerialization;
 
 /**
  * Initializes the passport object
@@ -324,7 +330,7 @@ module.exports.initPassportSerialization = (passport, User, Permission) => {
  * @param  {Object} OAuthAccessToken The oauth access token database model
  * @return {void}
  */
-module.exports.initPassport = (
+const initPassport = (
 	passport,
 	User,
 	Permission,
@@ -340,3 +346,4 @@ module.exports.initPassport = (
 	initFacebookAuthentication(passport, User, OAuthProvider);
 	initGoogleAuthentication(passport, User, OAuthProvider);
 };
+module.exports.initPassport = initPassport;

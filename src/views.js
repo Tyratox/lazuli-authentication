@@ -8,7 +8,7 @@ const ejs = require("ejs");
  * Generates the login view express middleware
  * @return {Function} Express middleware/endpoint that renders the login view
  */
-module.exports.loginView = () => {
+const loginView = () => {
 	return (request, response, next) => {
 		ejs.renderFile(
 			__dirname + "./templates/web/Login.ejs",
@@ -39,12 +39,13 @@ module.exports.loginView = () => {
 		);
 	};
 };
+module.exports.loginView = loginView;
 
 /**
  * Generates the oauth dialog view express middleware
  * @return {Function} Express middleware/endpoint that renders the oauth dialog
  */
-module.exports.oAuthDialogView = () => {
+const oAuthDialogView = () => {
 	return (request, response, next) => {
 		ejs.renderFile(
 			__dirname + "./templates/web/OAuthDialog.ejs",
@@ -73,12 +74,13 @@ module.exports.oAuthDialogView = () => {
 		);
 	};
 };
+module.exports.oAuthDialogView = oAuthDialogView;
 
 /**
  * Express middleware/endpoint that renders the mail verification view
  * @return {Function} Express middleware/endpoint that renders the mail verification view
  */
-module.exports.mailVerificationView = () => {
+const mailVerificationView = () => {
 	return (request, response, next) => {
 		ejs.renderFile(
 			__dirname + "./templates/web/VerifyEmail.ejs",
@@ -112,12 +114,13 @@ module.exports.mailVerificationView = () => {
 		);
 	};
 };
+module.exports.mailVerificationView = mailVerificationView;
 
 /**
  * Generates an express endpoint that renders the passwort reset view
  * @return {Function} The generated express endpoint
  */
-module.exports.passwordResetView = () => {
+const passwordResetView = () => {
 	return (request, response, next) => {
 		ejs.renderFile(
 			__dirname + "./templates/web/ResetPassword.ejs",
@@ -150,3 +153,4 @@ module.exports.passwordResetView = () => {
 		);
 	};
 };
+module.exports.passwordResetView = passwordResetView;

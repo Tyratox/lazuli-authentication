@@ -96,8 +96,12 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	 * The graphql object type for this model
 	 * @type {GraphQLObjectType}
 	 */
-	User.graphQLType = attributeFields(User, {
-		allowNull: false
+	User.graphQLType = new GraphQLObjectType({
+		name: "user",
+		description: "A user",
+		fields: attributeFields(User, {
+			allowNull: false
+		})
 	});
 
 	/**
@@ -161,34 +165,35 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 
 		User.graphQLType = User.graphQLType.merge(
 			new GraphQLObjectType({
+				name: "user",
 				fields: valueFilter.filterable("graphql.type.user.association", {
 					permissions: {
-						type: GraphQLNonNull(
-							GraphQLList(GraphQLNonNull(Permissions.graphQLType))
+						type: new GraphQLNonNull(
+							new GraphQLList(new GraphQLNonNull(Permission.graphQLType))
 						),
-						resolve: resolver(Permissions)
+						resolve: resolver(Permission)
 					},
 					oauthProviders: {
-						type: GraphQLNonNull(
-							GraphQLList(GraphQLNonNull(OAuthProvider.graphQLType))
+						type: new GraphQLNonNull(
+							new GraphQLList(new GraphQLNonNull(OAuthProvider.graphQLType))
 						),
 						resolve: resolver(OAuthProvider)
 					},
 					oauthAccessTokens: {
-						type: GraphQLNonNull(
-							GraphQLList(GraphQLNonNull(OAuthAccessToken.graphQLType))
+						type: new GraphQLNonNull(
+							new GraphQLList(new GraphQLNonNull(OAuthAccessToken.graphQLType))
 						),
 						resolve: resolver(OAuthAccessToken)
 					},
 					oauthCodes: {
-						type: GraphQLNonNull(
-							GraphQLList(GraphQLNonNull(OAuthCode.graphQLType))
+						type: new GraphQLNonNull(
+							new GraphQLList(new GraphQLNonNull(OAuthCode.graphQLType))
 						),
 						resolve: resolver(OAuthCode)
 					},
 					oauthClients: {
-						type: GraphQLNonNull(
-							GraphQLList(GraphQLNonNull(OAuthClient.graphQLType))
+						type: new GraphQLNonNull(
+							new GraphQLList(new GraphQLNonNull(OAuthClient.graphQLType))
 						),
 						resolve: resolver(OAuthClient)
 					}
@@ -229,7 +234,7 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 		});*/
 	};
 
-	eventEmitter.addListener("model.association", User.associate);
+	eventEmitter.addListener("model.association", User.associate.bind(User));
 
 	/**
 	 * Gets the sequelize user a passport profile

@@ -32,7 +32,7 @@ const pick = require("lodash/pick");
  */
 module.exports = (eventEmitter, valueFilter, sequelize) => {
 	let OAuthProvider = sequelize.define(
-		"oauth-provider",
+		"oauth_provider",
 		valueFilter.filterable("authentication-models-oauth-provider-attributes", {
 			type: {
 				type: Sequelize.ENUM,
@@ -55,8 +55,12 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	 * The graphql object type for this model
 	 * @type {GraphQLObjectType}
 	 */
-	OAuthProvider.graphQLType = attributeFields(OAuthProvider, {
-		allowNull: false
+	OAuthProvider.graphQLType = new GraphQLObjectType({
+		name: "oauth_provider",
+		description: "An oauth provider",
+		fields: attributeFields(OAuthProvider, {
+			allowNull: false
+		})
 	});
 
 	/**
@@ -75,11 +79,12 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 		eventEmitter.emit("graphql.type.oauth-provider.association.before", this);
 		OAuthProvider.graphQLType = OAuthProvider.graphQLType.merge(
 			new GraphQLObjectType({
+				name: "oauth_provider",
 				fields: valueFilter.filterable(
 					"graphql.type.oauth-provider.association",
 					{
 						user: {
-							type: GraphQLNonNull(User.graphQLType),
+							type: new GraphQLNonNull(User.graphQLType),
 							resolve: resolver(User)
 						}
 					}
@@ -89,7 +94,10 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 		eventEmitter.emit("graphql.type.oauth-provider.association.after", this);
 	};
 
-	eventEmitter.addListener("model.association", OAuthProvider.associate);
+	eventEmitter.addListener(
+		"model.association",
+		OAuthProvider.associate.bind(OAuthProvider)
+	);
 
 	return OAuthProvider;
 };

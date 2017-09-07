@@ -8,7 +8,7 @@ const oauth2orize = require("oauth2orize");
  * Initializes the oauth2orize powered oauth server and its endpoints
  * @return {void}
  */
-module.exports.initOAuthServer = (
+const initOAuthServer = (
 	oauth2Server,
 	OAuthClient,
 	OAuthRedirectUri,
@@ -39,6 +39,7 @@ module.exports.initOAuthServer = (
 	initOAuthServerGrant(oauth2Server, OAuthCode);
 	initOAuthServerExchange(oauth2Server, OAuthCode, OAuthAccessToken);
 };
+module.exports.initOAuthServer = initOAuthServer;
 
 /**
  * Initializes the granting part of the oauth server
@@ -79,16 +80,13 @@ const initOAuthServerGrant = (oauth2Server, OAuthCode) => {
 		})
 	);
 };
+module.exports.initOAuthServerGrant = initOAuthServerGrant;
 
 /**
  * Initializes the exchange part of the oauth server
  * @return {void}
  */
-module.exports.initOAuthServerExchange = (
-	oauth2Server,
-	OAuthCode,
-	OAuthAccessToken
-) => {
+const initOAuthServerExchange = (oauth2Server, OAuthCode, OAuthAccessToken) => {
 	return oauth2Server.exchange(
 		oauth2orize.exchange.code((client, code, redirectUri, callback) => {
 			OAuthCode.findByCode(code)
@@ -147,12 +145,13 @@ module.exports.initOAuthServerExchange = (
 		})
 	);
 };
+module.exports.initOAuthServerExchange = initOAuthServerExchange;
 
 /**
  * Authenticates the oauth client during the oauth2 authorization
  * @return {Function} The express middleware to authenticate the oauth client
  */
-module.exports.authenticateOAuthClient = (
+const authenticateOAuthClient = (
 	oauth2Server,
 	OAuthClient,
 	OAuthRedirectUri
@@ -181,12 +180,13 @@ module.exports.authenticateOAuthClient = (
 			.catch(callback);
 	});
 };
+module.exports.authenticateOAuthClient = authenticateOAuthClient;
 
 /**
  * Checks whether a oauth request can immediately be approved
  * @return {Function} The express middleware to either prompt the user or directly approve the oauth2 request
  */
-module.exports.checkForImmediateApproval = () => {
+const checkForImmediateApproval = () => {
 	return (request, response, next) => {
 		let { client } = request.oauth2;
 
@@ -206,3 +206,5 @@ module.exports.checkForImmediateApproval = () => {
 			.catch(next);
 	};
 };
+
+module.exports.checkForImmediateApproval = checkForImmediateApproval;

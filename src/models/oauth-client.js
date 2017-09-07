@@ -31,7 +31,7 @@ const pick = require("lodash/pick");
  */
 module.exports = (eventEmitter, valueFilter, sequelize) => {
 	let OAuthClient = sequelize.define(
-		"oauth-client",
+		"oauth_client",
 		{
 			name: {
 				type: Sequelize.STRING
@@ -64,8 +64,12 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	 * The graphql object type for this model
 	 * @type {GraphQLObjectType}
 	 */
-	OAuthClient.graphQLType = attributeFields(OAuthClient, {
-		allowNull: false
+	OAuthClient.graphQLType = new GraphQLObjectType({
+		name: "oauth_client",
+		description: "An oauth client",
+		fields: attributeFields(OAuthClient, {
+			allowNull: false
+		})
 	});
 
 	/**
@@ -110,28 +114,33 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 
 		OAuthClient.graphQLType = OAuthClient.graphQLType.merge(
 			new GraphQLObjectType({
+				name: "oauth_client",
 				fields: valueFilter.filterable(
 					"graphql.type.oauth-client.association",
 					{
 						user: {
-							type: GraphQLNonNull(User.graphQLType),
+							type: new GraphQLNonNull(User.graphQLType),
 							resolve: resolver(User)
 						},
 						oauthCodes: {
-							type: GraphQLNonNull(
-								GraphQLList(GraphQLNonNull(OAuthCode.graphQLType))
+							type: new GraphQLNonNull(
+								new GraphQLList(new GraphQLNonNull(OAuthCode.graphQLType))
 							),
 							resolve: resolver(OAuthCode)
 						},
 						oauthAccessTokens: {
-							type: GraphQLNonNull(
-								GraphQLList(GraphQLNonNull(OAuthAccessToken.graphQLType))
+							type: new GraphQLNonNull(
+								new GraphQLList(
+									new GraphQLNonNull(OAuthAccessToken.graphQLType)
+								)
 							),
 							resolve: resolver(OAuthAccessToken)
 						},
 						oauthRedirectUris: {
-							type: GraphQLNonNull(
-								GraphQLList(GraphQLNonNull(OAuthRedirectUri.graphQLType))
+							type: new GraphQLNonNull(
+								new GraphQLList(
+									new GraphQLNonNull(OAuthRedirectUri.graphQLType)
+								)
 							),
 							resolve: resolver(OAuthRedirectUri)
 						}
@@ -143,7 +152,10 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 		eventEmitter.emit("graphql.type.oauth-client.association.after", this);
 	};
 
-	eventEmitter.addListener("model.association", OAuthClient.associate);
+	eventEmitter.addListener(
+		"model.association",
+		OAuthClient.associate.bind(OAuthClient)
+	);
 
 	/**
 	 * Generates a random secret

@@ -4,7 +4,8 @@ const {
 	GraphQLObjectType,
 	GraphQLString,
 	GraphQLInt,
-	GraphQLNonNull
+	GraphQLNonNull,
+	GraphQLList
 } = require("graphql");
 
 const { resolver, attributeFields } = require("graphql-sequelize");
@@ -37,8 +38,12 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	 * The graphql object type for this model
 	 * @type {GraphQLObjectType}
 	 */
-	Permission.graphQLType = attributeFields(Permission, {
-		allowNull: false
+	Permission.graphQLType = new GraphQLObjectType({
+		name: "permission",
+		description: "A permission",
+		fields: attributeFields(Permission, {
+			allowNull: false
+		})
 	});
 
 	/**
@@ -62,9 +67,12 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 
 		Permission.graphQLType = Permission.graphQLType.merge(
 			new GraphQLObjectType({
+				name: "permission",
 				fields: valueFilter.filterable("graphql.type.permission.association", {
 					users: {
-						type: GraphQLNonNull(GraphQLList(GraphQLNonNull(User.graphQLType))),
+						type: new GraphQLNonNull(
+							new GraphQLList(new GraphQLNonNull(User.graphQLType))
+						),
 						resolve: resolver(User)
 					}
 				})
@@ -74,7 +82,10 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 		eventEmitter.emit("graphql.type.permission.association.after", this);
 	};
 
-	eventEmitter.addListener("model.association", Permission.associate);
+	eventEmitter.addListener(
+		"model.association",
+		Permission.associate.bind(Permission)
+	);
 
 	return Permission;
 };
