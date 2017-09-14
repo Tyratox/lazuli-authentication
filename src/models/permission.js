@@ -1,17 +1,7 @@
 const Sequelize = require("sequelize");
 
-const {
-	GraphQLObjectType,
-	GraphQLString,
-	GraphQLInt,
-	GraphQLNonNull,
-	GraphQLList
-} = require("graphql");
-
-const { resolver, attributeFields } = require("graphql-sequelize");
-
-// graphql-js prototypes are automatically extended
-require("graphql-schema-utils");
+const path = require("path");
+const graphQlType = require(path.join(__dirname, "..", "types", "permission"));
 
 /**
   * Generates the permission sequelize model
@@ -20,7 +10,9 @@ require("graphql-schema-utils");
   * @param {Object} sequelize The sequelize object to define the model on
   */
 module.exports = (eventEmitter, valueFilter, sequelize) => {
-	let Permission = sequelize.define(
+	const { nodeInterface, attributeFieldsCache } = sequelize;
+
+	const Permission = sequelize.define(
 		"permission",
 		valueFilter.filterable("model.permission.attributes", {
 			permission: {
@@ -35,26 +27,14 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	);
 
 	/**
-	 * The graphql object type for this model
-	 * @type {GraphQLObjectType}
-	 */
-	Permission.graphQLType = new GraphQLObjectType({
-		name: "permission",
-		description: "A permission",
-		fields: attributeFields(Permission, {
-			allowNull: false
-		})
-	});
-
-	/**
 	 * Associates this model with others
 	 * @param  {Object} models An object containing all registered database models
 	 * @return {void}
 	 */
-	Permission.associate = function({ User }) {
+	Permission.associate = function(models) {
 		eventEmitter.emit("model.permission.association.before", this);
 
-		this.belongsToMany(User, {
+		this.Users = this.belongsToMany(models.User, {
 			as: "Users",
 			foreignKey: "permission_id",
 			otherKey: "user_id",
@@ -63,23 +43,13 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 
 		eventEmitter.emit("model.permission.association.after", this);
 
-		eventEmitter.emit("graphql.type.permission.association.before", this);
-
-		Permission.graphQLType = Permission.graphQLType.merge(
-			new GraphQLObjectType({
-				name: "permission",
-				fields: valueFilter.filterable("graphql.type.permission.association", {
-					users: {
-						type: new GraphQLNonNull(
-							new GraphQLList(new GraphQLNonNull(User.graphQLType))
-						),
-						resolve: resolver(User)
-					}
-				})
-			})
+		this.graphQlType = graphQlType(
+			eventEmitter,
+			valueFilter,
+			models,
+			nodeInterface,
+			attributeFieldsCache
 		);
-
-		eventEmitter.emit("graphql.type.permission.association.after", this);
 	};
 
 	eventEmitter.addListener(

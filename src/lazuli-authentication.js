@@ -14,8 +14,8 @@ const {
 } = require("./views.js");
 
 const {
-	initOAuthServer,
-	authenticateOAuthClient,
+	initOauthServer,
+	authenticateOauthClient,
 	checkForImmediateApproval
 } = require("./oauth-server.js");
 
@@ -83,20 +83,6 @@ Authentication.prototype._oauth2Server = require("oauth2orize").createServer();
  * @type {Object}
  */
 Authentication.prototype._passport = require("passport");
-/**
- * All models created by this module
- * @private
- * @type {Object}
- */
-Authentication.prototype._models = {
-	OAuthAccessToken: "oauth-access-token",
-	OAuthClient: "oauth-client",
-	OAuthCode: "oauth-code",
-	OAuthProvider: "oauth-provider",
-	OAuthRedirectUri: "oauth-redirect-uri",
-	Permission: "permission",
-	User: "user"
-};
 
 /**
  * Adds all required passport middleware to the passed express server
@@ -113,38 +99,69 @@ Authentication.prototype.addPassportMiddleware = expressServer => {
  * @return {void}
  */
 Authentication.prototype.modelsAfter = function(models) {
-	initOAuthServer(
+	initOauthServer(
 		this._oauth2Server,
-		this._models.OAuthClient,
-		this._models.OAuthRedirectUri,
-		this._models.OAuthCode,
-		this._models.OAuthAccessToken
+		this._models.OauthClient,
+		this._models.OauthRedirectUri,
+		this._models.OauthCode,
+		this._models.OauthAccessToken
 	);
 	initPassport(
 		this._passport,
 		this._models.User,
 		this._models.Permission,
-		this._models.OAuthProvider,
-		this._models.OAuthClient,
-		this._models.OAuthRedirectUri,
-		this._models.OAuthAccessToken
+		this._models.OauthProvider,
+		this._models.OauthClient,
+		this._models.OauthRedirectUri,
+		this._models.OauthAccessToken
 	);
 
 	this.isBearerAuthenticated = isBearerAuthenticated(this._passport);
 };
 
 Authentication.prototype.registerModels = function(models, sequelize) {
-	const newModels = {};
-
-	Object.keys(this._models).forEach(model => {
-		newModels[model] = require(path.resolve(
+	this._models = {
+		OauthAccessToken: require(path.resolve(
 			__dirname,
 			"models",
-			this._models[model]
-		))(this.eventEmitter, this.valueFilter, sequelize);
-	});
+			"oauth-access-token"
+		))(this.eventEmitter, this.valueFilter, sequelize),
+		OauthClient: require(path.resolve(__dirname, "models", "oauth-client"))(
+			this.eventEmitter,
+			this.valueFilter,
+			sequelize
+		),
+		OauthCode: require(path.resolve(__dirname, "models", "oauth-code"))(
+			this.eventEmitter,
+			this.valueFilter,
+			sequelize
+		),
+		OauthProvider: require(path.resolve(__dirname, "models", "oauth-provider"))(
+			this.eventEmitter,
+			this.valueFilter,
+			sequelize
+		),
+		OauthRedirectUri: require(path.resolve(
+			__dirname,
+			"models",
+			"oauth-redirect-uri"
+		))(this.eventEmitter, this.valueFilter, sequelize),
+		Permission: require(path.resolve(__dirname, "models", "permission"))(
+			this.eventEmitter,
+			this.valueFilter,
+			sequelize
+		),
+		User: require(path.resolve(__dirname, "models", "user"))(
+			this.eventEmitter,
+			this.valueFilter,
+			sequelize
+		)
+	};
 
-	return Object.assign({}, models, newModels);
+	return {
+		...models,
+		...this._models
+	};
 };
 
 /**
@@ -218,10 +235,10 @@ Authentication.prototype._setupGetRouting = function(expressServer) {
 	expressServer.get(
 		"/oauth2/authorize",
 		isAuthenticated,
-		authenticateOAuthClient(
+		authenticateOauthClient(
 			this._oauth2Server,
-			this._models.OAuthClient,
-			this._models.OAuthRedirectUri
+			this._models.OauthClient,
+			this._models.OauthRedirectUri
 		),
 		checkForImmediateApproval(),
 		oAuthDialogView()
@@ -301,11 +318,16 @@ Authentication.prototype._setupPostRouting = function(expressServer) {
  * @param  {Object} expressServer The express server on which the routes should be added
  * @return {void}
  */
-Authentication.prototype.graphQlRouting = function(expressServer) {
+Authentication.prototype.graphQlRouting = function(expressServer, sequelize) {
 	expressServer.use(
 		"/graphql/user",
 		graphqlHTTP({
-			schema: require(path.resolve(__dirname, "schemas", "user")),
+			schema: require(path.resolve(__dirname, "schemas", "user"))(
+				this.eventEmitter,
+				this.valueFilter,
+				sequelize,
+				this._models.User
+			),
 			graphiql: true
 		})
 	);

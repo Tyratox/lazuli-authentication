@@ -29,12 +29,12 @@
 	},
 	"homepage": "https://lazuli.tyratox.ch",
 	"dependencies": {
+		"async": "^2.5.0",
 		"ejs": "^2.5.2",
 		"express": "^4.15.4",
 		"express-graphql": "^0.6.11",
 		"graphql": "^0.11.1",
 		"graphql-relay": "^0.5.2",
-		"graphql-schema-utils": "^0.6.2",
 		"graphql-sequelize": "^5.4.2",
 		"joi": "^10.4.1",
 		"lazuli-core": "tyratox/lazuli-core",

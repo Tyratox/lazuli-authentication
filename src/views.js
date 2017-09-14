@@ -48,7 +48,7 @@ module.exports.loginView = loginView;
 const oAuthDialogView = () => {
 	return (request, response, next) => {
 		ejs.renderFile(
-			__dirname + "./templates/web/OAuthDialog.ejs",
+			__dirname + "./templates/web/OauthDialog.ejs",
 			{
 				__: string => {
 					return i18n.__({

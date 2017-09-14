@@ -7,20 +7,15 @@ const { TOKEN_LENGTH, HASH_ALGORITHM, SALT_LENGTH } = require("lazuli-require")(
 	"lazuli-config"
 );
 
-const {
-	GraphQLObjectType,
-	GraphQLString,
-	GraphQLInt,
-	GraphQLNonNull,
-	GraphQLList
-} = require("graphql");
-
 const Sequelize = require("sequelize");
 
-const { resolver, attributeFields } = require("graphql-sequelize");
-
-// graphql-js prototypes are automatically extended
-require("graphql-schema-utils");
+const path = require("path");
+const graphQlType = require(path.join(
+	__dirname,
+	"..",
+	"types",
+	"oauth-access-token"
+));
 
 /**
  * Generates the oauth access token sequelize model
@@ -29,7 +24,9 @@ require("graphql-schema-utils");
  * @param {Object} sequelize The sequelize object to define the model on
  */
 module.exports = (eventEmitter, valueFilter, sequelize) => {
-	let OAuthAccessToken = sequelize.define(
+	const { nodeInterface, attributeFieldsCache } = sequelize;
+
+	const OauthAccessToken = sequelize.define(
 		"oauth_access_token",
 		{
 			hash: {
@@ -46,77 +43,44 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	);
 
 	/**
-	 * The graphql object type for this model
-	 * @type {GraphQLObjectType}
-	 */
-	OAuthAccessToken.graphQLType = new GraphQLObjectType({
-		name: "oauth_access_token",
-		description: "An oauth access token",
-		fields: attributeFields(OAuthAccessToken, {
-			allowNull: false
-		})
-	});
-
-	OAuthAccessToken.graphQLType.getFields();
-
-	/**
 	 * Associates this model with others
 	 * @param  {Object} models An object containing all registered database models
 	 * @return {void}
 	 */
-	OAuthAccessToken.associate = function({ User, OAuthClient }) {
+	OauthAccessToken.associate = function(models) {
 		eventEmitter.emit("model.oauth-access-token.association.before", this);
 
-		this.belongsTo(User, {
+		this.User = this.belongsTo(models.User, {
 			as: "User",
 			foreignKey: "user_id"
 		});
-		this.belongsTo(OAuthClient, {
-			as: "OAuthClient",
+
+		this.OauthClient = this.belongsTo(models.OauthClient, {
+			as: "OauthClient",
 			foreignKey: "oauth_client_id"
 		});
 
 		eventEmitter.emit("model.oauth-access-token.association.after", this);
 
-		eventEmitter.emit(
-			"graphql.type.oauth-access-token.association.before",
-			this
-		);
-
-		OAuthAccessToken.graphQLType = OAuthAccessToken.graphQLType.merge(
-			new GraphQLObjectType({
-				name: "oauth_access_token",
-				fields: valueFilter.filterable(
-					"graphql.type.oauth-access-token.association",
-					{
-						user: {
-							type: new GraphQLNonNull(User.graphQLType),
-							resolve: resolver(User)
-						},
-						oauthClient: {
-							type: new GraphQLNonNull(OAuthClient.graphQLType),
-							resolve: resolver(OAuthClient)
-						}
-					}
-				)
-			})
-		);
-		eventEmitter.emit(
-			"graphql.type.oauth-access-token.association.after",
-			this
+		this.graphQlType = graphQlType(
+			eventEmitter,
+			valueFilter,
+			models,
+			nodeInterface,
+			attributeFieldsCache
 		);
 	};
 
 	eventEmitter.addListener(
 		"model.association",
-		OAuthAccessToken.associate.bind(OAuthAccessToken)
+		OauthAccessToken.associate.bind(OauthAccessToken)
 	);
 
 	/**
 	 * Generates a random access token string
 	 * @return {String} The generated token
 	 */
-	OAuthAccessToken.generateToken = function() {
+	OauthAccessToken.generateToken = function() {
 		let token = generateRandomString(TOKEN_LENGTH * 2);
 		//HTTP Headers can only contain ASCII and 19 specific seperators
 		//http://stackoverflow.com/questions/19028068/illegal-characters-in-http-headers
@@ -132,7 +96,7 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	 * @param  {String} token The token to hash
 	 * @return {String}       The generated hash
 	 */
-	OAuthAccessToken.hashToken = function(token) {
+	OauthAccessToken.hashToken = function(token) {
 		return generateHash(token, false, HASH_ALGORITHM, SALT_LENGTH).hash;
 	};
 
@@ -141,9 +105,9 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	 * @param  {String} token The received access token
 	 * @return {Promise}      The sequelize find response
 	 */
-	OAuthAccessToken.findByToken = function(token) {
+	OauthAccessToken.findByToken = function(token) {
 		return this.findOne({ where: { hash: this.hashToken(token) } });
 	};
 
-	return OAuthAccessToken;
+	return OauthAccessToken;
 };

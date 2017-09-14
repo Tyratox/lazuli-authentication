@@ -8,12 +8,12 @@ const oauth2orize = require("oauth2orize");
  * Initializes the oauth2orize powered oauth server and its endpoints
  * @return {void}
  */
-const initOAuthServer = (
+const initOauthServer = (
 	oauth2Server,
-	OAuthClient,
-	OAuthRedirectUri,
-	OAuthCode,
-	OAuthAccessToken
+	OauthClient,
+	OauthRedirectUri,
+	OauthCode,
+	OauthAccessToken
 ) => {
 	//init the oauth 2 server
 	oauth2Server.serializeClient((client, callback) => {
@@ -21,12 +21,12 @@ const initOAuthServer = (
 	});
 
 	oauth2Server.deserializeClient((id, callback) => {
-		OAuthClient.findOne({
+		OauthClient.findOne({
 			where: { id: id },
 			include: [
 				{
-					model: OAuthRedirectUri,
-					as: "OAuthRedirectUris"
+					model: OauthRedirectUri,
+					as: "OauthRedirectUris"
 				}
 			]
 		})
@@ -36,16 +36,16 @@ const initOAuthServer = (
 			.catch(callback);
 	});
 
-	initOAuthServerGrant(oauth2Server, OAuthCode);
-	initOAuthServerExchange(oauth2Server, OAuthCode, OAuthAccessToken);
+	initOauthServerGrant(oauth2Server, OauthCode);
+	initOauthServerExchange(oauth2Server, OauthCode, OauthAccessToken);
 };
-module.exports.initOAuthServer = initOAuthServer;
+module.exports.initOauthServer = initOauthServer;
 
 /**
  * Initializes the granting part of the oauth server
  * @return {void}
  */
-const initOAuthServerGrant = (oauth2Server, OAuthCode) => {
+const initOauthServerGrant = (oauth2Server, OauthCode) => {
 	oauth2Server.grant(
 		oauth2orize.grant.code((client, redirectUri, user, ares, callback) => {
 			// Create a new authorization code
@@ -58,12 +58,12 @@ const initOAuthServerGrant = (oauth2Server, OAuthCode) => {
 				);
 			}
 
-			let codeValue = OAuthCode.generateCode();
+			let codeValue = OauthCode.generateCode();
 
 			let expirationDate = Date.now() + AUTH_CODE_LIFETIME * 1000;
 
-			let code = OAuthCode.build({
-				hash: OAuthCode.hashCode(codeValue),
+			let code = OauthCode.build({
+				hash: OauthCode.hashCode(codeValue),
 				expires: expirationDate,
 				user_id: user.get("id"),
 				oauth_client_id: client.get("id")
@@ -80,16 +80,16 @@ const initOAuthServerGrant = (oauth2Server, OAuthCode) => {
 		})
 	);
 };
-module.exports.initOAuthServerGrant = initOAuthServerGrant;
+module.exports.initOauthServerGrant = initOauthServerGrant;
 
 /**
  * Initializes the exchange part of the oauth server
  * @return {void}
  */
-const initOAuthServerExchange = (oauth2Server, OAuthCode, OAuthAccessToken) => {
+const initOauthServerExchange = (oauth2Server, OauthCode, OauthAccessToken) => {
 	return oauth2Server.exchange(
 		oauth2orize.exchange.code((client, code, redirectUri, callback) => {
-			OAuthCode.findByCode(code)
+			OauthCode.findByCode(code)
 				.then(authCode => {
 					if (authCode.get("expires") < Date.now()) {
 						return callback(
@@ -101,7 +101,7 @@ const initOAuthServerExchange = (oauth2Server, OAuthCode, OAuthAccessToken) => {
 						userId = authCode.get("user_id");
 
 					let promises = [
-						OAuthCode.destroy({
+						OauthCode.destroy({
 							where: {
 								$or: [
 									{
@@ -119,7 +119,7 @@ const initOAuthServerExchange = (oauth2Server, OAuthCode, OAuthAccessToken) => {
 
 					// Create an access token
 					let tokenData = {
-						token: OAuthAccessToken.generateToken(),
+						token: OauthAccessToken.generateToken(),
 						clientId: clientId,
 						userId: userId,
 						expires: expirationDate
@@ -127,8 +127,8 @@ const initOAuthServerExchange = (oauth2Server, OAuthCode, OAuthAccessToken) => {
 
 					//the 'key' here is 'hash' and not 'token' as in 'tokenData'!
 					promises.push(
-						OAuthAccessToken.create({
-							hash: OAuthAccessToken.hashToken(tokenData.token),
+						OauthAccessToken.create({
+							hash: OauthAccessToken.hashToken(tokenData.token),
 							expires: expirationDate,
 							user_id: userId,
 							oauth_client_id: clientId
@@ -145,24 +145,24 @@ const initOAuthServerExchange = (oauth2Server, OAuthCode, OAuthAccessToken) => {
 		})
 	);
 };
-module.exports.initOAuthServerExchange = initOAuthServerExchange;
+module.exports.initOauthServerExchange = initOauthServerExchange;
 
 /**
  * Authenticates the oauth client during the oauth2 authorization
  * @return {Function} The express middleware to authenticate the oauth client
  */
-const authenticateOAuthClient = (
+const authenticateOauthClient = (
 	oauth2Server,
-	OAuthClient,
-	OAuthRedirectUri
+	OauthClient,
+	OauthRedirectUri
 ) => {
 	return oauth2Server.authorization((clientId, redirectUri, callback) => {
-		OAuthClient.findOne({
+		OauthClient.findOne({
 			where: { id: clientId },
 			include: [
 				{
-					model: OAuthRedirectUri,
-					as: "OAuthRedirectUris"
+					model: OauthRedirectUri,
+					as: "OauthRedirectUris"
 				}
 			]
 		})
@@ -180,7 +180,7 @@ const authenticateOAuthClient = (
 			.catch(callback);
 	});
 };
-module.exports.authenticateOAuthClient = authenticateOAuthClient;
+module.exports.authenticateOauthClient = authenticateOauthClient;
 
 /**
  * Checks whether a oauth request can immediately be approved
@@ -192,7 +192,7 @@ const checkForImmediateApproval = () => {
 
 		//Or the user already approved to this client
 		client
-			.getOAuthAccessTokens()
+			.getOauthAccessTokens()
 			.then(tokens => {
 				//If the client is trusted or there's already a token issued
 				if (client.get("trusted") === true || tokens.length > 0) {

@@ -1,21 +1,39 @@
 const {
+	GraphQLSchema,
 	GraphQLObjectType,
 	GraphQLString,
 	GraphQLBoolean,
 	GraphQLInt,
 	GraphQLNonNull,
-	GraphQLList
+	GraphQLList,
+	GraphQLInputObjectType
 } = require("graphql");
 
 const { resolver } = require("graphql-sequelize");
 
-module.exports = (eventEmitter, valueFilter, User) => {
+const UserInputType = new GraphQLInputObjectType({
+	name: "InputType",
+	fields: {
+		int: { type: GraphQLInt }
+	}
+});
+
+/**
+  * Generates the oauth client graphql schema
+  * @param {Object} eventEmitter The global event emitter
+  * @param {Object} valueFilter The global value filter object
+  * @param {Object} sequelize The global sequelize object
+  * @param {Object} User The user model
+  */
+module.exports = (eventEmitter, valueFilter, sequelize, User) => {
+	const { nodeField } = sequelize;
+
 	const UserSchema = new GraphQLSchema({
 		query: new GraphQLObjectType({
 			name: "UserQuery",
 			fields: {
 				user: {
-					type: User.graphQLObjectType,
+					type: User.graphQlType,
 					args: {
 						id: {
 							description: "The id of the user",
@@ -25,10 +43,11 @@ module.exports = (eventEmitter, valueFilter, User) => {
 					resolve: resolver(User)
 				},
 				users: {
-					type: new GraphQLList(User.graphQLObjectType),
+					type: new GraphQLList(User.graphQlType),
 					args: {},
 					resolve: resolver(User)
-				}
+				},
+				node: nodeField
 			}
 		}),
 		mutation: new GraphQLObjectType({
@@ -37,7 +56,7 @@ module.exports = (eventEmitter, valueFilter, User) => {
 				createUser: {
 					type: User.graphQlType,
 					args: {
-						user: { type: User.graphQlType }
+						user: { type: UserInputType }
 					},
 					resolve: (root, { user }, info) => {
 						return User.create(user).then(userModel => {
@@ -48,7 +67,7 @@ module.exports = (eventEmitter, valueFilter, User) => {
 				updateUser: {
 					type: User.graphQlType,
 					args: {
-						user: { type: User.graphQlType }
+						user: { type: UserInputType }
 					},
 					resolve: (root, { user }, info) => {
 						return User.update(user).then(userModel => {
@@ -66,7 +85,8 @@ module.exports = (eventEmitter, valueFilter, User) => {
 							return userModel.destroy();
 						});
 					}
-				}
+				},
+				node: nodeField
 			}
 		})
 	});

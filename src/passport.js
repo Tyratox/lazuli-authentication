@@ -17,26 +17,26 @@ const GoogleStrategy = require("passport-google-oauth").OAuth2Strategy;
 /**
  * Enables the oauth client authentication in passport
  * @param  {Object} passport         The passport object which this method should be performed on
- * @param  {Object} OAuthClient      The oauth client database model
- * @param  {Object} OAuthRedirectUri The redirect uri database model
+ * @param  {Object} OauthClient      The oauth client database model
+ * @param  {Object} OauthRedirectUri The redirect uri database model
  * @return {void}
  */
-const initOAuthClientAuthentication = (
+const initOauthClientAuthentication = (
 	passport,
-	OAuthClient,
-	OAuthRedirectUri
+	OauthClient,
+	OauthRedirectUri
 ) => {
 	passport.use(
 		"client-local",
 		new LocalStrategy(
 			{ usernameField: "clientId", passwordField: "clientSecret" },
 			(clientId, clientSecret, callback) => {
-				OAuthClient.findOne({
+				OauthClient.findOne({
 					where: { id: clientId },
 					include: [
 						{
-							model: OAuthRedirectUri,
-							as: "OAuthRedirectUris"
+							model: OauthRedirectUri,
+							as: "OauthRedirectUris"
 						}
 					]
 				})
@@ -59,13 +59,13 @@ const initOAuthClientAuthentication = (
 		)
 	);
 };
-module.exports.initOAuthClientAuthentication = initOAuthClientAuthentication;
+module.exports.initOauthClientAuthentication = initOauthClientAuthentication;
 
 /**
  * Enables the local user authentication in passport
  * @param  {Object} passport         The passport object which this method should be performed on
  * @param  {Object} User             The user database model
- * @param  {Object} OAuthRedirectUri The redirect uri database model
+ * @param  {Object} OauthRedirectUri The redirect uri database model
  * @return {void}
  */
 const initLocalAuthentication = (passport, User) => {
@@ -96,15 +96,15 @@ module.exports.initLocalAuthentication = initLocalAuthentication;
 /**
  * Enables the oauth bearer authentication in passport
  * @param  {Object} passport            The passport object which this method should be performed on
- * @param  {Object} OAuthAccessToken    The oauth access token database model
- * @param  {Object} OAuthRedirectUri    The redirect uri database model
+ * @param  {Object} OauthAccessToken    The oauth access token database model
+ * @param  {Object} OauthRedirectUri    The redirect uri database model
  * @param  {Object} User                The user database model
  * @param  {Object} Permission          The permission database model
  * @return {void}
  */
-const initOAuthBearerAuthentication = (
+const initOauthBearerAuthentication = (
 	passport,
-	OAuthAccessToken,
+	OauthAccessToken,
 	User,
 	Permission
 ) => {
@@ -115,11 +115,11 @@ const initOAuthBearerAuthentication = (
 			},
 			(request, accessToken, callback) => {
 				//keeping the database clean
-				OAuthAccessToken.destroy({
+				OauthAccessToken.destroy({
 					where: { expires: { $lt: new Date() } }
 				})
 					.then(() => {
-						return OAuthAccessToken.findByToken(accessToken).then(token => {
+						return OauthAccessToken.findByToken(accessToken).then(token => {
 							// No token found
 							if (!token) {
 								return callback(new Error("The sent token is invalid!"));
@@ -173,16 +173,16 @@ const initOAuthBearerAuthentication = (
 		)
 	);
 };
-module.exports.initOAuthBearerAuthentication = initOAuthBearerAuthentication;
+module.exports.initOauthBearerAuthentication = initOauthBearerAuthentication;
 
 /**
  * Enables the facebook authentication in passport
  * @param  {Object} passport            The passport object which this method should be performed on
  * @param  {Object} User                The user database model
- * @param  {Object} OAuthProvider       The oauth provider database model
+ * @param  {Object} OauthProvider       The oauth provider database model
  * @return {void}
  */
-const initFacebookAuthentication = (passport, User, OAuthProvider) => {
+const initFacebookAuthentication = (passport, User, OauthProvider) => {
 	passport.use(
 		new FacebookStrategy(
 			{
@@ -201,7 +201,7 @@ const initFacebookAuthentication = (passport, User, OAuthProvider) => {
 							.save()
 							.then(user => {
 								return user
-									.getOAuthProviders({ where: { type: "facebook" } })
+									.getOauthProviders({ where: { type: "facebook" } })
 									.then(providers => {
 										if (providers.length > 0) {
 											let provider = providers[0];
@@ -213,7 +213,7 @@ const initFacebookAuthentication = (passport, User, OAuthProvider) => {
 
 											return provider.save();
 										} else {
-											return OAuthProvider.create({
+											return OauthProvider.create({
 												type: "facebook",
 												accessToken,
 												refreshToken
@@ -238,10 +238,10 @@ module.exports.initFacebookAuthentication = initFacebookAuthentication;
  * Enables the google authentication in passport
  * @param  {Object} passport            The passport object which this method should be performed on
  * @param  {Object} User                The user database model
- * @param  {Object} OAuthProvider       The oauth provider database model
+ * @param  {Object} OauthProvider       The oauth provider database model
  * @return {void}
  */
-const initGoogleAuthentication = (passport, User, OAuthProvider) => {
+const initGoogleAuthentication = (passport, User, OauthProvider) => {
 	passport.use(
 		new GoogleStrategy(
 			{
@@ -259,7 +259,7 @@ const initGoogleAuthentication = (passport, User, OAuthProvider) => {
 							.save()
 							.then(user => {
 								return user
-									.getOAuthProviders({ where: { type: "google" } })
+									.getOauthProviders({ where: { type: "google" } })
 									.then(providers => {
 										if (providers.length > 0) {
 											let provider = providers[0];
@@ -271,7 +271,7 @@ const initGoogleAuthentication = (passport, User, OAuthProvider) => {
 
 											return provider.save();
 										} else {
-											return OAuthProvider.create({
+											return OauthProvider.create({
 												type: "google",
 												accessToken,
 												refreshToken
@@ -324,26 +324,26 @@ module.exports.initPassportSerialization = initPassportSerialization;
  * @param  {Object} passport         The passport object to initialize
  * @param  {Object} User             The user database model
  * @param  {Object} Permission       The permission database model
- * @param  {Object} OAuthProvider    The oauth provider database model
- * @param  {Object} OAuthClient      The oauth client database model
- * @param  {Object} OAuthRedirectUri The oauth redirect uri database model
- * @param  {Object} OAuthAccessToken The oauth access token database model
+ * @param  {Object} OauthProvider    The oauth provider database model
+ * @param  {Object} OauthClient      The oauth client database model
+ * @param  {Object} OauthRedirectUri The oauth redirect uri database model
+ * @param  {Object} OauthAccessToken The oauth access token database model
  * @return {void}
  */
 const initPassport = (
 	passport,
 	User,
 	Permission,
-	OAuthProvider,
-	OAuthClient,
-	OAuthRedirectUri,
-	OAuthAccessToken
+	OauthProvider,
+	OauthClient,
+	OauthRedirectUri,
+	OauthAccessToken
 ) => {
 	initPassportSerialization(passport, User, Permission);
-	initOAuthClientAuthentication(passport, OAuthClient, OAuthRedirectUri);
+	initOauthClientAuthentication(passport, OauthClient, OauthRedirectUri);
 	initLocalAuthentication(passport, User);
-	initOAuthBearerAuthentication(passport, OAuthAccessToken, User, Permission);
-	initFacebookAuthentication(passport, User, OAuthProvider);
-	initGoogleAuthentication(passport, User, OAuthProvider);
+	initOauthBearerAuthentication(passport, OauthAccessToken, User, Permission);
+	initFacebookAuthentication(passport, User, OauthProvider);
+	initGoogleAuthentication(passport, User, OauthProvider);
 };
 module.exports.initPassport = initPassport;

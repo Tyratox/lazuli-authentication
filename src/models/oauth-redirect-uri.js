@@ -3,20 +3,15 @@ const {
 	generateHash
 } = require("../utilities/crypto-utilities.js");
 
-const {
-	GraphQLObjectType,
-	GraphQLString,
-	GraphQLInt,
-	GraphQLNonNull,
-	GraphQLList
-} = require("graphql");
-
 const Sequelize = require("sequelize");
 
-const { resolver, attributeFields } = require("graphql-sequelize");
-
-// graphql-js prototypes are automatically extended
-require("graphql-schema-utils");
+const path = require("path");
+const graphQlType = require(path.join(
+	__dirname,
+	"..",
+	"types",
+	"oauth-redirect-uri"
+));
 
 /**
   * Generates the oauth redirect uri sequelize model
@@ -25,7 +20,9 @@ require("graphql-schema-utils");
   * @param {Object} sequelize The sequelize object to define the model on
   */
 module.exports = (eventEmitter, valueFilter, sequelize) => {
-	let OAuthRedirectUri = sequelize.define(
+	const { nodeInterface, attributeFieldsCache } = sequelize;
+
+	const OauthRedirectUri = sequelize.define(
 		"oauth_redirect_uri",
 		valueFilter.filterable("model.oauth-redirect-uri.attributes", {
 			uri: {
@@ -39,62 +36,33 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	);
 
 	/**
-	 * The graphql object type for this model
-	 * @type {GraphQLObjectType}
-	 */
-	OAuthRedirectUri.graphQLType = new GraphQLObjectType({
-		name: "oauth_redirect_uri",
-		description: "An oauth redirect uri",
-		fields: attributeFields(OAuthRedirectUri, {
-			allowNull: false
-		})
-	});
-
-	/**
 	 * Associates this model with others
 	 * @param  {Object} models An object containing all registered database models
 	 * @return {void}
 	 */
-	OAuthRedirectUri.associate = function({ OAuthClient }) {
+	OauthRedirectUri.associate = function(models) {
 		eventEmitter.emit("model.oauth-redirect-uri.association.before", this);
-		this.belongsTo(OAuthClient, {
-			as: "OAuthClient",
+
+		this.OauthClient = this.belongsTo(models.OauthClient, {
+			as: "OauthClient",
 			foreignKey: "oauth_client_id"
 		});
+
 		eventEmitter.emit("model.oauth-redirect-uri.association.after", this);
 
-		eventEmitter.emit(
-			"graphql.type.oauth-redirect-uri.association.before",
-			this
-		);
-
-		OAuthRedirectUri.graphQLType = OAuthRedirectUri.graphQLType.merge(
-			new GraphQLObjectType({
-				name: "oauth_redirect_uri",
-				fields: valueFilter.filterable(
-					"graphql.type.oauth-redirect-uri.association",
-					{
-						oauthClients: {
-							type: new GraphQLNonNull(
-								new GraphQLList(new GraphQLNonNull(OAuthClient.graphQLType))
-							),
-							resolve: resolver(OAuthClient)
-						}
-					}
-				)
-			})
-		);
-
-		eventEmitter.emit(
-			"graphql.type.oauth-redirect-uri.association.after",
-			this
+		this.graphQlType = graphQlType(
+			eventEmitter,
+			valueFilter,
+			models,
+			nodeInterface,
+			attributeFieldsCache
 		);
 	};
 
 	eventEmitter.addListener(
 		"model.association",
-		OAuthRedirectUri.associate.bind(OAuthRedirectUri)
+		OauthRedirectUri.associate.bind(OauthRedirectUri)
 	);
 
-	return OAuthRedirectUri;
+	return OauthRedirectUri;
 };

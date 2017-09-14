@@ -1,4 +1,5 @@
 const {
+	GraphQLSchema,
 	GraphQLObjectType,
 	GraphQLString,
 	GraphQLBoolean,
@@ -13,41 +14,44 @@ const { resolver } = require("graphql-sequelize");
   * Generates the oauth client graphql schema
   * @param {Object} eventEmitter The global event emitter
   * @param {Object} valueFilter The global value filter object
-  * @param {Object} models An object containing all registered database models
+  * @param {Object} sequelize The global sequelize object
+  * @param {Object} OauthClient The oauthClient model
   */
-module.exports = (eventEmitter, valueFilter, models) => {
-	const OAuthClientSchema = new GraphQLSchema({
+module.exports = (eventEmitter, valueFilter, sequelize, OauthClient) => {
+	const { nodeField } = sequelize;
+
+	const OauthClientSchema = new GraphQLSchema({
 		query: new GraphQLObjectType({
-			name: "OAuthClientQuery",
+			name: "OauthClientQuery",
 			fields: {
 				oauthClient: {
-					type: OAuthClient.graphQLObjectType,
+					type: OauthClient.graphQlType,
 					args: {
 						id: {
 							description: "The id of the oauth client",
 							type: new GraphQLNonNull(GraphQLInt)
 						}
 					},
-					resolve: resolver(OAuthClient)
+					resolve: resolver(OauthClient)
 				},
 				oauthClients: {
-					type: new GraphQLList(OAuthClient.graphQLObjectType),
+					type: new GraphQLList(OauthClient.graphQlType),
 					args: {},
-					resolve: resolver(OAuthClient)
+					resolve: resolver(OauthClient)
 				}
 			}
 		}),
 		mutation: new GraphQLObjectType({
-			name: "OAuthClientMutation",
+			name: "OauthClientMutation",
 			fields: {
-				createoOAuthClient: {
-					type: OAuthClient.graphQlType,
+				createoOauthClient: {
+					type: OauthClient.graphQlType,
 					args: {
-						oauthClient: { type: OAuthClient.graphQlType }
+						oauthClient: { type: OauthClient.graphQlType }
 					},
 					resolve: (root, { oauthClient }, info) => {
-						return OAuthClient.create(oauthClient).then(oauthClientModel => {
-							return resolver(OAuthClient)(
+						return OauthClient.create(oauthClient).then(oauthClientModel => {
+							return resolver(OauthClient)(
 								root,
 								{ id: oauthClientModel.get("id") },
 								info
@@ -56,13 +60,13 @@ module.exports = (eventEmitter, valueFilter, models) => {
 					}
 				},
 				updateUser: {
-					type: OAuthClient.graphQlType,
+					type: OauthClient.graphQlType,
 					args: {
-						user: { type: OAuthClient.graphQlType }
+						user: { type: OauthClient.graphQlType }
 					},
 					resolve: (root, { oauthClient }, info) => {
-						return OAuthClient.update(oauthClient).then(oauthClientModel => {
-							return resolver(OAuthClient)(
+						return OauthClient.update(oauthClient).then(oauthClientModel => {
+							return resolver(OauthClient)(
 								root,
 								{ id: oauthClientModel.get("id") },
 								info
@@ -76,7 +80,7 @@ module.exports = (eventEmitter, valueFilter, models) => {
 						userId: { type: GraphQLInt }
 					},
 					resolve: (root, { userId }, info) => {
-						return OAuthClient.findById(userId).then(oauthClientModel => {
+						return OauthClient.findById(userId).then(oauthClientModel => {
 							return oauthClientModel.destroy();
 						});
 					}
@@ -85,5 +89,5 @@ module.exports = (eventEmitter, valueFilter, models) => {
 		})
 	});
 
-	return OAuthClientSchema;
+	return OauthClientSchema;
 };

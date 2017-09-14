@@ -5,23 +5,15 @@ const {
 
 const { CLIENT_SECRET_LENGTH } = require("lazuli-require")("lazuli-config");
 
-const {
-	GraphQLObjectType,
-	GraphQLString,
-	GraphQLInt,
-	GraphQLBoolean,
-	GraphQLNonNull,
-	GraphQLList
-} = require("graphql");
-
 const Sequelize = require("sequelize");
 
-const { resolver, attributeFields } = require("graphql-sequelize");
-
-// graphql-js prototypes are automatically extended
-require("graphql-schema-utils");
-
-const pick = require("lodash/pick");
+const path = require("path");
+const graphQlType = require(path.join(
+	__dirname,
+	"..",
+	"types",
+	"oauth-client"
+));
 
 /**
  * Generates the oauth client sequelize model
@@ -30,7 +22,9 @@ const pick = require("lodash/pick");
  * @param {Object} sequelize The sequelize object to define the model on
  */
 module.exports = (eventEmitter, valueFilter, sequelize) => {
-	let OAuthClient = sequelize.define(
+	const { nodeInterface, attributeFieldsCache } = sequelize;
+
+	const OauthClient = sequelize.define(
 		"oauth_client",
 		{
 			name: {
@@ -61,48 +55,34 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	);
 
 	/**
-	 * The graphql object type for this model
-	 * @type {GraphQLObjectType}
-	 */
-	OAuthClient.graphQLType = new GraphQLObjectType({
-		name: "oauth_client",
-		description: "An oauth client",
-		fields: attributeFields(OAuthClient, {
-			allowNull: false
-		})
-	});
-
-	/**
 	 * Associates this model with others
 	 * @param  {Object} models An object containing all registered database models
 	 * @return {void}
 	 */
-	OAuthClient.associate = function({
-		User,
-		OAuthCode,
-		OAuthAccessToken,
-		OAuthRedirectUri
-	}) {
+	OauthClient.associate = function(models) {
 		eventEmitter.emit("model.oauth-client.association.before", this);
 
-		this.belongsTo(User, {
+		this.User = this.belongsTo(models.User, {
 			as: "User",
 			foreignKey: "user_id"
 		});
-		this.hasMany(OAuthCode, {
-			as: "OAuthCodes",
+
+		this.OauthCodes = this.hasMany(models.OauthCode, {
+			as: "OauthCodes",
 			foreignKey: "oauth_client_id",
 			onDelete: "cascade",
 			hooks: true
 		});
-		this.hasMany(OAuthAccessToken, {
-			as: "OAuthAccessTokens",
+
+		this.OauthAccessTokens = this.hasMany(models.OauthAccessToken, {
+			as: "OauthAccessTokens",
 			foreignKey: "oauth_client_id",
 			onDelete: "cascade",
 			hooks: true
 		});
-		this.hasMany(OAuthRedirectUri, {
-			as: "OAuthRedirectUris",
+
+		this.OauthRedirectUris = this.hasMany(models.OauthRedirectUri, {
+			as: "OauthRedirectUris",
 			foreignKey: "oauth_client_id",
 			onDelete: "cascade",
 			hooks: true
@@ -110,58 +90,25 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 
 		eventEmitter.emit("model.oauth-client.association.after", this);
 
-		eventEmitter.emit("graphql.type.oauth-client.association.before", this);
-
-		OAuthClient.graphQLType = OAuthClient.graphQLType.merge(
-			new GraphQLObjectType({
-				name: "oauth_client",
-				fields: valueFilter.filterable(
-					"graphql.type.oauth-client.association",
-					{
-						user: {
-							type: new GraphQLNonNull(User.graphQLType),
-							resolve: resolver(User)
-						},
-						oauthCodes: {
-							type: new GraphQLNonNull(
-								new GraphQLList(new GraphQLNonNull(OAuthCode.graphQLType))
-							),
-							resolve: resolver(OAuthCode)
-						},
-						oauthAccessTokens: {
-							type: new GraphQLNonNull(
-								new GraphQLList(
-									new GraphQLNonNull(OAuthAccessToken.graphQLType)
-								)
-							),
-							resolve: resolver(OAuthAccessToken)
-						},
-						oauthRedirectUris: {
-							type: new GraphQLNonNull(
-								new GraphQLList(
-									new GraphQLNonNull(OAuthRedirectUri.graphQLType)
-								)
-							),
-							resolve: resolver(OAuthRedirectUri)
-						}
-					}
-				)
-			})
+		this.graphQlType = graphQlType(
+			eventEmitter,
+			valueFilter,
+			models,
+			nodeInterface,
+			attributeFieldsCache
 		);
-
-		eventEmitter.emit("graphql.type.oauth-client.association.after", this);
 	};
 
 	eventEmitter.addListener(
 		"model.association",
-		OAuthClient.associate.bind(OAuthClient)
+		OauthClient.associate.bind(OauthClient)
 	);
 
 	/**
 	 * Generates a random secret
 	 * @return {String} The random secret
 	 */
-	OAuthClient.generateSecret = function() {
+	OauthClient.generateSecret = function() {
 		return cryptoUtilities.generateRandomString(CLIENT_SECRET_LENGTH);
 	};
 
@@ -170,7 +117,7 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	 * @param  {String} secret The secret to hash and store
 	 * @return {void}
 	 */
-	OAuthClient.prototype.setSecret = function(secret) {
+	OauthClient.prototype.setSecret = function(secret) {
 		let { hash, salt, algorithm } = cryptoUtilities.generateHash(secret);
 
 		this.set({
@@ -185,7 +132,7 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	 * @param  {String} secret Checks whether this secret matches the stored one by hashing it with the stored salt
 	 * @return {Boolean}        Whether the secrets match
 	 */
-	OAuthClient.prototype.verifySecret = function(secret) {
+	OauthClient.prototype.verifySecret = function(secret) {
 		let { hash } = cryptoUtilities.generateHash(
 			secret,
 			this.get("secretSalt"),
@@ -220,16 +167,16 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	 * @param  {String} redirectUri The redirect uri to verify
 	 * @return {Boolean}            Whether the redirect uri is registered with this object
 	 */
-	OAuthClient.prototype.verifyRedirectUri = function(redirectUri) {
-		if (!this.get("OAuthRedirectUris")) {
+	OauthClient.prototype.verifyRedirectUri = function(redirectUri) {
+		if (!this.get("OauthRedirectUris")) {
 			console.log(
-				"OAuthRedirectUris wasn't included in this instance of OAuthClient!"
+				"OauthRedirectUris wasn't included in this instance of OauthClient!"
 			);
 
 			return false;
 		}
 
-		let uris = this.get("OAuthRedirectUris").map(uri => {
+		let uris = this.get("OauthRedirectUris").map(uri => {
 			return uri.get("uri");
 		});
 
@@ -242,5 +189,5 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 		return false;
 	};
 
-	return OAuthClient;
+	return OauthClient;
 };

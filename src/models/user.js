@@ -1,19 +1,8 @@
-const pick = require("lodash/pick");
 const async = require("async");
 const Sequelize = require("sequelize");
 
-const {
-	GraphQLObjectType,
-	GraphQLString,
-	GraphQLInt,
-	GraphQLNonNull,
-	GraphQLList
-} = require("graphql");
-
-const { resolver, attributeFields } = require("graphql-sequelize");
-
-// graphql-js prototypes are automatically extended
-require("graphql-schema-utils");
+const path = require("path");
+const graphQlType = require(path.join(__dirname, "..", "types", "user"));
 
 const {
 	LOCALES,
@@ -31,6 +20,8 @@ const { sendEmail } = require("lazuli-require")("lazuli-email");
   * @param {Object} sequelize The sequelize object to define the model on
   */
 module.exports = (eventEmitter, valueFilter, sequelize) => {
+	const { nodeInterface, attributeFieldsCache } = sequelize;
+
 	const User = sequelize.define(
 		"user",
 		valueFilter.filterable("model.user.attributes", {
@@ -93,36 +84,14 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 	);
 
 	/**
-	 * The graphql object type for this model
-	 * @type {GraphQLObjectType}
-	 */
-	User.graphQLType = new GraphQLObjectType({
-		name: "user",
-		description: "A user",
-		fields: attributeFields(User, {
-			allowNull: false
-		})
-	});
-
-	/**
 	 * Associates this model with others
 	 * @param  {Object} models An object containing all registered database models
 	 * @return {void}
 	 */
-	User.associate = function({
-		Permission,
-		OAuthProvider,
-		OAuthAccessToken,
-		OAuthCode,
-		OAuthClient
-		/*Image,
-		Book,
-		Offer,
-		OfferRequest*/
-	}) {
+	User.associate = function(models) {
 		eventEmitter.emit("model.user.association.before", this);
 
-		this.belongsToMany(Permission, {
+		this.Permissions = this.belongsToMany(models.Permission, {
 			as: "Permissions",
 			foreignKey: "user_id",
 			otherKey: "permission_id",
@@ -131,29 +100,29 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 			hooks: true
 		});
 
-		this.hasMany(OAuthProvider, {
-			as: "OAuthProviders",
+		this.OauthProviders = this.hasMany(models.OauthProvider, {
+			as: "OauthProviders",
 			foreignKey: "user_id",
 			onDelete: "cascade",
 			hooks: true
 		});
 
-		this.hasMany(OAuthAccessToken, {
-			as: "OAuthAccessTokens",
+		this.OauthAccessTokens = this.hasMany(models.OauthAccessToken, {
+			as: "OauthAccessTokens",
 			foreignKey: "user_id",
 			onDelete: "cascade",
 			hooks: true
 		});
 
-		this.hasMany(OAuthCode, {
-			as: "OAuthCodes",
+		this.OauthCodes = this.hasMany(models.OauthCode, {
+			as: "OauthCodes",
 			foreignKey: "user_id",
 			onDelete: "cascade",
 			hooks: true
 		});
 
-		this.hasMany(OAuthClient, {
-			as: "OAuthClients",
+		this.OauthClients = this.hasMany(models.OauthClient, {
+			as: "OauthClients",
 			foreignKey: "user_id",
 			onDelete: "cascade",
 			hooks: true
@@ -161,47 +130,13 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 
 		eventEmitter.emit("model.user.association.after", this);
 
-		eventEmitter.emit("graphql.type.user.association.before", this);
-
-		User.graphQLType = User.graphQLType.merge(
-			new GraphQLObjectType({
-				name: "user",
-				fields: valueFilter.filterable("graphql.type.user.association", {
-					permissions: {
-						type: new GraphQLNonNull(
-							new GraphQLList(new GraphQLNonNull(Permission.graphQLType))
-						),
-						resolve: resolver(Permission)
-					},
-					oauthProviders: {
-						type: new GraphQLNonNull(
-							new GraphQLList(new GraphQLNonNull(OAuthProvider.graphQLType))
-						),
-						resolve: resolver(OAuthProvider)
-					},
-					oauthAccessTokens: {
-						type: new GraphQLNonNull(
-							new GraphQLList(new GraphQLNonNull(OAuthAccessToken.graphQLType))
-						),
-						resolve: resolver(OAuthAccessToken)
-					},
-					oauthCodes: {
-						type: new GraphQLNonNull(
-							new GraphQLList(new GraphQLNonNull(OAuthCode.graphQLType))
-						),
-						resolve: resolver(OAuthCode)
-					},
-					oauthClients: {
-						type: new GraphQLNonNull(
-							new GraphQLList(new GraphQLNonNull(OAuthClient.graphQLType))
-						),
-						resolve: resolver(OAuthClient)
-					}
-				})
-			})
+		this.graphQlType = graphQlType(
+			eventEmitter,
+			valueFilter,
+			models,
+			nodeInterface,
+			attributeFieldsCache
 		);
-
-		eventEmitter.emit("graphql.type.user.association.after", this);
 
 		/*this.hasMany(Image, {
 			as: "Images",
@@ -233,7 +168,6 @@ module.exports = (eventEmitter, valueFilter, sequelize) => {
 			hooks: true
 		});*/
 	};
-
 	eventEmitter.addListener("model.association", User.associate.bind(User));
 
 	/**
