@@ -36,11 +36,8 @@
 		"graphql": "^0.11.1",
 		"graphql-relay": "^0.5.2",
 		"graphql-sequelize": "^5.4.2",
-		"joi": "^10.4.1",
+		"joi": "^11.0.1",
 		"lazuli-core": "tyratox/lazuli-core",
-		"lazuli-filters": "tyratox/lazuli-filters",
-		"lazuli-i18n": "tyratox/lazuli-i18n",
-		"lazuli-logger": "tyratox/lazuli-logger",
 		"lazuli-require": "tyratox/lazuli-require",
 		"oauth2orize": "^1.5.1",
 		"passport": "^0.3.2",
@@ -54,7 +51,6 @@
 		"lazuli-config": "tyratox/lazuli-config",
 		"lazuli-core": "tyratox/lazuli-core",
 		"lazuli-filters": "tyratox/lazuli-filters",
-		"lazuli-i18n": "tyratox/lazuli-i18n",
 		"lazuli-piwick-tacker": "tyratox/lazuli-piwik-tracker"
 	},
 	"devDependencies": {
@@ -64,7 +60,10 @@
 		"babel-register": "^6.26.0",
 		"jsdoc": "^3.5.4",
 		"lazuli-config": "tyratox/lazuli-config",
+		"lazuli-core": "tyratox/lazuli-core",
 		"lazuli-email": "tyratox/lazuli-email",
+		"lazuli-filters": "tyratox/lazuli-filters",
+		"lazuli-i18n": "tyratox/lazuli-i18n",
 		"lazuli-piwik-tracker": "tyratox/lazuli-piwik-tracker"
 	},
 	"ava": {

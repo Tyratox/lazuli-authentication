@@ -14,18 +14,19 @@ const BearerStrategy = require("passport-http-bearer").Strategy;
 const FacebookStrategy = require("passport-facebook").Strategy;
 const GoogleStrategy = require("passport-google-oauth").OAuth2Strategy;
 
+const User = require("./models/user");
+const Permission = require("./models/permission");
+const OauthProvider = require("./models/oauth-provider");
+const OauthClient = require("./models/oauth-client");
+const OauthRedirectUri = require("./models/oauth-redirect-uri");
+const OauthAccessToken = require("./models/oauth-access-token");
+
 /**
  * Enables the oauth client authentication in passport
- * @param  {Object} passport         The passport object which this method should be performed on
- * @param  {Object} OauthClient      The oauth client database model
- * @param  {Object} OauthRedirectUri The redirect uri database model
+ * @param  {Object} passport The passport object which this method should be performed on
  * @return {void}
  */
-const initOauthClientAuthentication = (
-	passport,
-	OauthClient,
-	OauthRedirectUri
-) => {
+const initOauthClientAuthentication = passport => {
 	passport.use(
 		"client-local",
 		new LocalStrategy(
@@ -63,12 +64,10 @@ module.exports.initOauthClientAuthentication = initOauthClientAuthentication;
 
 /**
  * Enables the local user authentication in passport
- * @param  {Object} passport         The passport object which this method should be performed on
- * @param  {Object} User             The user database model
- * @param  {Object} OauthRedirectUri The redirect uri database model
+ * @param  {Object} passport The passport object which this method should be performed on
  * @return {void}
  */
-const initLocalAuthentication = (passport, User) => {
+const initLocalAuthentication = passport => {
 	passport.use(
 		"local",
 		new LocalStrategy((email, password, done) => {
@@ -95,19 +94,10 @@ module.exports.initLocalAuthentication = initLocalAuthentication;
 
 /**
  * Enables the oauth bearer authentication in passport
- * @param  {Object} passport            The passport object which this method should be performed on
- * @param  {Object} OauthAccessToken    The oauth access token database model
- * @param  {Object} OauthRedirectUri    The redirect uri database model
- * @param  {Object} User                The user database model
- * @param  {Object} Permission          The permission database model
+ * @param  {Object} passport The passport object which this method should be performed on
  * @return {void}
  */
-const initOauthBearerAuthentication = (
-	passport,
-	OauthAccessToken,
-	User,
-	Permission
-) => {
+const initOauthBearerAuthentication = passport => {
 	passport.use(
 		new BearerStrategy(
 			{
@@ -177,12 +167,10 @@ module.exports.initOauthBearerAuthentication = initOauthBearerAuthentication;
 
 /**
  * Enables the facebook authentication in passport
- * @param  {Object} passport            The passport object which this method should be performed on
- * @param  {Object} User                The user database model
- * @param  {Object} OauthProvider       The oauth provider database model
+ * @param  {Object} passport       The passport object which this method should be performed on
  * @return {void}
  */
-const initFacebookAuthentication = (passport, User, OauthProvider) => {
+const initFacebookAuthentication = passport => {
 	passport.use(
 		new FacebookStrategy(
 			{
@@ -237,11 +225,9 @@ module.exports.initFacebookAuthentication = initFacebookAuthentication;
 /**
  * Enables the google authentication in passport
  * @param  {Object} passport            The passport object which this method should be performed on
- * @param  {Object} User                The user database model
- * @param  {Object} OauthProvider       The oauth provider database model
  * @return {void}
  */
-const initGoogleAuthentication = (passport, User, OauthProvider) => {
+const initGoogleAuthentication = passport => {
 	passport.use(
 		new GoogleStrategy(
 			{
@@ -296,7 +282,7 @@ module.exports.initGoogleAuthentication = initGoogleAuthentication;
  * Initializes the user serialization in the passport object
  * @return {void}
  */
-const initPassportSerialization = (passport, User, Permission) => {
+const initPassportSerialization = passport => {
 	passport.serializeUser((user, done) => {
 		done(null, user.get("id"));
 	});
@@ -322,23 +308,9 @@ module.exports.initPassportSerialization = initPassportSerialization;
 /**
  * Initializes the passport object
  * @param  {Object} passport         The passport object to initialize
- * @param  {Object} User             The user database model
- * @param  {Object} Permission       The permission database model
- * @param  {Object} OauthProvider    The oauth provider database model
- * @param  {Object} OauthClient      The oauth client database model
- * @param  {Object} OauthRedirectUri The oauth redirect uri database model
- * @param  {Object} OauthAccessToken The oauth access token database model
  * @return {void}
  */
-const initPassport = (
-	passport,
-	User,
-	Permission,
-	OauthProvider,
-	OauthClient,
-	OauthRedirectUri,
-	OauthAccessToken
-) => {
+const initPassport = passport => {
 	initPassportSerialization(passport, User, Permission);
 	initOauthClientAuthentication(passport, OauthClient, OauthRedirectUri);
 	initLocalAuthentication(passport, User);

@@ -6,12 +6,13 @@ const {
 
 const piwikTracker = require("lazuli-require")("lazuli-piwik-tracker");
 
+const User = require("./models/user");
+
 /**
  * Generates an express middleware/endpoint that resets a users password
- * @param  {Object} User         The user database model
  * @return {Function} An express middleware/endpoint that resets a users password
  */
-module.exports.passwordReset = User => {
+module.exports.passwordReset = () => {
 	return (request, response, next) => {
 		User.findOne({
 			where: { emailVerified: request.body.email }
@@ -43,10 +44,9 @@ module.exports.passwordReset = User => {
 
 /**
   * Generates an express endpoint that initiates a passwort reset
-  * @param  {Object} User The user database model
   * @return {Function} An express endpoint that initiates a passwort reset
   */
-module.exports.initPasswordReset = User => {
+module.exports.initPasswordReset = () => {
 	return (request, response, next) => {
 		User.findOne({
 			where: { emailVerified: request.body.email }
@@ -153,10 +153,9 @@ module.exports.authGoogleCallback = passport => {
 
 /**
  * Generates an express endpoint that verifies the users email
- * @param  {Object} User         The user database model
  * @return {Function} An express endpoint that verifies the users email
  */
-module.exports.verifyEmail = User => {
+module.exports.verifyEmail = () => {
 	return (request, response, next) => {
 		let email = request.body.email,
 			emailVerificationCode = request.body.emailVerificationCode,
@@ -194,10 +193,9 @@ module.exports.verifyEmail = User => {
 
 /**
   * Generates an express endpoint that registers a user
-  * @param  {Object} User         The user database model
   * @return {Function} An express endpoint that registers a user
   */
-module.exports.registration = User => {
+module.exports.registration = () => {
 	return (request, response, next) => {
 		let firstName = request.body.firstName,
 			email = request.body.email,

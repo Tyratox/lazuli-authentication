@@ -1,101 +1,90 @@
+const Sequelize = require("sequelize");
+
+const { TOKEN_LENGTH } = require("lazuli-require")("lazuli-config");
+
+const eventEmitter = require("lazuli-require")(
+	"lazuli-core/globals/event-emitter"
+);
+const valueFilter = require("lazuli-require")(
+	"lazuli-core/globals/value-filter"
+);
+const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
+
 const {
 	generateRandomString,
 	generateHash
 } = require("../utilities/crypto-utilities.js");
 
-const Sequelize = require("sequelize");
-
-const path = require("path");
-const graphQlType = require(path.join(__dirname, "..", "types", "oauth-code"));
-
-const { TOKEN_LENGTH } = require("lazuli-require")("lazuli-config");
+const OauthCode = sequelize.define(
+	"oauth_code",
+	{
+		hash: {
+			type: Sequelize.STRING
+		},
+		expires: {
+			type: Sequelize.DATE
+		}
+	},
+	{
+		charset: "utf8",
+		collate: "utf8_unicode_ci"
+	}
+);
 
 /**
- * Generates the oauth code sequelize model
- * @param {Object} eventEmitter The global event emitter
- * @param {Object} valueFilter The global value filter object
- * @param {Object} sequelize The sequelize object to define the model on
+ * Associates this model with others
+ * @param  {Object} models An object containing all registered database models
+ * @return {void}
  */
-module.exports = (eventEmitter, valueFilter, sequelize) => {
-	const { nodeInterface, attributeFieldsCache } = sequelize;
+OauthCode.associate = function(models) {
+	eventEmitter.emit("model.oauth-code.association.before", this);
 
-	const OauthCode = sequelize.define(
-		"oauth_code",
-		{
-			hash: {
-				type: Sequelize.STRING
-			},
-			expires: {
-				type: Sequelize.DATE
-			}
-		},
-		{
-			charset: "utf8",
-			collate: "utf8_unicode_ci"
-		}
-	);
+	this.User = this.belongsTo(models.User, {
+		as: "User",
+		foreignKey: "user_id"
+	});
 
-	/**
-	 * Associates this model with others
-	 * @param  {Object} models An object containing all registered database models
-	 * @return {void}
-	 */
-	OauthCode.associate = function(models) {
-		eventEmitter.emit("model.oauth-code.association.before", this);
+	this.OauthClient = this.belongsTo(models.OauthClient, {
+		as: "OauthClient",
+		foreignKey: "oauth_client_id"
+	});
 
-		this.User = this.belongsTo(models.User, {
-			as: "User",
-			foreignKey: "user_id"
-		});
+	eventEmitter.emit("model.oauth-code.association.after", this);
 
-		this.OauthClient = this.belongsTo(models.OauthClient, {
-			as: "OauthClient",
-			foreignKey: "oauth_client_id"
-		});
-
-		eventEmitter.emit("model.oauth-code.association.after", this);
-
-		this.graphQlType = graphQlType(
-			eventEmitter,
-			valueFilter,
-			models,
-			nodeInterface,
-			attributeFieldsCache
-		);
-	};
-
-	eventEmitter.addListener(
-		"model.association",
-		OauthCode.associate.bind(OauthCode)
-	);
-
-	/**
-	 * Generates a oauth code
-	 * @return {String} The generated oauth code
-	 */
-	OauthCode.generateCode = function() {
-		return cryptoUtilities.generateRandomString(TOKEN_LENGTH);
-	};
-
-	/**
-	 * Hashes an oauth code without salt
-	 * @param  {String} code      The code to hash
-	 * @return {String}           The unsalted hash
-	 */
-	OauthCode.hashCode = function(code) {
-		return cryptoUtilities.generateHash(code, false).hash;
-	};
-
-	/**
-	 * Searches for an oauth code entry
-	 * @param  {String} code  The unhashed oauth code
-	 * @return {Promise}      A sequelize find promise
-	 */
-	OauthCode.findByCode = function(code) {
-		return this.findOne({
-			where: { hash: this.hashCode(code) }
-		});
-	};
-
-	return OauthCode;
+	this.graphQlType = require("../types/oauth-client");
 };
+
+eventEmitter.addListener(
+	"model.association",
+	OauthCode.associate.bind(OauthCode)
+);
+
+/**
+ * Generates a oauth code
+ * @return {String} The generated oauth code
+ */
+OauthCode.generateCode = function() {
+	return cryptoUtilities.generateRandomString(TOKEN_LENGTH);
+};
+
+/**
+ * Hashes an oauth code without salt
+ * @param  {String} code      The code to hash
+ * @return {String}           The unsalted hash
+ */
+OauthCode.hashCode = function(code) {
+	return cryptoUtilities.generateHash(code, false).hash;
+};
+
+/**
+ * Searches for an oauth code entry
+ * @param  {String} code  The unhashed oauth code
+ * @return {Promise}      A sequelize find promise
+ */
+OauthCode.findByCode = function(code) {
+	return this.findOne({
+		where: { hash: this.hashCode(code) }
+	});
+};
+
+module.exports = OauthCode;

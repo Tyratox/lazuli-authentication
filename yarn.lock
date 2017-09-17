@@ -936,8 +936,8 @@ camelize@1.0.0:
   resolved "https://registry.yarnpkg.com/camelize/-/camelize-1.0.0.tgz#164a5483e630fa4321e5af07020e531831b2609b"
 
 caniuse-lite@^1.0.30000718:
-  version "1.0.30000727"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30000727.tgz#20c895768398ded5f98a4beab4a76c285def41d2"
+  version "1.0.30000732"
+  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30000732.tgz#7cf9ca565f4d31a4b3dfa6e26b72ec22e9027da1"
 
 capture-stack-trace@^1.0.0:
   version "1.0.0"
@@ -1647,6 +1647,12 @@ express-session@^1.15.5:
     uid-safe "~2.1.4"
     utils-merge "1.0.0"
 
+express-validation@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/express-validation/-/express-validation-1.0.2.tgz#7d589dd3b257c55b3e004665b6c69cb12cc2b142"
+  dependencies:
+    lodash "^4.9.0"
+
 express@^4.15.4:
   version "4.15.4"
   resolved "https://registry.yarnpkg.com/express/-/express-4.15.4.tgz#032e2253489cf8fce02666beca3d11ed7a2daed1"
@@ -1747,14 +1753,14 @@ finalhandler@1.0.3:
     unpipe "~1.0.0"
 
 finalhandler@~1.0.4:
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/finalhandler/-/finalhandler-1.0.4.tgz#18574f2e7c4b98b8ae3b230c21f201f31bdb3fb7"
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/finalhandler/-/finalhandler-1.0.5.tgz#a701303d257a1bc82fea547a33e5ae89531723df"
   dependencies:
     debug "2.6.8"
     encodeurl "~1.0.1"
     escape-html "~1.0.3"
     on-finished "~2.3.0"
-    parseurl "~1.3.1"
+    parseurl "~1.3.2"
     statuses "~1.3.1"
     unpipe "~1.0.0"
 
@@ -1816,8 +1822,8 @@ form-data@~2.1.1:
     mime-types "^2.1.12"
 
 forwarded@~0.1.0:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/forwarded/-/forwarded-0.1.1.tgz#8a4e30c640b05395399a3549c730257728048961"
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/forwarded/-/forwarded-0.1.2.tgz#98c23dab1175657b8c0573e8ceccd91b0ff18c84"
 
 frameguard@3.0.0:
   version "3.0.0"
@@ -1880,7 +1886,7 @@ generate-function@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/generate-function/-/generate-function-2.0.0.tgz#6858fe7c0969b7d4e9093337647ac79f60dfbe74"
 
-generic-pool@^3.1.6:
+generic-pool@^3.1.8:
   version "3.1.8"
   resolved "https://registry.yarnpkg.com/generic-pool/-/generic-pool-3.1.8.tgz#09844b6545bc9177ec218bd35d4ad894c65be271"
 
@@ -2419,9 +2425,11 @@ isarray@1.0.0, isarray@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/isarray/-/isarray-1.0.0.tgz#bb935d48582cba168c06834957a54a3e07124f11"
 
-isemail@2.x.x:
-  version "2.2.1"
-  resolved "https://registry.yarnpkg.com/isemail/-/isemail-2.2.1.tgz#0353d3d9a62951080c262c2aa0a42b8ea8e9e2a6"
+isemail@3.x.x:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/isemail/-/isemail-3.0.0.tgz#c89a46bb7a3361e1759f8028f9082488ecce3dff"
+  dependencies:
+    punycode "2.x.x"
 
 isexe@^2.0.0:
   version "2.0.0"
@@ -2445,12 +2453,12 @@ iterall@^1.1.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/iterall/-/iterall-1.1.1.tgz#f7f0af11e9a04ec6426260f5019d9fcca4d50214"
 
-joi@^10.4.1:
-  version "10.6.0"
-  resolved "https://registry.yarnpkg.com/joi/-/joi-10.6.0.tgz#52587f02d52b8b75cdb0c74f0b164a191a0e1fc2"
+joi@^11.0.1:
+  version "11.0.1"
+  resolved "https://registry.yarnpkg.com/joi/-/joi-11.0.1.tgz#a97bafd15b4cea708462f862a4e8e8b4072c5985"
   dependencies:
     hoek "4.x.x"
-    isemail "2.x.x"
+    isemail "3.x.x"
     items "2.x.x"
     topo "2.x.x"
 
@@ -2584,19 +2592,24 @@ lazuli-config@tyratox/lazuli-config:
     lazuli-require tyratox/lazuli-require
 
 lazuli-core@tyratox/lazuli-core:
-  version "1.0.1"
-  resolved "https://codeload.github.com/tyratox/lazuli-core/tar.gz/4de43d864d59b269befd535fa14084cda1fd4aad"
+  version "1.2.4"
+  resolved "https://codeload.github.com/tyratox/lazuli-core/tar.gz/61b5d6df0aef84335e3eab9a3727270367bdf02b"
   dependencies:
     body-parser "^1.17.2"
     compression "^1.7.0"
     express "^4.15.4"
+    express-graphql "^0.6.11"
     express-session "^1.15.5"
+    express-validation "^1.0.2"
     graphql "^0.11.1"
     graphql-relay "^0.5.2"
+    graphql-sequelize "^5.4.2"
     helmet "^3.8.1"
+    joi "^11.0.1"
     mysql2 "^1.4.2"
     promise-events "^0.1.3"
     sequelize "^4.7.5"
+    winston "^2.3.1"
 
 lazuli-email@tyratox/lazuli-email:
   version "1.0.0"
@@ -2616,13 +2629,6 @@ lazuli-i18n@tyratox/lazuli-i18n:
   dependencies:
     i18n "^0.8.3"
     lazuli-require tyratox/lazuli-require
-
-lazuli-logger@tyratox/lazuli-logger:
-  version "1.0.0"
-  resolved "https://codeload.github.com/tyratox/lazuli-logger/tar.gz/8444ed2dd90bb7f620257e1d4ea2e07e7dd8386a"
-  dependencies:
-    lazuli-require tyratox/lazuli-require
-    winston "^2.3.1"
 
 lazuli-piwik-tracker@tyratox/lazuli-piwik-tracker:
   version "1.0.0"
@@ -2737,7 +2743,7 @@ lodash.unescape@^4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/lodash.unescape/-/lodash.unescape-4.0.1.tgz#bf2249886ce514cda112fae9218cdc065211fc9c"
 
-lodash@^4.0.0, lodash@^4.0.1, lodash@^4.14.0, lodash@^4.15.0, lodash@^4.17.1, lodash@^4.17.4:
+lodash@^4.0.0, lodash@^4.0.1, lodash@^4.14.0, lodash@^4.15.0, lodash@^4.17.1, lodash@^4.17.4, lodash@^4.9.0:
   version "4.17.4"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.4.tgz#78203a4d1c328ae1d86dca6460e369b57f4055ae"
 
@@ -3200,7 +3206,7 @@ parse-ms@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/parse-ms/-/parse-ms-1.0.1.tgz#56346d4749d78f23430ca0c713850aef91aa361d"
 
-parseurl@~1.3.1:
+parseurl@~1.3.1, parseurl@~1.3.2:
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/parseurl/-/parseurl-1.3.2.tgz#fc289d4ed8993119460c156253262cdc8de65bf3"
 
@@ -3416,6 +3422,10 @@ proxy-addr@~1.1.5:
 pseudomap@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/pseudomap/-/pseudomap-1.0.2.tgz#f052a28da70e618917ef0a8ac34c1ae5a68286b3"
+
+punycode@2.x.x:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.0.tgz#5f863edc89b96db09074bad7947bf09056ca4e7d"
 
 punycode@^1.4.1:
   version "1.4.1"
@@ -3753,15 +3763,15 @@ seq-queue@0.0.5:
   resolved "https://registry.yarnpkg.com/seq-queue/-/seq-queue-0.0.5.tgz#d56812e1c017a6e4e7c3e3a37a1da6d78dd3c93e"
 
 sequelize@^4.7.5:
-  version "4.8.3"
-  resolved "https://registry.yarnpkg.com/sequelize/-/sequelize-4.8.3.tgz#5d0b2043430a1e2c7025ccdb8dffa18f1d6d3489"
+  version "4.8.4"
+  resolved "https://registry.yarnpkg.com/sequelize/-/sequelize-4.8.4.tgz#b13c9479fc745eca06f1a6a4a8fda6cac607b607"
   dependencies:
     bluebird "^3.4.6"
     cls-bluebird "^2.0.1"
     debug "^3.0.0"
     depd "^1.1.0"
     dottie "^2.0.0"
-    generic-pool "^3.1.6"
+    generic-pool "^3.1.8"
     inflection "1.12.0"
     lodash "^4.17.1"
     moment "^2.13.0"

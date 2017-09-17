@@ -3,10 +3,11 @@
 process.on("uncaughtException", console.log);
 
 const Lazuli = require("lazuli-require")("lazuli-core");
-const Authentication = new (require("../src/lazuli-authentication"))(
-	Lazuli.eventEmitter,
-	Lazuli.valueFilter
+const eventEmitter = require("lazuli-require")(
+	"lazuli-core/globals/event-emitter"
 );
+
+const Authentication = new (require("../src/lazuli-authentication"))();
 
 Lazuli.init();
 
@@ -14,4 +15,4 @@ Lazuli.init();
 	t.pass();
 });*/
 
-Lazuli.eventEmitter.emit("express.stop");
+eventEmitter.emit("express.stop");

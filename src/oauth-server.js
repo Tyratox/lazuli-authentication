@@ -4,17 +4,16 @@ const { AUTH_CODE_LIFETIME, ACCESS_TOKEN_LIFETIME } = require("lazuli-require")(
 
 const oauth2orize = require("oauth2orize");
 
+const OauthClient = require("./models/oauth-client");
+const OauthRedirectUri = require("./models/oauth-redirect-uri");
+const OauthCode = require("./models/oauth-code");
+const OauthAccessToken = require("./models/oauth-access-token");
+
 /**
  * Initializes the oauth2orize powered oauth server and its endpoints
  * @return {void}
  */
-const initOauthServer = (
-	oauth2Server,
-	OauthClient,
-	OauthRedirectUri,
-	OauthCode,
-	OauthAccessToken
-) => {
+const initOauthServer = oauth2Server => {
 	//init the oauth 2 server
 	oauth2Server.serializeClient((client, callback) => {
 		return callback(null, client.get("id"));
@@ -36,16 +35,17 @@ const initOauthServer = (
 			.catch(callback);
 	});
 
-	initOauthServerGrant(oauth2Server, OauthCode);
-	initOauthServerExchange(oauth2Server, OauthCode, OauthAccessToken);
+	initOauthServerGrant(oauth2Server);
+	initOauthServerExchange(oauth2Server);
 };
 module.exports.initOauthServer = initOauthServer;
 
 /**
  * Initializes the granting part of the oauth server
+ * @param {Object} oauth2Server The oauth2 server
  * @return {void}
  */
-const initOauthServerGrant = (oauth2Server, OauthCode) => {
+const initOauthServerGrant = oauth2Server => {
 	oauth2Server.grant(
 		oauth2orize.grant.code((client, redirectUri, user, ares, callback) => {
 			// Create a new authorization code
@@ -58,13 +58,11 @@ const initOauthServerGrant = (oauth2Server, OauthCode) => {
 				);
 			}
 
-			let codeValue = OauthCode.generateCode();
-
-			let expirationDate = Date.now() + AUTH_CODE_LIFETIME * 1000;
+			const codeValue = OauthCode.generateCode();
 
 			let code = OauthCode.build({
 				hash: OauthCode.hashCode(codeValue),
-				expires: expirationDate,
+				expires: Date.now() + AUTH_CODE_LIFETIME * 1000,
 				user_id: user.get("id"),
 				oauth_client_id: client.get("id")
 			});
@@ -84,9 +82,10 @@ module.exports.initOauthServerGrant = initOauthServerGrant;
 
 /**
  * Initializes the exchange part of the oauth server
+ * @param {Object} oauth2Server The oauth2 server
  * @return {void}
  */
-const initOauthServerExchange = (oauth2Server, OauthCode, OauthAccessToken) => {
+const initOauthServerExchange = oauth2Server => {
 	return oauth2Server.exchange(
 		oauth2orize.exchange.code((client, code, redirectUri, callback) => {
 			OauthCode.findByCode(code)
@@ -149,13 +148,10 @@ module.exports.initOauthServerExchange = initOauthServerExchange;
 
 /**
  * Authenticates the oauth client during the oauth2 authorization
+ * @param {Object} oauth2Server The oauth2 server
  * @return {Function} The express middleware to authenticate the oauth client
  */
-const authenticateOauthClient = (
-	oauth2Server,
-	OauthClient,
-	OauthRedirectUri
-) => {
+const authenticateOauthClient = oauth2Server => {
 	return oauth2Server.authorization((clientId, redirectUri, callback) => {
 		OauthClient.findOne({
 			where: { id: clientId },
