@@ -24,10 +24,6 @@ const { nodeInterface, attributeFieldsCache } = require("lazuli-require")(
 );
 
 const OauthClient = require("../models/oauth-client");
-const UserType = require("../types/user");
-const OauthCodeType = require("../types/oauth-code");
-const OauthAccessTokenType = require("../types/oauth-access-token");
-const OauthRedirectUriType = require("../types/oauth-redirect-uri");
 
 /**
  * The graphql object type for this model
@@ -37,6 +33,11 @@ module.exports = new GraphQLObjectType({
 	name: OauthClient.name,
 	description: "An oauth client",
 	fields: () => {
+		const UserType = require("./user");
+		const OauthCodeType = require("./oauth-code");
+		const OauthAccessTokenType = require("./oauth-access-token");
+		const OauthRedirectUriType = require("./oauth-redirect-uri");
+
 		const oauthClientUserConnection = sequelizeConnection({
 			name: "oauthClientUser",
 			nodeType: UserType,

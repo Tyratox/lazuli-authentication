@@ -38,24 +38,16 @@ module.exports = {
 
 	created: Joi.date(),
 
-	facebook: {
-		accessToken: Joi.string().allow("", null),
-		refreshToken: Joi.string().allow("", null)
-	},
-
-	google: {
-		accessToken: Joi.string().allow("", null),
-		refreshToken: Joi.string().allow("", null)
-	},
+	oauthProviders: Joi.array().items(
+		Joi.object().keys({
+			type: Joi.string().valid("facebook", "google"),
+			accessToken: Joi.string(),
+			refreshToken: Joi.string()
+		})
+	),
 
 	profilePictureId: Joi.number()
 		.integer()
 		.positive()
-		.allow(null),
-
-	newPassword: Joi.boolean().allow("", null),
-
-	newEmail: Joi.string()
-		.email()
-		.allow("", null)
+		.allow(null)
 };

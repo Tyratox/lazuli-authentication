@@ -8,6 +8,8 @@ const {
 	GraphQLList
 } = require("graphql");
 
+const Joi = require("joi");
+
 const { resolver } = require("graphql-sequelize");
 
 const eventEmitter = require("lazuli-require")(
@@ -18,10 +20,10 @@ const valueFilter = require("lazuli-require")(
 );
 const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
 
-const User = require("../models/User");
+const User = require("../models/user");
 
-const userInputType = require("../input-types/user");
-const oauthProviderInputType = require("../input-types/oauth-provider");
+const UserInputType = require("../input-types/user");
+const UserInputTypeValidation = require("../graphql-validation/user");
 
 /**
  * The user query schema
@@ -55,10 +57,46 @@ module.exports.mutation = {
 		args: {
 			user: { type: UserInputType }
 		},
-		resolve: (root, { user }, info) => {
-			return User.create(user).then(userModel => {
-				return resolver(User)(root, { id: userModel.get("id") }, info);
-			});
+		resolve: (root, { user }, context, info) => {
+			const staticValidation = Joi.validate(user, UserInputTypeValidation);
+
+			const { request } = context;
+
+			if (!staticValidation.error) {
+				if (
+					request.user &&
+					request.user.doesHavePermissions("admin.user.create")
+				) {
+					//change to sequelize keys
+					user.profile_picture_id = user.profilePictureId;
+
+					return User.create(user)
+						.then(userModel => {
+							//add relations as well
+
+							//permissions
+							if (user.permissions) {
+								return userModel
+									.setPermissionArray(user.permissions)
+									.then(() => Promise.resolve(userModel));
+							} else {
+								return Promise.resolve(userModel);
+							}
+						})
+						.then(userModel => {
+							return resolver(User)(
+								root,
+								{ id: userModel.get("id") },
+								context,
+								info
+							);
+						});
+				} else {
+					return Promise.reject(new Error("Access denied"));
+				}
+			} else {
+				return validation.error;
+			}
 		}
 	},
 	updateUser: {
@@ -66,7 +104,7 @@ module.exports.mutation = {
 		args: {
 			user: { type: UserInputType }
 		},
-		resolve: (root, { user }, info) => {
+		resolve: (root, { user }, context, info) => {
 			return User.update(user).then(userModel => {
 				return resolver(User)(root, { id: userModel.get("id") }, info);
 			});

@@ -2593,7 +2593,7 @@ lazuli-config@tyratox/lazuli-config:
 
 lazuli-core@tyratox/lazuli-core:
   version "1.2.4"
-  resolved "https://codeload.github.com/tyratox/lazuli-core/tar.gz/61b5d6df0aef84335e3eab9a3727270367bdf02b"
+  resolved "https://codeload.github.com/tyratox/lazuli-core/tar.gz/dbe85a88212f87162315e2cbfd23a9e99c139623"
   dependencies:
     body-parser "^1.17.2"
     compression "^1.7.0"

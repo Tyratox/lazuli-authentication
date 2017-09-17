@@ -25,12 +25,6 @@ const { nodeInterface, attributeFieldsCache } = require("lazuli-require")(
 
 const User = require("../models/user");
 
-const PermissionType = require("../types/Permission");
-const OauthProviderType = require("../types/oauth-provider");
-const OauthAccessTokenType = require("../types/oauth-access-token");
-const OauthCodeType = require("../types/oauth-code");
-const OauthClientType = require("../types/oauth-client");
-
 /**
  * The graphql object type for this model
  * @type {GraphQLObjectType}
@@ -39,6 +33,12 @@ module.exports = new GraphQLObjectType({
 	name: User.name,
 	description: "A user",
 	fields: () => {
+		const PermissionType = require("./permission");
+		const OauthProviderType = require("./oauth-provider");
+		const OauthAccessTokenType = require("./oauth-access-token");
+		const OauthCodeType = require("./oauth-code");
+		const OauthClientType = require("./oauth-client");
+
 		const userPermissionConnection = sequelizeConnection({
 			name: "userPermission",
 			nodeType: PermissionType,

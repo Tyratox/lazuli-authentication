@@ -521,18 +521,19 @@ User.prototype.doesHavePermission = function(permission) {
  * @param  {Array} permissions   An array of permissions to set to the user
  * @return {Promise}             A promise whether the update was successfull
  */
-User.prototype.setPermissionsStrings = function(permissions) {
+User.prototype.setPermissionArray = function(permissions) {
+	const Permission = require("./permission");
+
 	return new Promise((resolve, reject) => {
 		let permissionInstances = [];
 
 		async.each(
 			permissions,
 			(permission, callback) => {
-				model.Permission
-					.findOrCreate({
-						where: { permission: permission },
-						defaults: { permission: permission }
-					})
+				Permission.findOrCreate({
+					where: { permission: permission },
+					defaults: { permission: permission }
+				})
 					.then(result => {
 						let promises = [];
 						let permissionInstance = result[0],
