@@ -35,17 +35,11 @@ const User = sequelize.define(
 		},
 		emailVerified: {
 			type: Sequelize.STRING,
-			unique: true,
-			validate: {
-				isEmail: true
-			}
+			unique: true
 		},
 		emailUnverified: {
 			type: Sequelize.STRING,
-			unique: true,
-			validate: {
-				isEmail: true
-			}
+			unique: true
 		},
 		emailVerificationCode: {
 			type: Sequelize.STRING
@@ -89,8 +83,8 @@ User.associate = function(models) {
 
 	this.Permissions = this.belongsToMany(models.Permission, {
 		as: "Permissions",
-		foreignKey: "user_id",
-		otherKey: "permission_id",
+		foreignKey: "userId",
+		otherKey: "permissionId",
 		through: "permission_relations",
 		onDelete: "cascade",
 		hooks: true
@@ -130,30 +124,30 @@ User.associate = function(models) {
 
 	/*this.hasMany(Image, {
 		as: "Images",
-		foreignKey: "user_id"
+		foreignKey: "userId"
 	});
 
 	this.belongsTo(Image, {
 		as: "ProfilePicture",
-		foreignKey: "profile_picture_id",
+		foreignKey: "profilePictureId",
 		constraints: false //otherwise we have a circular dependency
 	});
 
 	this.hasMany(Book, {
 		as: "Books",
-		foreignKey: "user_id"
+		foreignKey: "userId"
 	});
 
 	this.hasMany(Offer, {
 		as: "Offers",
-		foreignKey: "user_id",
+		foreignKey: "userId",
 		onDelete: "cascade",
 		hooks: true
 	});
 
 	this.hasMany(OfferRequest, {
 		as: "OfferRequests",
-		foreignKey: "user_id",
+		foreignKey: "userId",
 		onDelete: "cascade",
 		hooks: true
 	});*/

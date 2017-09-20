@@ -109,9 +109,17 @@ Authentication.prototype._models = {
  * Adds all required passport middleware to the passed express server
  * @return {void}
  */
-Authentication.prototype.addPassportMiddleware = () => {
+Authentication.prototype.addPassportMiddleware = function() {
 	expressServer.use(this._passport.initialize());
 	expressServer.use(this._passport.session());
+	expressServer.use((request, response, next) => {
+		/*request.user = {
+			doesHavePermission: () => true,
+			doesHavePermissions: () => true
+		}; //TEMP for manual testing
+		*/
+		next();
+	});
 };
 
 /**
@@ -265,7 +273,8 @@ Authentication.prototype._setupPostRouting = function() {
 Authentication.prototype.addGraphQlQueryFields = fields => {
 	return {
 		...fields,
-		...require("./schemas/user").query
+		...require("./schemas/user").query,
+		...require("./schemas/oauth-client").query
 	};
 };
 
@@ -277,7 +286,8 @@ Authentication.prototype.addGraphQlQueryFields = fields => {
 Authentication.prototype.addGraphQlMutationFields = fields => {
 	return {
 		...fields,
-		...require("./schemas/user").mutation
+		...require("./schemas/user").mutation,
+		...require("./schemas/oauth-client").mutation
 	};
 };
 

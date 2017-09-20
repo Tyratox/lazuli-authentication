@@ -15,7 +15,7 @@ const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
 const {
 	generateRandomString,
 	generateHash
-} = require("../utilities/crypto-utilities.js");
+} = require("../utilities/crypto.js");
 
 const OauthProvider = sequelize.define(
 	"oauth_provider",
@@ -47,7 +47,7 @@ OauthProvider.associate = function(models) {
 
 	this.User = this.belongsTo(models.User, {
 		as: "User",
-		foreignKey: "user_id"
+		foreignKey: "userId"
 	});
 
 	eventEmitter.emit("model.oauth-provider.association.before", this);

@@ -13,7 +13,7 @@ const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
 const {
 	generateRandomString,
 	generateHash
-} = require("../utilities/crypto-utilities.js");
+} = require("../utilities/crypto.js");
 
 const OauthClient = sequelize.define(
 	"oauth_client",
@@ -55,26 +55,26 @@ OauthClient.associate = function(models) {
 
 	this.User = this.belongsTo(models.User, {
 		as: "User",
-		foreignKey: "user_id"
+		foreignKey: "userId"
 	});
 
 	this.OauthCodes = this.hasMany(models.OauthCode, {
 		as: "OauthCodes",
-		foreignKey: "oauth_client_id",
+		foreignKey: "oauthClientId",
 		onDelete: "cascade",
 		hooks: true
 	});
 
 	this.OauthAccessTokens = this.hasMany(models.OauthAccessToken, {
 		as: "OauthAccessTokens",
-		foreignKey: "oauth_client_id",
+		foreignKey: "oauthClientId",
 		onDelete: "cascade",
 		hooks: true
 	});
 
 	this.OauthRedirectUris = this.hasMany(models.OauthRedirectUri, {
 		as: "OauthRedirectUris",
-		foreignKey: "oauth_client_id",
+		foreignKey: "oauthClientId",
 		onDelete: "cascade",
 		hooks: true
 	});

@@ -8,7 +8,7 @@ const {
 	GraphQLList
 } = require("graphql");
 
-const { resolver } = require("graphql-sequelize");
+const { attributeFields, resolver } = require("graphql-sequelize");
 
 const eventEmitter = require("lazuli-require")(
 	"lazuli-core/globals/event-emitter"
@@ -17,9 +17,15 @@ const valueFilter = require("lazuli-require")(
 	"lazuli-core/globals/value-filter"
 );
 const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
-const { nodeField } = sequelize;
+
+const { pick } = require("../utilities/object");
+const { escapeLikeString } = require("../utilities/sql");
 
 const OauthClient = require("../models/oauth-client");
+const OauthRedirectUri = require("../models/oauth-redirect-uri");
+
+const OauthClientInputType = require("../input-types/oauth-client");
+const OauthClientInputTypeValidation = require("../graphql-validation/oauth-client");
 
 const OauthClientSchema = new GraphQLSchema({
 	query: new GraphQLObjectType({
@@ -37,53 +43,266 @@ const OauthClientSchema = new GraphQLSchema({
 			},
 			oauthClients: {
 				type: new GraphQLList(OauthClient.graphQlType),
-				args: {},
-				resolve: resolver(OauthClient)
+				args: {
+					//generally allow to filter all fields
+					...attributeFields(OauthClient, { allowNull: true }),
+					limit: {
+						type: GraphQLInt
+					}
+				},
+				resolve: (root, args, context, info) => {
+					const { request } = context;
+
+					if (!request.user) {
+						return Promise.reject(
+							new Error("You have to be logged in, in order to list users!")
+						);
+					}
+
+					if (!request.user.doesHavePermission("admin.oauth-client.list")) {
+						return Promise.reject(
+							new Error("You're not allowed to list oauth clients!")
+						);
+					}
+
+					if (!request.user.doesHavePermission("admin.oauth-client.get")) {
+						//only allow uncritical search keys
+						args = pick(
+							args,
+							valueFilter.filterable("graphql.query.oauth-client.list.args", [
+								"id",
+								"name"
+							])
+						);
+					}
+					return resolver(OauthClient, {
+						before: (findOptions, args) => {
+							if (findOptions.where) {
+								if (findOptions.where.name) {
+									findOptions.where.name = {
+										$like: `%${escapeLikeString(args.name)}%`
+									};
+								}
+							}
+
+							return valueFilter.filterable(
+								"graphql.query.oauth-client.list.find-options",
+								findOptions
+							);
+						}
+					})(root, args, context, info);
+				}
 			}
 		}
 	}),
 	mutation: new GraphQLObjectType({
 		name: "OauthClientMutation",
 		fields: {
-			createoOauthClient: {
+			upsertOauthClient: {
 				type: OauthClient.graphQlType,
 				args: {
-					oauthClient: { type: OauthClient.graphQlType }
+					oauthClient: { type: OauthClientInputType }
 				},
-				resolve: (root, { oauthClient }, info) => {
-					return OauthClient.create(oauthClient).then(oauthClientModel => {
-						return resolver(OauthClient)(
-							root,
-							{ id: oauthClientModel.get("id") },
-							info
-						);
-					});
+				resolve: (root, { oauthClient }, context, info) => {
+					//first check if the passed oauthClient object meets all requirements.
+					//graphql only checks the input types.
+					const staticValidation = Joi.validate(
+						oauthClient,
+						OauthClientInputTypeValidation
+					);
+
+					if (!staticValidation.error) {
+						//If there's no error check what we need to do: update or insert
+						let promise;
+
+						const { request } = context;
+
+						if (oauthClient.id) {
+							//if the oauthClient object contains an id it's not sure yet what
+							//action should be taken.
+							//should a oauth client with the given id exist, it will be
+							//updated
+							promise = OauthClient.findById(
+								oauthClient.id
+							).then(oauthClientModel => {
+								if (oauthClientModel) {
+									if (
+										request.user &&
+										(request.user.doesHavePermission(
+											"admin.oauth-client.update"
+										) ||
+											oauthClientModel.get("userId") === request.user.get("id"))
+									) {
+										return Promise.resolve(oauthClientModel);
+									} else {
+										return Promise.reject(
+											new Error(
+												"You are not allowed to update this oauth client!"
+											)
+										);
+									}
+								} else {
+									//if not, a new oauth client with the given id will be created
+									if (
+										request.user.doesHavePermission("admin.oauth-client.create")
+									) {
+										return OauthClient.create({ id: oauthClient.id });
+									} else {
+										return Promise.reject(
+											new Error(
+												"You're not allowed to create a new oauth client!"
+											)
+										);
+									}
+								}
+							});
+						} else {
+							//if the oauth client object doesn't contain an id,
+							//a new oauth client will be created
+							if (
+								request.user &&
+								request.user.doesHavePermission("admin.oauth-client.create")
+							) {
+								promise = OauthClient.create();
+							} else {
+								promise = Promise.reject(
+									new Error("You're not allowed to create a new oauth client!")
+								);
+							}
+						}
+
+						//all of the previous possibilities will return a promise returning
+						//the oauth client model to update
+						return promise.then(oauthClientModel => {
+							if (!oauthClientModel) {
+								return Promise.reject(
+									new Error("Something went terribly wrong!")
+								);
+							}
+
+							//if the oauth client posseses required permission, all given
+							//keys will be updated
+							if (
+								request.user.doesHavePermission("admin.oauth-client.upsert")
+							) {
+								oauthClientModel.set(oauthClient);
+							} else {
+								//otherwise we pick a few. these keys can be changed by using a
+								//filter
+								oauthClientModel.set(
+									pick(
+										user,
+										valueFilter.filterable(
+											"graphql.mutation.oauth-client.upsert.keys",
+											["name"]
+										)
+									)
+								);
+							}
+
+							//after setting the new values, save the oauth client model to
+							//the database
+							return oauthClientModel
+								.save()
+								.then(() => {
+									//after saving all columns in the oauth client table we also
+									//have to update the associations
+
+									//if the user is allowed to, we update the models permissions
+									if (
+										oauthClient.redirectUris &&
+										(request.user.doesHavePermission(
+											"admin.oauth-client.upsert"
+										) ||
+											request.user.get("id") == oauthClient.get("userId"))
+									) {
+										return oauthClientModel
+											.getOauthRedirectUris()
+											.then(redirectUriModels => {
+												//diff existing and sent
+												const toDelete = redirectUriModels.filter(
+													redirectUriModel => {
+														return (
+															oauthClient.redirectUris.indexOf(
+																redirectUriModel.get("uri")
+															) !== -1
+														);
+													}
+												);
+												const existing = redirectUriModels.map(
+													redirectUriModel => redirectUriModel.get("uri")
+												);
+												const toAdd = oauthClient.redirectUris.filter(
+													redirectUri => {
+														return existing.indexOf(redirectUri) === -1;
+													}
+												);
+
+												return Promise.all([
+													...toDelete.map(redirectUriModel => {
+														return redirectUriModel.destory();
+													}),
+													...toAdd.map(redirectUri =>
+														OauthRedirectUri.create({
+															uri: redirectUri,
+															oauthClientId: oauthClientModel.get("id")
+														})
+													)
+												]);
+											});
+									} else {
+										return Promise.resolve();
+									}
+								})
+								.then(() => {
+									//in the end, we return the updated oauth client object by
+									//using graphql-sequelize's resolver
+									return resolver(OauthClient)(
+										root,
+										{ id: oauthClientModel.get("id") },
+										context,
+										info
+									);
+								});
+						});
+					} else {
+						return Promise.reject(staticValidation.error);
+					}
 				}
 			},
-			updateUser: {
-				type: OauthClient.graphQlType,
-				args: {
-					user: { type: OauthClient.graphQlType }
-				},
-				resolve: (root, { oauthClient }, info) => {
-					return OauthClient.update(oauthClient).then(oauthClientModel => {
-						return resolver(OauthClient)(
-							root,
-							{ id: oauthClientModel.get("id") },
-							info
-						);
-					});
-				}
-			},
-			deleteUser: {
+			deleteOauthClient: {
 				type: GraphQLBoolean,
 				args: {
-					userId: { type: GraphQLInt }
+					oauthClientId: { type: GraphQLInt }
 				},
-				resolve: (root, { userId }, info) => {
-					return OauthClient.findById(userId).then(oauthClientModel => {
-						return oauthClientModel.destroy();
-					});
+				resolve: (root, { oauthClientId }, context, info) => {
+					if (request.user) {
+						OauthClient.findById(oauthClientId).then(oauthClientModel => {
+							if (oauthClientModel) {
+								if (
+									request.user.doesHavePermission(
+										"admin.oauth-client.delete"
+									) ||
+									oauthClientModel.get("userId") == request.user.get("id")
+								) {
+									//triggers hooks and deletes associations
+									return oauthClientModel.destory();
+								} else {
+									return Promise.reject(
+										new Error("You're not allowed to delete this oauth client")
+									);
+								}
+							} else {
+								return Promise.reject(
+									new Error("The given oauth client couldn't be found!")
+								);
+							}
+						});
+					} else {
+						return Promise.reject(
+							new Error("You're not allowed to delete this oauth client")
+						);
+					}
 				}
 			}
 		}

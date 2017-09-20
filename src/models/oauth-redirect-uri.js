@@ -11,7 +11,7 @@ const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
 const {
 	generateRandomString,
 	generateHash
-} = require("../utilities/crypto-utilities.js");
+} = require("../utilities/crypto.js");
 
 const OauthRedirectUri = sequelize.define(
 	"oauth_redirect_uri",
@@ -36,7 +36,7 @@ OauthRedirectUri.associate = function(models) {
 
 	this.OauthClient = this.belongsTo(models.OauthClient, {
 		as: "OauthClient",
-		foreignKey: "oauth_client_id"
+		foreignKey: "oauthClientId"
 	});
 
 	eventEmitter.emit("model.oauth-redirect-uri.association.after", this);

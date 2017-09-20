@@ -32,8 +32,8 @@ Permission.associate = function(models) {
 
 	this.Users = this.belongsToMany(models.User, {
 		as: "Users",
-		foreignKey: "permission_id",
-		otherKey: "user_id",
+		foreignKey: "permissionId",
+		otherKey: "userId",
 		through: "permission_relations"
 	});
 

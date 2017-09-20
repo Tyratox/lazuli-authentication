@@ -13,7 +13,7 @@ const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
 const {
 	generateRandomString,
 	generateHash
-} = require("../utilities/crypto-utilities.js");
+} = require("../utilities/crypto.js");
 
 const OauthCode = sequelize.define(
 	"oauth_code",
@@ -41,12 +41,12 @@ OauthCode.associate = function(models) {
 
 	this.User = this.belongsTo(models.User, {
 		as: "User",
-		foreignKey: "user_id"
+		foreignKey: "userId"
 	});
 
 	this.OauthClient = this.belongsTo(models.OauthClient, {
 		as: "OauthClient",
-		foreignKey: "oauth_client_id"
+		foreignKey: "oauthClientId"
 	});
 
 	eventEmitter.emit("model.oauth-code.association.after", this);
