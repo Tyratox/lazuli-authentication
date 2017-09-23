@@ -217,7 +217,7 @@ const OauthClientSchema = new GraphQLSchema({
 								);
 							}
 
-							//if the oauth client posseses required permission, all given
+							//if the user posseses the required permission, all given
 							//keys will be updated
 							return request.user
 								.doesHavePermission("admin.oauth-client.upsert")
@@ -256,45 +256,7 @@ const OauthClientSchema = new GraphQLSchema({
 															request.user.get("id") ==
 																oauthClient.get("userId")
 														) {
-															return oauthClientModel
-																.getOauthRedirectUris()
-																.then(redirectUriModels => {
-																	//diff existing and sent
-																	const toDelete = redirectUriModels.filter(
-																		redirectUriModel => {
-																			return (
-																				oauthClient.redirectUris.indexOf(
-																					redirectUriModel.get("uri")
-																				) !== -1
-																			);
-																		}
-																	);
-																	const existing = redirectUriModels.map(
-																		redirectUriModel =>
-																			redirectUriModel.get("uri")
-																	);
-																	const toAdd = oauthClient.redirectUris.filter(
-																		redirectUri => {
-																			return (
-																				existing.indexOf(redirectUri) === -1
-																			);
-																		}
-																	);
-
-																	return Promise.all([
-																		...toDelete.map(redirectUriModel => {
-																			return redirectUriModel.destory();
-																		}),
-																		...toAdd.map(redirectUri =>
-																			OauthRedirectUri.create({
-																				uri: redirectUri,
-																				oauthClientId: oauthClientModel.get(
-																					"id"
-																				)
-																			})
-																		)
-																	]);
-																});
+															return oauthClientModel.getOauthRedirectUris();
 														} else {
 															return Promise.reject(
 																new Error(
@@ -302,6 +264,38 @@ const OauthClientSchema = new GraphQLSchema({
 																)
 															);
 														}
+													})
+													.then(redirectUriModels => {
+														//diff existing and sent
+														const toDelete = redirectUriModels.filter(
+															redirectUriModel => {
+																return (
+																	oauthClient.redirectUris.indexOf(
+																		redirectUriModel.get("uri")
+																	) !== -1
+																);
+															}
+														);
+														const existing = redirectUriModels.map(
+															redirectUriModel => redirectUriModel.get("uri")
+														);
+														const toAdd = oauthClient.redirectUris.filter(
+															redirectUri => {
+																return existing.indexOf(redirectUri) === -1;
+															}
+														);
+
+														return Promise.all([
+															...toDelete.map(redirectUriModel => {
+																return redirectUriModel.destory();
+															}),
+															...toAdd.map(redirectUri =>
+																OauthRedirectUri.create({
+																	uri: redirectUri,
+																	oauthClientId: oauthClientModel.get("id")
+																})
+															)
+														]);
 													});
 											} else {
 												return Promise.resolve();

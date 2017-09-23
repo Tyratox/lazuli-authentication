@@ -91,54 +91,54 @@ const initOauthServerExchange = oauth2Server => {
 			OauthCode.findByCode(code)
 				.then(authCode => {
 					if (authCode.get("expires") < Date.now()) {
-						return callback(
+						return Promise.reject(
 							new Error("The sent auth code has already expired!")
 						);
 					}
-					//Delete the auth code now that it has been used
-					let clientId = authCode.get("oauthClientId"),
-						userId = authCode.get("userId");
 
-					let promises = [
-						OauthCode.destroy({
-							where: {
-								$or: [
-									{
-										expires: { $lt: new Date() }
-									},
-									{
-										id: authCode.get("id")
-									}
-								]
-							}
-						})
-					];
-
-					let expirationDate = Date.now() + ACCESS_TOKEN_LIFETIME * 1000;
-
-					// Create an access token
-					let tokenData = {
-						token: OauthAccessToken.generateToken(),
-						clientId: clientId,
-						userId: userId,
-						expires: expirationDate
-					};
-
-					//the 'key' here is 'hash' and not 'token' as in 'tokenData'!
-					promises.push(
-						OauthAccessToken.create({
-							hash: OauthAccessToken.hashToken(tokenData.token),
-							expires: expirationDate,
+					return OauthAccessToken.generateToken().then(token => {
+						// Create an access token
+						const expirationDate = Date.now() + ACCESS_TOKEN_LIFETIME * 1000;
+						const tokenData = {
+							token,
+							clientId: clientId,
 							userId: userId,
-							oauthClientId: clientId
-						})
-					);
+							expires: expirationDate
+						};
 
-					Promise.all(promises)
-						.then(() => {
+						//Delete the auth code now that it has been used
+						const clientId = authCode.get("oauthClientId"),
+							userId = authCode.get("userId");
+
+						let promises = [
+							OauthCode.destroy({
+								where: {
+									$or: [
+										{
+											expires: { $lt: new Date() }
+										},
+										{
+											id: authCode.get("id")
+										}
+									]
+								}
+							})
+						];
+
+						//the 'key' here is 'hash' and not 'token' as in 'tokenData'!
+						promises.push(
+							OauthAccessToken.create({
+								hash: OauthAccessToken.hashToken(tokenData.token),
+								expires: expirationDate,
+								userId: userId,
+								oauthClientId: clientId
+							})
+						);
+
+						return Promise.all(promises).then(() => {
 							callback(null, tokenData);
-						})
-						.catch(callback);
+						});
+					});
 				})
 				.catch(callback);
 		})
