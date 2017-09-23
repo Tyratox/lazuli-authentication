@@ -16,7 +16,7 @@ const valueFilter = require("lazuli-require")(
 );
 
 module.exports = new GraphQLInputObjectType({
-	name: "UserInputType",
+	name: "User",
 	fields: valueFilter.filterable("graphql.input-types.user.fields", {
 		id: { type: GraphQLInt },
 		nameDisplay: { type: GraphQLString },

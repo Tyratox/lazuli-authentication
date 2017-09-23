@@ -1,6 +1,6 @@
 /**
  * Generates a middleware generating function that checks for the passed permissions
- * @param  {Object}   passport  The passport object
+ * @param  {Object}  passport  The passport object
  * @return {Function} The express middleware generator accepting a permissions array
  */
 module.exports.isBearerAuthenticated = passport => {

@@ -18,6 +18,13 @@ const valueFilter = require("lazuli-require")(
 );
 const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
 
+const Permission = require("./Permission");
+
+const {
+	generateRandomString,
+	generateHash
+} = require("../utilities/crypto.js");
+
 const User = sequelize.define(
 	"user",
 	valueFilter.filterable("model.user.attributes", {
@@ -92,28 +99,28 @@ User.associate = function(models) {
 
 	this.OauthProviders = this.hasMany(models.OauthProvider, {
 		as: "OauthProviders",
-		foreignKey: "user_id",
+		foreignKey: "userId",
 		onDelete: "cascade",
 		hooks: true
 	});
 
 	this.OauthAccessTokens = this.hasMany(models.OauthAccessToken, {
 		as: "OauthAccessTokens",
-		foreignKey: "user_id",
+		foreignKey: "userId",
 		onDelete: "cascade",
 		hooks: true
 	});
 
 	this.OauthCodes = this.hasMany(models.OauthCode, {
 		as: "OauthCodes",
-		foreignKey: "user_id",
+		foreignKey: "userId",
 		onDelete: "cascade",
 		hooks: true
 	});
 
 	this.OauthClients = this.hasMany(models.OauthClient, {
 		as: "OauthClients",
-		foreignKey: "user_id",
+		foreignKey: "userId",
 		onDelete: "cascade",
 		hooks: true
 	});
@@ -151,8 +158,6 @@ User.associate = function(models) {
 		onDelete: "cascade",
 		hooks: true
 	});*/
-
-	//require.cache[require.resolve(__filename)] = this; //Update require cache to include association
 };
 eventEmitter.addListener("model.association", User.associate.bind(User));
 
@@ -207,7 +212,7 @@ User.register = function(firstName, email, locale) {
 		} else {
 			return this.create(userData).then(user => {
 				user.initEmailVerification(true).then(() => {
-					eventEmitter.emit("after-user-registration", user);
+					eventEmitter.emit("model.user.register.after", user);
 					return Promise.resolve(user);
 				});
 			});
@@ -238,7 +243,7 @@ User.findOrCreateUserByPassportProfile = function(profile) {
  * @return {Promise}        A promise to check for the success of the action
  */
 User.createFromPassportProfile = function(profile) {
-	let user = this.build({
+	const user = this.build({
 		nameDisplay: profile.displayName,
 		nameFirst: profile.givenName,
 		nameLast: profile.familyName,
@@ -246,28 +251,31 @@ User.createFromPassportProfile = function(profile) {
 		emailVerified: profile.emails[0].value
 	});
 
+	eventEmitter.emit("model.user.from-passport-profile.before", user, profile);
+
 	/*let url = profile.photos[0].value;
 	if (url.indexOf("?sz=50") !== -1) {
 		url = url.replace("?sz=50", "?sz=500");
 	}*/
 
-	return (
-		user
-			.save()
-			/*.then(user => {
-			return request
-				.get({ uri: url, encoding: null })
-				.then(buffer => {
-					return model.Image.store(buffer, user);
-				})
-				.then(image => {
-					return user.setProfilePicture(image);
-				});
-		})*/
-			.then(() => {
-				return user.reload();
-			})
-	);
+	return this.save()
+		.then(user => {
+			return Promise.all(
+				valueFilter.filter(
+					"model.user.from-passport-profile.save",
+					[],
+					user,
+					profile
+				)
+			);
+		})
+		.then(user.reload)
+		.then(() => {
+			return eventEmitter.emit("model.user.from-passport-profile.after", user);
+		})
+		.then(() => {
+			return Promise.resolve(user);
+		});
 };
 
 /**
@@ -282,27 +290,26 @@ User.prototype.updateFromPassportProfile = function(profile) {
 		nameLast: profile.familyName
 	});
 
-	let url = profile.photos[0].value;
-	if (url.indexOf("?sz=50") !== -1) {
-		url = url.replace("?sz=50", "?sz=500");
-	}
+	eventEmitter.emit("model.user.from-passport-profile.before", this);
 
-	return (
-		this.save()
-			/*.then(user => {
-			return request
-				.get({ uri: url, encoding: null })
-				.then(buffer => {
-					return model.Image.store(buffer, user);
-				})
-				.then(image => {
-					return user.setProfilePicture(image);
-				});
-		})*/
-			.then(() => {
-				return this.reload();
-			})
-	);
+	return this.save()
+		.then(user => {
+			return Promise.all(
+				valueFilter.filter(
+					"model.user.from-passport-profile.save",
+					[],
+					this,
+					profile
+				)
+			);
+		})
+		.then(this.reload)
+		.then(() => {
+			eventEmitter.emit("model.user.from-passport-profile.after", this);
+		})
+		.then(() => {
+			return Promise.resolve(this);
+		});
 };
 
 /**
@@ -311,13 +318,13 @@ User.prototype.updateFromPassportProfile = function(profile) {
  * @return {Promise}         A promise to check whether the pas
  */
 User.prototype.verifyPassword = function(password) {
-	let { hash } = cryptoUtilities.generateHash(
+	let { hash } = generateHash(
 		password,
 		this.get("passwordSalt"),
 		this.get("passwordAlgorithm")
 	);
 
-	let { hash: newHash, newAlgorithm } = cryptoUtilities.generateHash(
+	let { hash: newHash, newAlgorithm } = generateHash(
 		password,
 		this.get("passwordSalt")
 	);
@@ -351,7 +358,7 @@ User.prototype.updatePassword = function(password, passwordResetCode) {
 		this.get("passwordResetCode") === passwordResetCode
 	) {
 		if (this.get("passwordResetCodeExpirationDate") >= new Date()) {
-			let { hash, salt, algorithm } = cryptoUtilities.generateHash(password);
+			let { hash, salt, algorithm } = generateHash(password);
 
 			this.set({
 				passwordHash: hash,
@@ -378,7 +385,7 @@ User.prototype.updatePassword = function(password, passwordResetCode) {
  * @return {Promise} A promise to check whether the email was sent
  */
 User.prototype.initPasswordReset = function() {
-	let passwordResetCode = cryptoUtilities.generateRandomString(TOKEN_LENGTH);
+	let passwordResetCode = generateRandomString(TOKEN_LENGTH);
 	let expirationDate = Date.now() + RESET_CODE_LIFETIME * 1000;
 
 	this.set("passwordResetCode", passwordResetCode);
@@ -401,9 +408,7 @@ User.prototype.initPasswordReset = function() {
  * @return {Promise} A promise to check whether the email was sent
  */
 User.prototype.initEmailVerification = function(registration = false) {
-	let emailVerificationCode = cryptoUtilities.generateRandomString(
-		CONFIRM_TOKEN_LENGTH
-	);
+	let emailVerificationCode = generateRandomString(CONFIRM_TOKEN_LENGTH);
 
 	return sendEmail(
 		this.get("emailUnverified"),
@@ -460,51 +465,53 @@ User.prototype.verifyEmail = function(
 };
 
 /**
- * Gets the permission array
- * @return {Array} An array of the permissions the user has
- */
-User.prototype.getPermissionArray = function() {
-	if (!this.get("Permissions")) {
-		console.log(
-			new Error("Permissions weren't included in this instance of User!")
-		);
-		return [];
-	}
-	return this.get("Permissions").map(permission => {
-		return permission.get("permission");
-	});
-};
-
-/**
  * Checks whether the user has all of the passed permissions
  * @param  {Array}  [permissionsNeeded=[]] The permissions to check for
- * @return {Boolean}                       Whether the user has all the passed permissions
+ * @return {Promise}
  */
 User.prototype.doesHavePermissions = function(permissionsNeeded = []) {
-	let permissions = this.getPermissionArray();
+	let promise;
+	if (!this.get("Permissions")) {
+		promise = this.reload({
+			include: [
+				{
+					model: Permission,
+					as: "Permissions"
+				}
+			]
+		});
+	} else {
+		promise = Promise.resolve(this);
+	}
 
-	let missing = permissionsNeeded.filter(permission => {
-		for (let i = 0; i < permissions.length; i++) {
-			// has exactly this permission or has a higher level permission
+	return promise.then(() => {
+		const permissions = this.get("Permissions").map(permission => {
+			return permission.get("permission");
+		});
 
-			if (
-				permission === permissions[i] ||
-				permission.startsWith(permissions[i] + ".")
-			) {
-				return false; //not missing, remove from array
+		let missing = permissionsNeeded.filter(permission => {
+			for (let i = 0; i < permissions.length; i++) {
+				// has exactly this permission or has a higher level permission
+
+				if (
+					permission === permissions[i] ||
+					permission.startsWith(permissions[i] + ".")
+				) {
+					return false; //not missing, remove from array
+				}
 			}
-		}
 
-		return true; //missing, leave in array
+			return true; //missing, leave in array
+		});
+
+		return Promise.resolve(missing.length === 0);
 	});
-
-	return missing.length === 0;
 };
 
 /**
  * Checks whether the user has the passed permission
  * @param  {Array}  [permissionsNeeded=[]] The permission to check for
- * @return {Boolean}                       Whether the user has the passed permission
+ * @return {Promise}
  */
 User.prototype.doesHavePermission = function(permission) {
 	return this.doesHavePermissions([permission]);

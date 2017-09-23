@@ -1,18 +1,16 @@
-//import test from "ava";
+import test from "ava";
 
-process.on("uncaughtException", console.log);
+const { initPromise } = require("./helpers/init.js");
 
-const Lazuli = require("lazuli-require")("lazuli-core");
-const eventEmitter = require("lazuli-require")(
-	"lazuli-core/globals/event-emitter"
-);
+let adminUserModel, adminClient, anonClient;
 
-const Authentication = new (require("../src/lazuli-authentication"))();
+test.before(t => {
+	return initPromise.then(data => {
+		adminUserModel = data.adminUserModel;
+		adminClient = data.adminClient;
+		anonClient = data.anonClient;
+	});
+});
 
-Lazuli.init();
-
-/*test("lazuli init", t => {
-	t.pass();
-});*/
-
-eventEmitter.emit("express.stop");
+require("./graphql/user")(test, initPromise);
+require("./models/user")(test, initPromise);

@@ -7,13 +7,13 @@ module.exports = {
 		.positive(),
 
 	nameDisplay: Joi.string()
-		.regex(/[A-z]+/)
+		.alphanum()
 		.max(511),
 	nameFirst: Joi.string()
-		.regex(/[A-z]+/)
+		.alphanum()
 		.max(255),
 	nameLast: Joi.string()
-		.regex(/[A-z]+/)
+		.alphanum()
 		.max(255),
 
 	emailVerified: Joi.string()

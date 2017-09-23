@@ -64,7 +64,7 @@ eventEmitter.addListener(
  * @return {String} The generated oauth code
  */
 OauthCode.generateCode = function() {
-	return cryptoUtilities.generateRandomString(TOKEN_LENGTH);
+	return generateRandomString(TOKEN_LENGTH);
 };
 
 /**
@@ -73,7 +73,7 @@ OauthCode.generateCode = function() {
  * @return {String}           The unsalted hash
  */
 OauthCode.hashCode = function(code) {
-	return cryptoUtilities.generateHash(code, false).hash;
+	return generateHash(code, false).hash;
 };
 
 /**

@@ -14,7 +14,7 @@ const valueFilter = require("lazuli-require")(
 );
 
 module.exports = new GraphQLInputObjectType({
-	name: "OauthClientInputType",
+	name: "OauthClient",
 	fields: valueFilter.filterable("graphql.input-types.oauth-client.fields", {
 		id: { type: GraphQLInt },
 		name: { type: GraphQLString },

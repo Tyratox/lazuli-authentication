@@ -73,6 +73,10 @@ class Authentication {
 			this.addPassportMiddleware.bind(this)
 		);
 
+		valueFilter.add("graphql.middleware.before", middlewares => {
+			return [...middlewares, this.isBearerAuthenticated()];
+		});
+
 		eventEmitter.on("model.init.after", this.modelsAfter.bind(this));
 		eventEmitter.on("express.routing.rest", this.restRouting.bind(this));
 	}
@@ -112,14 +116,6 @@ Authentication.prototype._models = {
 Authentication.prototype.addPassportMiddleware = function() {
 	expressServer.use(this._passport.initialize());
 	expressServer.use(this._passport.session());
-	expressServer.use((request, response, next) => {
-		/*request.user = {
-			doesHavePermission: () => true,
-			doesHavePermissions: () => true
-		}; //TEMP for manual testing
-		*/
-		next();
-	});
 };
 
 /**
@@ -171,7 +167,7 @@ Authentication.prototype.restRouting = function() {
  */
 Authentication.prototype._setupGetRouting = function() {
 	expressServer.get(
-		"/v1/auth/logged-in",
+		"/auth/logged-in",
 		this.isBearerAuthenticated(),
 		(request, response, next) => {
 			return response.end('{"loggedIn": true}');
@@ -188,7 +184,7 @@ Authentication.prototype._setupGetRouting = function() {
 	expressServer.get("/views/password-reset", passwordResetView());
 
 	expressServer.get(
-		"/v1/auth/facebook/login/",
+		"/auth/facebook/login/",
 		this._passport.authenticate("facebook", { scope: ["email"] })
 	);
 
@@ -198,7 +194,7 @@ Authentication.prototype._setupGetRouting = function() {
 	);
 
 	expressServer.get(
-		"/v1/auth/google/login/",
+		"/auth/google/login/",
 		this._passport.authenticate("google", {
 			scope: ["openid profile email"]
 		})
@@ -221,31 +217,31 @@ Authentication.prototype._setupGetRouting = function() {
  */
 Authentication.prototype._setupPostRouting = function() {
 	expressServer.post(
-		"/v1/auth/local/login",
+		"/auth/local/login",
 		expressServer.validate(localLoginValidation), //Tracked in analytics
 		authLocal(this._passport)
 	);
 
 	expressServer.post(
-		"/v1/auth/init-password-reset",
+		"/auth/init-password-reset",
 		expressServer.validate(initPasswordResetValidation),
 		initPasswordReset()
 	);
 
 	expressServer.post(
-		"/v1/auth/password-reset",
+		"/auth/password-reset",
 		expressServer.validate(passwordResetValidation),
 		passwordReset()
 	);
 
 	expressServer.post(
-		"/v1/auth/local/register",
+		"/auth/local/register",
 		expressServer.validate(localRegistrationValidation),
 		registration()
 	);
 
 	expressServer.post(
-		"/v1/auth/local/verify-email",
+		"/auth/local/verify-email",
 		expressServer.validate(verifyMailValidation),
 		verifyEmail()
 	);

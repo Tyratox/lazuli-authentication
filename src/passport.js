@@ -115,15 +115,7 @@ const initOauthBearerAuthentication = passport => {
 								return callback(new Error("The sent token is invalid!"));
 							}
 
-							return User.findOne({
-								where: { id: token.get("user_id") },
-								include: [
-									{
-										model: Permission,
-										as: "Permissions"
-									}
-								]
-							}).then(user => {
+							return User.findById(token.get("userId")).then(user => {
 								if (!user) {
 									// No user was found, so the token is invalid
 									return token.destroy().then(() => {
@@ -142,12 +134,22 @@ const initOauthBearerAuthentication = passport => {
 									if (
 										!request.requiredPermissions ||
 										request.requiredPermissions.length === 0 ||
-										(request.requiredPermissions &&
-											user.doesHavePermissions(request.requiredPermissions))
+										request.requiredPermissions
 									) {
-										//request.hasPermission not possible yet, as request.user
-										//isn't set yet
-										return callback(null, user);
+										return user
+											.doesHavePermissions(request.requiredPermissions)
+											.then(hasPermission => {
+												if (hasPermission) {
+													return callback(null, user);
+												} else {
+													return callback(
+														new Error(
+															"You don't have the permission to do this!"
+														),
+														false
+													);
+												}
+											});
 									}
 
 									return callback(
@@ -307,7 +309,7 @@ module.exports.initPassportSerialization = initPassportSerialization;
 
 /**
  * Initializes the passport object
- * @param  {Object} passport         The passport object to initialize
+ * @param  {Object} passport The passport object to initialize
  * @return {void}
  */
 const initPassport = passport => {

@@ -37,7 +37,7 @@ class OAuthClientController {
 		}
 
 		if (userId) {
-			query.user_id = userId;
+			query.userId = userId;
 		}
 
 		this.models.OAuthClient
@@ -78,7 +78,7 @@ class OAuthClientController {
 		let query = { id: request.params.clientId };
 
 		if (!request.hasPermission("admin.client.list")) {
-			query.user_id = request.user.id;
+			query.userId = request.user.id;
 		}
 
 		this.models.OAuthClient
@@ -100,12 +100,12 @@ class OAuthClientController {
 					response.json(
 						client.toJSON({
 							admin: true,
-							owner: client.user_id === request.user.id
+							owner: client.get("userId") === request.user.id
 						})
 					);
 				} else {
 					response.json(
-						client.toJSON({ owner: client.user_id === request.user.id })
+						client.toJSON({ owner: client.get("userId") === request.user.id })
 					);
 				}
 
@@ -120,14 +120,14 @@ class OAuthClientController {
 
 		let client = this.models.OAuthClient.build({
 			name: request.body.client.name,
-			user_id: request.user.id
+			userId: request.user.id
 		});
 
 		client.setSecret(secret);
 
 		if (request.hasPermissions(["admin.client.create", "admin.client.write"])) {
 			if (request.body.client.userId) {
-				client.set("user_id", request.body.client.userId);
+				client.set("userId", request.body.client.userId);
 			}
 
 			client.set(
@@ -148,7 +148,7 @@ class OAuthClientController {
 						promises.push(
 							this.models.OAuthRedirectUri.create({
 								uri: uri,
-								oauth_client_id: client.get("id")
+								oauthClientId: client.get("id")
 							})
 						);
 					});
@@ -248,7 +248,7 @@ class OAuthClientController {
 						if (tempCurrentUris.indexOf(newUris[i]) === -1) {
 							let uri = this.models.OAuthRedirectUri.build({
 								uri: newUris[i],
-								oauth_client_id: client.get("id")
+								oauthClientId: client.get("id")
 							});
 
 							promises.push(uri.save());

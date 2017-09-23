@@ -21,7 +21,8 @@ const OauthAccessToken = sequelize.define(
 	"oauth_access_token",
 	{
 		hash: {
-			type: Sequelize.STRING
+			type: Sequelize.STRING,
+			unique: true
 		},
 		expires: {
 			type: Sequelize.DATE
@@ -82,6 +83,7 @@ OauthAccessToken.generateToken = function() {
  * @return {String}       The generated hash
  */
 OauthAccessToken.hashToken = function(token) {
+	//TODO prevent duplicates!
 	return generateHash(token, false, HASH_ALGORITHM, SALT_LENGTH).hash;
 };
 

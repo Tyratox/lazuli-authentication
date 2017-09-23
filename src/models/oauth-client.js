@@ -94,7 +94,7 @@ eventEmitter.addListener(
  * @return {String} The random secret
  */
 OauthClient.generateSecret = function() {
-	return cryptoUtilities.generateRandomString(CLIENT_SECRET_LENGTH);
+	return generateRandomString(CLIENT_SECRET_LENGTH);
 };
 
 /**
@@ -103,7 +103,7 @@ OauthClient.generateSecret = function() {
  * @return {void}
  */
 OauthClient.prototype.setSecret = function(secret) {
-	let { hash, salt, algorithm } = cryptoUtilities.generateHash(secret);
+	let { hash, salt, algorithm } = generateHash(secret);
 
 	this.set({
 		secretHash: hash,
@@ -118,13 +118,13 @@ OauthClient.prototype.setSecret = function(secret) {
  * @return {Boolean}        Whether the secrets match
  */
 OauthClient.prototype.verifySecret = function(secret) {
-	let { hash } = cryptoUtilities.generateHash(
+	let { hash } = generateHash(
 		secret,
 		this.get("secretSalt"),
 		this.get("secretAlgorithm")
 	);
 
-	let { hash: newHash, algorithm: newAlgorithm } = cryptoUtilities.generateHash(
+	let { hash: newHash, algorithm: newAlgorithm } = generateHash(
 		secret,
 		this.get("secretSalt")
 	);
@@ -150,28 +150,36 @@ OauthClient.prototype.verifySecret = function(secret) {
 /**
  * Checks whether the passed uri is stored in the model as redirectUri
  * @param  {String} redirectUri The redirect uri to verify
- * @return {Boolean}            Whether the redirect uri is registered with this object
+ * @return {Promise}
  */
 OauthClient.prototype.verifyRedirectUri = function(redirectUri) {
+	let promise;
 	if (!this.get("OauthRedirectUris")) {
-		console.log(
-			"OauthRedirectUris wasn't included in this instance of OauthClient!"
-		);
-
-		return false;
+		promise = this.reload({
+			include: [
+				{
+					model: OauthRedirectUri,
+					as: "OauthRedirectUris"
+				}
+			]
+		});
+	} else {
+		promise = Promise.resolve(this);
 	}
 
-	let uris = this.get("OauthRedirectUris").map(uri => {
-		return uri.get("uri");
-	});
+	return promise.then(() => {
+		let uris = this.get("OauthRedirectUris").map(uri => {
+			return uri.get("uri");
+		});
 
-	for (var i = 0; i < uris.length; i++) {
-		if (uris[i] === redirectUri) {
-			return true;
+		for (var i = 0; i < uris.length; i++) {
+			if (uris[i] === redirectUri) {
+				return Promise.resolve(true);
+			}
 		}
-	}
 
-	return false;
+		return Promise.resolve(false);
+	});
 };
 
 module.exports = OauthClient;

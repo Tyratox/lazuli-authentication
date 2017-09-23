@@ -63,8 +63,8 @@ const initOauthServerGrant = oauth2Server => {
 			let code = OauthCode.build({
 				hash: OauthCode.hashCode(codeValue),
 				expires: Date.now() + AUTH_CODE_LIFETIME * 1000,
-				user_id: user.get("id"),
-				oauth_client_id: client.get("id")
+				userId: user.get("id"),
+				oauthClientId: client.get("id")
 			});
 
 			let promises = [code.save()];
@@ -96,8 +96,8 @@ const initOauthServerExchange = oauth2Server => {
 						);
 					}
 					//Delete the auth code now that it has been used
-					let clientId = authCode.get("oauth_client_id"),
-						userId = authCode.get("user_id");
+					let clientId = authCode.get("oauthClientId"),
+						userId = authCode.get("userId");
 
 					let promises = [
 						OauthCode.destroy({
@@ -129,8 +129,8 @@ const initOauthServerExchange = oauth2Server => {
 						OauthAccessToken.create({
 							hash: OauthAccessToken.hashToken(tokenData.token),
 							expires: expirationDate,
-							user_id: userId,
-							oauth_client_id: clientId
+							userId: userId,
+							oauthClientId: clientId
 						})
 					);
 

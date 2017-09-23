@@ -5,7 +5,7 @@
 	"main": "src/lazuli-authentication.mjs",
 	"scripts": {
 		"docs": "jsdoc src -r -c jsdoc.json -R README.md -d docs",
-		"test": "ava"
+		"test": "ava test/test.js"
 	},
 	"repository": {
 		"type": "git",
@@ -45,6 +45,7 @@
 		"passport-google-oauth": "^1.0.0",
 		"passport-http-bearer": "^1.0.1",
 		"passport-local": "^1.0.0",
+		"request-promise-native": "^1.0.5",
 		"sequelize": "^4.7.5"
 	},
 	"peerDependencies": {
@@ -55,9 +56,6 @@
 	},
 	"devDependencies": {
 		"ava": "^0.22.0",
-		"babel-core": "^6.26.0",
-		"babel-preset-env": "^1.6.0",
-		"babel-register": "^6.26.0",
 		"jsdoc": "^3.5.4",
 		"lazuli-config": "tyratox/lazuli-config",
 		"lazuli-core": "tyratox/lazuli-core",
@@ -65,11 +63,5 @@
 		"lazuli-filters": "tyratox/lazuli-filters",
 		"lazuli-i18n": "tyratox/lazuli-i18n",
 		"lazuli-piwik-tracker": "tyratox/lazuli-piwik-tracker"
-	},
-	"ava": {
-		"require": [
-			"babel-register"
-		],
-		"babel": "inherit"
 	}
 }

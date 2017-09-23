@@ -149,7 +149,7 @@ UserConroller.prototype.postUser = (request, response, next) => {
 	);
 
 	if (request.body.user.profilePictureId) {
-		user.profile_picture_id = request.body.user.profilePictureId;
+		user.profilePictureId = request.body.user.profilePictureId;
 	}
 
 	user
@@ -260,7 +260,7 @@ UserConroller.prototype.putUser = (request, response, next) => {
 			);
 
 			if (request.body.user.profilePictureId) {
-				user.profile_picture_id = request.body.user.profilePictureId;
+				user.profilePictureId = request.body.user.profilePictureId;
 			}
 
 			//check for email / password change
