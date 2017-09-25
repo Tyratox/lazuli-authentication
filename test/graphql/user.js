@@ -7,6 +7,7 @@ const eventEmitter = require("lazuli-require")(
 const User = require("../../src/models/user");
 const OauthAccessToken = require("../../src/models/oauth-access-token");
 const Permission = require("../../src/models/permission");
+const OauthProvider = require("../../src/models/oauth-provider");
 
 const { validateAccessDenied } = require("../helpers/graphql");
 
@@ -32,7 +33,10 @@ module.exports = (test, initPromise) => {
 		const nameDisplay = generateRandomString(15),
 			nameFirst = generateRandomString(15),
 			nameLast = generateRandomString(15),
-			permission = generateRandomString(15);
+			permission = generateRandomString(15),
+			provider = Math.random() < 0.5 ? "facebook" : "google",
+			accessToken = generateRandomString(15),
+			refreshToken = generateRandomString(15);
 
 		return User.create({ nameDisplay, nameFirst, nameLast }).then(userModel => {
 			const id = userModel.get("id");
@@ -40,6 +44,14 @@ module.exports = (test, initPromise) => {
 			return Permission.create({ permission })
 				.then(permissionModel => {
 					return userModel.addPermission(permissionModel);
+				})
+				.then(() => {
+					return OauthProvider.create({
+						provider,
+						accessToken,
+						refreshToken,
+						userId: id
+					});
 				})
 				.then(() => {
 					return adminClient
@@ -56,6 +68,15 @@ module.exports = (test, initPromise) => {
 											permission
 										}
 									}
+								},
+								oauthProviders{
+									edges{
+										node{
+											provider,
+											accessToken,
+											refreshToken
+										}
+									}
 								}
 							}
 						}`,
@@ -70,7 +91,10 @@ module.exports = (test, initPromise) => {
 									nameDisplay,
 									nameFirst,
 									nameLast,
-									permissions: { edges: [{ node: { permission } }] }
+									permissions: { edges: [{ node: { permission } }] },
+									oauthProviders: {
+										edges: [{ node: { provider, accessToken, refreshToken } }]
+									}
 								},
 								"graphql response doesn't match the input"
 							);
@@ -99,6 +123,15 @@ module.exports = (test, initPromise) => {
 								edges{
 									node{
 										permission
+									}
+								}
+							},
+							oauthProviders{
+								edges{
+									node{
+										provider,
+										accessToken,
+										refreshToken
 									}
 								}
 							}
@@ -132,6 +165,15 @@ module.exports = (test, initPromise) => {
 								edges{
 									node{
 										permission
+									}
+								}
+							},
+							oauthProviders{
+								edges{
+									node{
+										provider,
+										accessToken,
+										refreshToken
 									}
 								}
 							}

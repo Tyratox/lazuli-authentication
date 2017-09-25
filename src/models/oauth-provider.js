@@ -20,7 +20,7 @@ const {
 const OauthProvider = sequelize.define(
 	"oauth_provider",
 	valueFilter.filterable("authentication-models-oauth-provider-attributes", {
-		type: {
+		provider: {
 			type: Sequelize.ENUM,
 			values: ["google", "facebook"]
 		},

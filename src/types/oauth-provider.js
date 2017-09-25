@@ -29,7 +29,7 @@ const OauthProvider = require("../models/oauth-provider");
  * The graphql object type for this model
  * @type {GraphQLObjectType}
  */
-module.exports = oauthProviderType = new GraphQLObjectType({
+module.exports = new GraphQLObjectType({
 	name: OauthProvider.name,
 	description: "An oauth provider",
 	fields: () => {

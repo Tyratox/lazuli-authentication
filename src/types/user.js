@@ -73,7 +73,7 @@ module.exports = new GraphQLObjectType({
 				name: "userOauthProviderOrderBy",
 				values: {
 					ID: { value: ["id", "ASC"] },
-					TYPE: { value: ["type", "DESC"] }
+					PROVIDER: { value: ["provider", "DESC"] }
 				}
 			}),
 			where: function(key, value, currentWhere) {

@@ -17,10 +17,10 @@ const valueFilter = require("lazuli-require")(
 module.exports = new GraphQLInputObjectType({
 	name: "OauthProvider",
 	fields: valueFilter.filterable("graphql.input-types.oauth-provider.fields", {
-		type: {
-			id: { type: GraphQLInt },
+		id: { type: GraphQLInt },
+		provider: {
 			type: new GraphQLEnumType({
-				name: "OauthProviderType",
+				name: "Provider",
 				values: {
 					FACEBOOK: { value: "facebook" },
 					GOOGLE: { value: "google" }
