@@ -1,31 +1,36 @@
 const crypto = require("crypto");
 
+const { HASH_ALGORITHM, SALT_LENGTH } = require("lazuli-require")(
+	"lazuli-config"
+);
+
 /**
  * Generates random string of characters
  * @function generateRandomString
  * @param {number} length Length of the random string.
  * @return {String} A random string of a given length
  */
-module.exports.generateRandomString = length => {
+const generateRandomString = length => {
 	return crypto
 		.randomBytes(length)
 		.toString("base64")
 		.slice(0, length);
 };
 
+module.exports.generateRandomString = generateRandomString;
+
 /**
  * Hash data
  * @function generateHash
  * @param {string} data The data to hash
  * @param {string} [salt=null] The salt which should be used
- * @param {string} algorithm The hash algorithm that should be used
- * @param {number} saltLength How long the random salt should be
+ * @param {string} [algorithm=HASH_ALGORITHM] The hash algorithm that should be used
  * @return {Object} The hashed string, the generated salt and the
  * used hash algorithm {hash: '', salt: '', algorithm: ''}
  */
-module.exports.generateHash = (data, salt = null, algorithm, saltLength) => {
+const generateHash = (data, salt = null, algorithm = HASH_ALGORITHM) => {
 	if (!salt && salt !== false) {
-		salt = generateRandomString(saltLength);
+		salt = generateRandomString(SALT_LENGTH);
 	}
 
 	let hmacOrHash;
@@ -40,3 +45,5 @@ module.exports.generateHash = (data, salt = null, algorithm, saltLength) => {
 
 	return { hash: hmacOrHash.digest("hex"), salt: salt, algorithm: algorithm };
 };
+
+module.exports.generateHash = generateHash;

@@ -13,4 +13,7 @@ test.before(t => {
 });
 
 require("./graphql/user")(test, initPromise);
+require("./graphql/oauth-client")(test, initPromise);
+
 require("./models/user")(test, initPromise);
+require("./models/oauth-client")(test, initPromise);

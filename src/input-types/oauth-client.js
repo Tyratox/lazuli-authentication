@@ -18,7 +18,7 @@ module.exports = new GraphQLInputObjectType({
 	fields: valueFilter.filterable("graphql.input-types.oauth-client.fields", {
 		id: { type: GraphQLInt },
 		name: { type: GraphQLString },
-		redirectUris: { type: new GraphQLList(GraphQLString) },
+		oauthRedirectUris: { type: new GraphQLList(GraphQLString) },
 		userId: { type: GraphQLInt },
 		trusted: { type: GraphQLBoolean }
 	})

@@ -64,9 +64,12 @@ eventEmitter.addListener(
 
 /**
  * Generates a random access token string
- * @return {Promise} A promise that will return the generated token
+ * @param userId
+ * @param oauthClientId
+ * @param expires
+ * @return {Promise} A promise that will return the generated token and the model
  */
-OauthAccessToken.generateToken = function() {
+OauthAccessToken.generateToken = function(userId, oauthClientId, expires) {
 	let token = generateRandomString(TOKEN_LENGTH * 2);
 	//HTTP Headers can only contain ASCII and 19 specific seperators
 	//http://stackoverflow.com/questions/19028068/illegal-characters-in-http-headers
@@ -78,9 +81,16 @@ OauthAccessToken.generateToken = function() {
 
 	return this.findByToken(token).then(accessTokenModel => {
 		if (accessTokenModel) {
-			return this.generateToken();
+			return this.generateToken(userId, oauthClientId, expires);
 		} else {
-			return Promise.resolve(token);
+			return this.create({
+				hash: this.hashToken(token),
+				expires,
+				userId,
+				oauthClientId
+			}).then(model => {
+				return { token, model };
+			});
 		}
 	});
 };

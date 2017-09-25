@@ -15,6 +15,8 @@ const {
 	generateHash
 } = require("../utilities/crypto.js");
 
+const OauthRedirectUri = require("./oauth-redirect-uri");
+
 const OauthClient = sequelize.define(
 	"oauth_client",
 	{
@@ -100,7 +102,7 @@ OauthClient.generateSecret = function() {
 /**
  * Sets the secret after hashing it
  * @param  {String} secret The secret to hash and store
- * @return {void}
+ * @return {Promise}
  */
 OauthClient.prototype.setSecret = function(secret) {
 	let { hash, salt, algorithm } = generateHash(secret);
@@ -110,12 +112,14 @@ OauthClient.prototype.setSecret = function(secret) {
 		secretSalt: salt,
 		secretAlgorithm: algorithm
 	});
+
+	return this.save();
 };
 
 /**
  * Verifies a secret
  * @param  {String} secret Checks whether this secret matches the stored one by hashing it with the stored salt
- * @return {Boolean}        Whether the secrets match
+ * @return {Promise}       Whether the secrets match
  */
 OauthClient.prototype.verifySecret = function(secret) {
 	let { hash } = generateHash(
@@ -139,12 +143,12 @@ OauthClient.prototype.verifySecret = function(secret) {
 			});
 
 			return this.save().then(() => {
-				return true;
+				return Promise.resolve(true);
 			});
 		}
-		return Promise.resolve();
+		return Promise.resolve(true);
 	}
-	return Promise.reject();
+	return Promise.resolve(false);
 };
 
 /**
@@ -172,7 +176,7 @@ OauthClient.prototype.verifyRedirectUri = function(redirectUri) {
 			return uri.get("uri");
 		});
 
-		for (var i = 0; i < uris.length; i++) {
+		for (let i = 0; i < uris.length; i++) {
 			if (uris[i] === redirectUri) {
 				return Promise.resolve(true);
 			}

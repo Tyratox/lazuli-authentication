@@ -4,29 +4,20 @@ const eventEmitter = require("lazuli-require")(
 	"lazuli-core/globals/event-emitter"
 );
 
-const logger = require("lazuli-require")("lazuli-core/globals/logger");
-
 const User = require("../../src/models/user");
 const OauthAccessToken = require("../../src/models/oauth-access-token");
 const Permission = require("../../src/models/permission");
 
-let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
+const { validateAccessDenied } = require("../helpers/graphql");
 
-const validateAccessDenied = (t, body) => {
-	if (body.errors) {
-		if (body.errors.length !== 1) {
-			return Promise.reject("More than one error was thrown!");
-		}
-		if (!body.errors[0].message) {
-			return Promise.reject("The error doesn't contain a message!");
-		}
-		const string = "Access Denied!";
-		t.deepEqual(body.errors[0].message.substring(0, string.length), string);
-	} else {
-		logger.critical("Security Breach", body);
-		return Promise.reject("No error thrown");
-	}
+let { generateRandomString } = require("../../src/utilities/crypto");
+let orig = generateRandomString;
+generateRandomString = length => {
+	//alphanum
+	return orig(length).replace(/[^A-z0-9]/g, Math.floor(Math.random() * 10));
 };
+
+let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 
 module.exports = (test, initPromise) => {
 	initPromise.then(data => {
@@ -38,55 +29,93 @@ module.exports = (test, initPromise) => {
 	});
 
 	test("graphql.query.authenticated.user", t => {
-		const nameDisplay = Math.random()
-				.toString()
-				.substring(2),
-			nameFirst = Math.random()
-				.toString()
-				.substring(2),
-			nameLast = Math.random()
-				.toString()
-				.substring(2);
+		const nameDisplay = generateRandomString(15),
+			nameFirst = generateRandomString(15),
+			nameLast = generateRandomString(15),
+			permission = generateRandomString(15);
 
 		return User.create({ nameDisplay, nameFirst, nameLast }).then(userModel => {
 			const id = userModel.get("id");
 
-			return adminClient
+			return Permission.create({ permission })
+				.then(permissionModel => {
+					return userModel.addPermission(permissionModel);
+				})
+				.then(() => {
+					return adminClient
+						.query(
+							`query user ($id: Int!) {
+							user(id: $id) {
+								id,
+								nameDisplay,
+								nameFirst,
+								nameLast,
+								permissions{
+									edges{
+										node{
+											permission
+										}
+									}
+								}
+							}
+						}`,
+							{ id }
+						)
+						.then(body => {
+							t.falsy(body.errors, "graphql returned errors");
+							t.deepEqual(
+								body.data.user,
+								{
+									id: toGlobalId(User.name, id),
+									nameDisplay,
+									nameFirst,
+									nameLast,
+									permissions: { edges: [{ node: { permission } }] }
+								},
+								"graphql response doesn't match the input"
+							);
+						});
+				});
+		});
+	});
+
+	test("graphql.query.non-priv.user", t => {
+		const nameDisplay = generateRandomString(15),
+			nameFirst = generateRandomString(15),
+			nameLast = generateRandomString(15);
+
+		return User.create({ nameDisplay, nameFirst, nameLast }).then(userModel => {
+			const id = userModel.get("id");
+
+			return nonPrivClient
 				.query(
 					`query user ($id: Int!) {
 						user(id: $id) {
 							id,
 							nameDisplay,
 							nameFirst,
-							nameLast
+							nameLast,
+							permissions{
+								edges{
+									node{
+										permission
+									}
+								}
+							}
 						}
 					}`,
 					{ id }
 				)
 				.then(body => {
-					if (body.errors) {
-						return Promise.reject(body.errors);
-					}
-					t.deepEqual(body.data.user, {
-						id: toGlobalId(User.name, id),
-						nameDisplay,
-						nameFirst,
-						nameLast
-					});
+					return validateAccessDenied(t, body, ["id"]);
 				});
 		});
 	});
 
 	test("graphql.query.anonymous.user", t => {
-		const nameDisplay = Math.random()
-				.toString()
-				.substring(2),
-			nameFirst = Math.random()
-				.toString()
-				.substring(2),
-			nameLast = Math.random()
-				.toString()
-				.substring(2);
+		const nameDisplay = generateRandomString(15),
+			nameFirst = generateRandomString(15),
+			nameLast = generateRandomString(15);
 
 		return User.create({ nameDisplay, nameFirst, nameLast }).then(userModel => {
 			const id = userModel.get("id");
@@ -98,13 +127,20 @@ module.exports = (test, initPromise) => {
 							id,
 							nameDisplay,
 							nameFirst,
-							nameLast
+							nameLast,
+							permissions{
+								edges{
+									node{
+										permission
+									}
+								}
+							}
 						}
 					}`,
 					{ id }
 				)
 				.then(body => {
-					return validateAccessDenied(t, body);
+					return validateAccessDenied(t, body, ["id"]);
 				});
 		});
 	});
@@ -119,11 +155,7 @@ module.exports = (test, initPromise) => {
 		for (let i = 0; i < Math.floor(Math.random() * 10); i++) {
 			promises.push(
 				User.create({
-					nameDisplay:
-						name +
-						Math.random()
-							.toString()
-							.substring(2)
+					nameDisplay: name + generateRandomString(15)
 				})
 			);
 		}
@@ -140,9 +172,7 @@ module.exports = (test, initPromise) => {
 					{ query: name }
 				)
 				.then(body => {
-					if (body.errors) {
-						return Promise.reject(body.errors);
-					}
+					t.falsy(body.errors, "graphql returned errors");
 
 					t.deepEqual(
 						body.data.users,
@@ -151,7 +181,8 @@ module.exports = (test, initPromise) => {
 								id: toGlobalId(User.name, model.get("id")),
 								nameDisplay: model.get("nameDisplay")
 							};
-						})
+						}),
+						"graphql response doesn't match the input"
 					);
 				});
 		});
@@ -165,11 +196,7 @@ module.exports = (test, initPromise) => {
 		for (let i = 0; i < Math.floor(Math.random() * 10); i++) {
 			promises.push(
 				User.create({
-					nameDisplay:
-						name +
-						Math.random()
-							.toString()
-							.substring(2)
+					nameDisplay: name + generateRandomString(15)
 				})
 			);
 		}
@@ -186,7 +213,7 @@ module.exports = (test, initPromise) => {
 					{ query: name }
 				)
 				.then(body => {
-					return validateAccessDenied(t, body);
+					return validateAccessDenied(t, body, ["id"]);
 				});
 		});
 	});
@@ -199,11 +226,7 @@ module.exports = (test, initPromise) => {
 		for (let i = 0; i < Math.floor(Math.random() * 10); i++) {
 			promises.push(
 				User.create({
-					nameDisplay:
-						name +
-						Math.random()
-							.toString()
-							.substring(2)
+					nameDisplay: name + generateRandomString(15)
 				})
 			);
 		}
@@ -227,15 +250,12 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.authenticated.user.upsert", t => {
 		//create a new one
-		const nameDisplay = Math.random()
-				.toString()
-				.substring(2),
-			nameFirst = Math.random()
-				.toString()
-				.substring(2),
-			nameLast = Math.random()
-				.toString()
-				.substring(2);
+		const nameDisplay = generateRandomString(15),
+			nameDisplay2 = generateRandomString(15),
+			nameFirst = generateRandomString(15),
+			nameLast = generateRandomString(15),
+			permission1 = generateRandomString(15),
+			permission2 = generateRandomString(15);
 
 		return adminClient
 			.query(
@@ -244,30 +264,66 @@ module.exports = (test, initPromise) => {
 						id,
 						nameDisplay,
 						nameFirst,
-						nameLast
+						nameLast,
+						permissions{
+							edges{
+								node{
+									permission
+								}
+							}
+						}
 					}
 				}`,
-				{ user: { nameDisplay, nameFirst, nameLast } }
+				{
+					user: { nameDisplay, nameFirst, nameLast, permissions: [permission1] }
+				}
 			)
 			.then(body => {
-				if (body.errors) {
-					return Promise.reject(body.errors);
-				}
+				t.falsy(body.errors, "graphql returned errors");
 
-				if (!body.data.upsertUser || !body.data.upsertUser.id) {
-					return Promise.reject(new Error("Invalid response"));
+				t.truthy(body.data.upsertUser, "invalid graphql response");
+				if (body.data.upsertUser) {
+					t.truthy(body.data.upsertUser.id, "invalid graphql response");
 				}
 
 				const globalId = body.data.upsertUser.id,
 					databaseId = fromGlobalId(body.data.upsertUser.id).id;
 
-				return User.findById(databaseId).then(userModel => {
-					t.deepEqual(body.data.upsertUser, {
-						id: toGlobalId(User.name, userModel.get("id")),
-						nameDisplay: userModel.get("nameDisplay"),
-						nameFirst: userModel.get("nameFirst"),
-						nameLast: userModel.get("nameLast")
-					});
+				return User.find({
+					where: { id: databaseId },
+					include: [{ model: Permission, as: "Permissions" }]
+				}).then(userModel => {
+					t.deepEqual(
+						body.data.upsertUser,
+						{
+							id: toGlobalId(User.name, userModel.get("id")),
+							nameDisplay: nameDisplay,
+							nameFirst: userModel.get("nameFirst"),
+							nameLast: userModel.get("nameLast"),
+							permissions: {
+								edges: userModel.get("Permissions").map(permissionModel => {
+									return {
+										node: { permission: permissionModel.get("permission") }
+									};
+								})
+							}
+						},
+						"graphql response doesn't match the database"
+					);
+
+					t.deepEqual(
+						body.data.upsertUser,
+						{
+							id: toGlobalId(User.name, userModel.get("id")),
+							nameDisplay,
+							nameFirst,
+							nameLast,
+							permissions: {
+								edges: [{ node: { permission: permission1 } }]
+							}
+						},
+						"graphql response doesn't match the input"
+					);
 
 					//update existing
 
@@ -278,25 +334,68 @@ module.exports = (test, initPromise) => {
 									id,
 									nameDisplay,
 									nameFirst,
-									nameLast
+									nameLast,
+									permissions{
+										edges{
+											node{
+												permission
+											}
+										}
+									}
 								}
 							}`,
-							{ user: { id: databaseId, nameDisplay: "displayName" } }
+							{
+								user: {
+									id: databaseId,
+									nameDisplay: nameDisplay2,
+									permissions: [permission2]
+								}
+							}
 						)
 						.then(body => {
-							if (body.errors) {
-								return Promise.reject(body.errors);
+							t.falsy(body.errors, "graphql returned errors");
+
+							t.truthy(body.data.upsertUser, "invalid graphql response");
+							if (body.data.upsertUser) {
+								t.truthy(body.data.upsertUser.id, "invalid graphql response");
 							}
 
-							if (!body.data.upsertUser || !body.data.upsertUser.id) {
-								return Promise.reject(new Error("Invalid response"));
-							}
+							return userModel.reload().then(() => {
+								t.deepEqual(
+									body.data.upsertUser,
+									{
+										id: toGlobalId(User.name, userModel.get("id")),
+										nameDisplay: userModel.get("nameDisplay"),
+										nameFirst: userModel.get("nameFirst"),
+										nameLast: userModel.get("nameLast"),
+										permissions: {
+											edges: userModel
+												.get("Permissions")
+												.map(permissionModel => {
+													return {
+														node: {
+															permission: permissionModel.get("permission")
+														}
+													};
+												})
+										}
+									},
+									"graphql response doesn't match the database"
+								);
 
-							t.deepEqual(body.data.upsertUser, {
-								id: toGlobalId(User.name, userModel.get("id")),
-								nameDisplay: "displayName",
-								nameFirst: userModel.get("nameFirst"),
-								nameLast: userModel.get("nameLast")
+								t.deepEqual(
+									body.data.upsertUser,
+									{
+										id: toGlobalId(User.name, userModel.get("id")),
+										nameDisplay: nameDisplay2,
+										nameFirst,
+										nameLast,
+										permissions: {
+											edges: [{ node: { permission: permission2 } }]
+										}
+									},
+									"graphql response doesn't match input"
+								);
 							});
 						});
 				});
@@ -305,15 +404,9 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.non-priv.user.upsert", t => {
 		//create a new one
-		const nameDisplay = Math.random()
-				.toString()
-				.substring(2),
-			nameFirst = Math.random()
-				.toString()
-				.substring(2),
-			nameLast = Math.random()
-				.toString()
-				.substring(2);
+		const nameDisplay = generateRandomString(15),
+			nameFirst = generateRandomString(15),
+			nameLast = generateRandomString(15);
 
 		return nonPrivClient
 			.query(
@@ -334,15 +427,9 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.anonymous.user.upsert", t => {
 		//create a new one
-		const nameDisplay = Math.random()
-				.toString()
-				.substring(2),
-			nameFirst = Math.random()
-				.toString()
-				.substring(2),
-			nameLast = Math.random()
-				.toString()
-				.substring(2);
+		const nameDisplay = generateRandomString(15),
+			nameFirst = generateRandomString(15),
+			nameLast = generateRandomString(15);
 
 		return anonClient
 			.query(
@@ -363,15 +450,9 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.authenticated.user.delete", t => {
 		//create a new one
-		const nameDisplay = Math.random()
-				.toString()
-				.substring(2),
-			nameFirst = Math.random()
-				.toString()
-				.substring(2),
-			nameLast = Math.random()
-				.toString()
-				.substring(2);
+		const nameDisplay = generateRandomString(15),
+			nameFirst = generateRandomString(15),
+			nameLast = generateRandomString(15);
 
 		return User.create({
 			nameDisplay,
@@ -386,18 +467,15 @@ module.exports = (test, initPromise) => {
 					{ id: userModel.get("id") }
 				)
 				.then(body => {
-					if (body.errors) {
-						return Promise.reject(body.errors);
-					}
+					t.falsy(body.errors, "graphql returned errors");
 
-					if (typeof body.data.deleteUser === undefined) {
-						return Promise.reject(new Error("Invalid response"));
-					}
-
-					t.true(body.data.deleteUser);
+					t.true(
+						body.data.deleteUser,
+						"graphql reports that the user wasn't deleted"
+					);
 
 					return User.findById(userModel.get("id")).then(newUserModel => {
-						t.falsy(newUserModel);
+						t.falsy(newUserModel, "The user was still found in the database");
 					});
 				});
 		});
@@ -405,15 +483,9 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.non-priv.user.delete", t => {
 		//create a new one
-		const nameDisplay = Math.random()
-				.toString()
-				.substring(2),
-			nameFirst = Math.random()
-				.toString()
-				.substring(2),
-			nameLast = Math.random()
-				.toString()
-				.substring(2);
+		const nameDisplay = generateRandomString(15),
+			nameFirst = generateRandomString(15),
+			nameLast = generateRandomString(15);
 
 		return User.create({
 			nameDisplay,
@@ -435,15 +507,9 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.anon.user.delete", t => {
 		//create a new one
-		const nameDisplay = Math.random()
-				.toString()
-				.substring(2),
-			nameFirst = Math.random()
-				.toString()
-				.substring(2),
-			nameLast = Math.random()
-				.toString()
-				.substring(2);
+		const nameDisplay = generateRandomString(15),
+			nameFirst = generateRandomString(15),
+			nameLast = generateRandomString(15);
 
 		return User.create({
 			nameDisplay,

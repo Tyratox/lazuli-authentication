@@ -183,14 +183,14 @@ User.getUserByPassportProfile = function(profile) {
  */
 User.register = function(firstName, email, locale) {
 	let lastName = "";
-	let names = firstName.split(" ");
+	const names = firstName.split(" ");
 
 	if (names.length === 2) {
 		firstName = names[0];
 		lastName = names[1];
 	}
 
-	let userData = {
+	const userData = {
 		nameDisplay: firstName,
 		nameFirst: firstName,
 
@@ -211,7 +211,7 @@ User.register = function(firstName, email, locale) {
 			return Promise.reject("This email is already registered!");
 		} else {
 			return this.create(userData).then(user => {
-				user.initEmailVerification(true).then(() => {
+				return user.initEmailVerification(true).then(() => {
 					eventEmitter.emit("model.user.register.after", user);
 					return Promise.resolve(user);
 				});
@@ -318,13 +318,13 @@ User.prototype.updateFromPassportProfile = function(profile) {
  * @return {Promise}         A promise to check whether the pas
  */
 User.prototype.verifyPassword = function(password) {
-	let { hash } = generateHash(
+	const { hash } = generateHash(
 		password,
 		this.get("passwordSalt"),
 		this.get("passwordAlgorithm")
 	);
 
-	let { hash: newHash, newAlgorithm } = generateHash(
+	const { hash: newHash, newAlgorithm } = generateHash(
 		password,
 		this.get("passwordSalt")
 	);
@@ -358,7 +358,7 @@ User.prototype.updatePassword = function(password, passwordResetCode) {
 		this.get("passwordResetCode") === passwordResetCode
 	) {
 		if (this.get("passwordResetCodeExpirationDate") >= new Date()) {
-			let { hash, salt, algorithm } = generateHash(password);
+			const { hash, salt, algorithm } = generateHash(password);
 
 			this.set({
 				passwordHash: hash,
@@ -385,8 +385,8 @@ User.prototype.updatePassword = function(password, passwordResetCode) {
  * @return {Promise} A promise to check whether the email was sent
  */
 User.prototype.initPasswordReset = function() {
-	let passwordResetCode = generateRandomString(TOKEN_LENGTH);
-	let expirationDate = Date.now() + RESET_CODE_LIFETIME * 1000;
+	const passwordResetCode = generateRandomString(TOKEN_LENGTH);
+	const expirationDate = Date.now() + RESET_CODE_LIFETIME * 1000;
 
 	this.set("passwordResetCode", passwordResetCode);
 	this.set("passwordResetCodeExpirationDate", expirationDate);
@@ -408,7 +408,7 @@ User.prototype.initPasswordReset = function() {
  * @return {Promise} A promise to check whether the email was sent
  */
 User.prototype.initEmailVerification = function(registration = false) {
-	let emailVerificationCode = generateRandomString(CONFIRM_TOKEN_LENGTH);
+	const emailVerificationCode = generateRandomString(CONFIRM_TOKEN_LENGTH);
 
 	return sendEmail(
 		this.get("emailUnverified"),
@@ -489,7 +489,7 @@ User.prototype.doesHavePermissions = function(permissionsNeeded = []) {
 			return permission.get("permission");
 		});
 
-		let missing = permissionsNeeded.filter(permission => {
+		const missing = permissionsNeeded.filter(permission => {
 			for (let i = 0; i < permissions.length; i++) {
 				// has exactly this permission or has a higher level permission
 
@@ -532,12 +532,12 @@ User.prototype.setPermissionArray = function(permissions) {
 			permissions,
 			(permission, callback) => {
 				Permission.findOrCreate({
-					where: { permission: permission },
-					defaults: { permission: permission }
+					where: { permission },
+					defaults: { permission }
 				})
 					.then(result => {
 						let promises = [];
-						let permissionInstance = result[0],
+						const permissionInstance = result[0],
 							created = result[1];
 
 						permissionInstances.push(permissionInstance);

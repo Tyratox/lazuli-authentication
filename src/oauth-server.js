@@ -96,9 +96,17 @@ const initOauthServerExchange = oauth2Server => {
 						);
 					}
 
-					return OauthAccessToken.generateToken().then(token => {
+					//Delete the auth code now that it has been used
+					const clientId = authCode.get("oauthClientId"),
+						userId = authCode.get("userId");
+
+					return OauthAccessToken.generateToken(
+						userId,
+						clientId,
+						Date.now() + ACCESS_TOKEN_LIFETIME * 1000
+					).then(({ model, token }) => {
 						// Create an access token
-						const expirationDate = Date.now() + ACCESS_TOKEN_LIFETIME * 1000;
+
 						const tokenData = {
 							token,
 							clientId: clientId,
@@ -106,36 +114,18 @@ const initOauthServerExchange = oauth2Server => {
 							expires: expirationDate
 						};
 
-						//Delete the auth code now that it has been used
-						const clientId = authCode.get("oauthClientId"),
-							userId = authCode.get("userId");
-
-						let promises = [
-							OauthCode.destroy({
-								where: {
-									$or: [
-										{
-											expires: { $lt: new Date() }
-										},
-										{
-											id: authCode.get("id")
-										}
-									]
-								}
-							})
-						];
-
-						//the 'key' here is 'hash' and not 'token' as in 'tokenData'!
-						promises.push(
-							OauthAccessToken.create({
-								hash: OauthAccessToken.hashToken(tokenData.token),
-								expires: expirationDate,
-								userId: userId,
-								oauthClientId: clientId
-							})
-						);
-
-						return Promise.all(promises).then(() => {
+						return OauthCode.destroy({
+							where: {
+								$or: [
+									{
+										expires: { $lt: new Date() }
+									},
+									{
+										id: authCode.get("id")
+									}
+								]
+							}
+						}).then(() => {
 							callback(null, tokenData);
 						});
 					});

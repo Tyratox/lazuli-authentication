@@ -23,6 +23,8 @@ const { nodeInterface, attributeFieldsCache } = require("lazuli-require")(
 	"lazuli-core/globals/sequelize"
 );
 
+const { protectGraphqlSchemaFields } = require("../utilities/graphql");
+
 const OauthClient = require("../models/oauth-client");
 
 /**
@@ -100,12 +102,15 @@ module.exports = new GraphQLObjectType({
 			edgeFields: {}
 		});
 
-		return {
+		return protectGraphqlSchemaFields(OauthClient.name, ["id"], {
 			...attributeFields(OauthClient, {
 				globalId: true,
 				allowNull: false,
 				cache: attributeFieldsCache
 			}),
+			secret: {
+				type: GraphQLString
+			},
 			...valueFilter.filterable("graphql.type.oauth-client.association", {
 				user: {
 					type: oauthClientUserConnection.connectionType,
@@ -128,7 +133,7 @@ module.exports = new GraphQLObjectType({
 					resolve: oauthClientOauthRedirectUriConnection.resolve
 				}
 			})
-		};
+		});
 	},
 	interfaces: [nodeInterface]
 });

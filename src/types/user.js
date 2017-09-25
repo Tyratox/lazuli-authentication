@@ -23,6 +23,7 @@ const { nodeInterface, attributeFieldsCache } = require("lazuli-require")(
 	"lazuli-core/globals/sequelize"
 );
 
+const { protectGraphqlSchemaFields } = require("../utilities/graphql");
 const User = require("../models/user");
 
 /**
@@ -153,7 +154,7 @@ module.exports = new GraphQLObjectType({
 			edgeFields: {}
 		});
 
-		return {
+		return protectGraphqlSchemaFields(User.name, [], {
 			...attributeFields(User, {
 				globalId: true,
 				allowNull: false,
@@ -186,7 +187,7 @@ module.exports = new GraphQLObjectType({
 					resolve: userOauthClientConnection.resolve
 				}
 			})
-		};
+		});
 	},
 	interfaces: [nodeInterface]
 });

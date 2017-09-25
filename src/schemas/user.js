@@ -20,7 +20,6 @@ const valueFilter = require("lazuli-require")(
 );
 const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
 
-const { pick } = require("../utilities/object");
 const { escapeLikeString } = require("../utilities/sql");
 
 const User = require("../models/user");
@@ -52,24 +51,7 @@ module.exports.query = {
 				);
 			}
 
-			return resolver(User)(root, args, context, info).then(model => {
-				let json = model.get({ plain: true });
-
-				return request.user.doesHavePermission("admin").then(hasPermission => {
-					if (hasPermission) {
-						//If the user is an admin, return the full object
-						return Promise.resolve(json);
-					} else {
-						//if not, return a few selected keys
-						return Promise.resolve(
-							pick(
-								json,
-								valueFilter.filterable("graphql.query.user.public.props", [])
-							)
-						);
-					}
-				});
-			});
+			return resolver(User)(root, args, context, info);
 		}
 	},
 	users: {
@@ -154,33 +136,7 @@ module.exports.query = {
 								findOptions
 							);
 						}
-					})(root, args, context, info).then(models => {
-						return request.user
-							.doesHavePermission("admin")
-							.then(hasPermission => {
-								if (hasPermission) {
-									//if the user is an admin, return the full json object
-									return Promise.resolve(
-										models.map(model => {
-											return model.get({ plain: true });
-										})
-									);
-								} else {
-									//if not return a few selected keys
-									return Promise.resolve(
-										models.map(model => {
-											return pick(
-												model.get({ plain: true }),
-												valueFilter.filterable(
-													"graphql.query.users.public.props",
-													[]
-												)
-											);
-										})
-									);
-								}
-							});
-					});
+					})(root, args, context, info);
 				});
 		}
 	}
@@ -201,91 +157,87 @@ module.exports.mutation = {
 			//first check if the passed user object meets all requirements. graphql
 			//only checks the input types.
 			const staticValidation = Joi.validate(user, UserInputTypeValidation);
+			const { request } = context;
 
-			if (!staticValidation.error) {
-				//If there's no error check what we need to do: update or insert
-				let promise;
+			if (staticValidation.error) {
+				return Promise.reject(staticValidation.error);
+			}
 
-				const { request } = context;
+			return Promise.resolve()
+				.then(() => {
+					//If there's no error check what we need to do: update or insert
 
-				if (user.id) {
-					//if the user object contains an id it's not sure yet what action
-					//should be taken.
-					//should a user with the given id exist, it will be updated
-					promise = User.findById(user.id).then(userModel => {
-						if (userModel) {
-							if (request.user) {
+					if (user.id) {
+						//if the user object contains an id it's not sure yet what action
+						//should be taken.
+						//should a user with the given id exist, it will be updated
+						return User.findById(user.id).then(userModel => {
+							if (userModel) {
+								if (!request.user) {
+									return Promise.reject(
+										new Error(
+											"Access Denied! You are not allowed to update this user!"
+										)
+									);
+								}
 								return request.user
 									.doesHavePermission("admin.user.update")
 									.then(hasPermission => {
 										if (
-											hasPermission ||
-											userModel.get("id") === request.user.get("id")
+											!hasPermission &&
+											userModel.get("id") !== request.user.get("id")
 										) {
-											return Promise.resolve(userModel);
-										} else {
 											return Promise.reject(
 												new Error(
 													"Access Denied! You are not allowed to update this user!"
 												)
 											);
 										}
+
+										return Promise.resolve(userModel);
 									});
 							} else {
-								return Promise.reject(
-									new Error(
-										"Access Denied! You are not allowed to update this user!"
-									)
-								);
-							}
-						} else {
-							//if not, a new user with the given id will be created
-							request.user
-								.doesHavePermission("admin.user.create")
-								.then(hasPermission => {
-									if (hasPermission) {
+								//if not, a new user with the given id will be created
+								return request.user
+									.doesHavePermission("admin.user.create")
+									.then(hasPermission => {
+										if (!hasPermission) {
+											return Promise.reject(
+												new Error(
+													"Access Denied! You're not allowed to create a new user!"
+												)
+											);
+										}
 										return User.create({ id: user.id });
-									} else {
-										return Promise.reject(
-											new Error(
-												"Access Denied! You're not allowed to create a new user!"
-											)
-										);
-									}
-								});
+									});
+							}
+						});
+					} else {
+						//if the user object doesn't contain an id, a new user will be created
+						if (!request.user) {
+							return Promise.reject(
+								new Error(
+									"Access Denied! You're not allowed to create a new user!"
+								)
+							);
 						}
-					});
-				} else {
-					//if the user object doesn't contain an id, a new user will be created
-					if (request.user) {
-						promise = request.user
+						return request.user
 							.doesHavePermission("admin.user.create")
 							.then(hasPermission => {
-								if (hasPermission) {
-									return User.create();
-								} else {
+								if (!hasPermission) {
 									return Promise.reject(
 										new Error(
 											"Access Denied! You're not allowed to create a new user!"
 										)
 									);
 								}
+								return User.create();
 							});
-					} else {
-						promise = Promise.reject(
-							new Error(
-								"Access Denied! You're not allowed to create a new user!"
-							)
-						);
 					}
-				}
-
-				//all of the previous possibilities will return a promise returning the
-				//user model to update
-				return promise.then(userModel => {
-					if (!userModel) {
-						return Promise.reject(new Error("Something went terribly wrong!"));
-					}
+				})
+				.then(userModel => {
+					//all of the previous possibilities will return a promise returning the
+					//user model to update
 
 					//if the user posseses required permission, all given keys will be
 					//updated
@@ -315,20 +267,19 @@ module.exports.mutation = {
 									//after saving all columns in the user table we also have to
 									//update the associations
 
-									//if the user is allowed to, we update the models permissions
-									if (user.permissions) {
-										return request.user
-											.doesHavePermission("admin")
-											.then(hasPermission => {
-												if (hasPermission) {
-													return userModel.setPermissionArray(user.permissions);
-												} else {
-													return Promise.reject();
-												}
-											});
-									} else {
+									if (!user.permissions) {
 										return Promise.resolve();
 									}
+									//if the user is allowed to, we update the models permissions
+									return request.user
+										.doesHavePermission("admin")
+										.then(hasPermission => {
+											if (hasPermission) {
+												return userModel.setPermissionArray(user.permissions);
+											} else {
+												return Promise.reject();
+											}
+										});
 								})
 								.then(() => {
 									//in the end, we return the updated user object by using
@@ -342,9 +293,6 @@ module.exports.mutation = {
 								});
 						});
 				});
-			} else {
-				return Promise.reject(staticValidation.error);
-			}
 		}
 	},
 	deleteUser: {
