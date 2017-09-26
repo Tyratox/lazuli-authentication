@@ -1,4 +1,5 @@
 const async = require("async");
+const path = require("path");
 const Sequelize = require("sequelize");
 
 const {
@@ -393,7 +394,10 @@ User.prototype.initPasswordReset = function() {
 
 	return sendEmail(
 		this.get("emailVerified"),
-		__dirname + "/../templates/emails/password-reset",
+		valueFilter.filter(
+			"email.password-reset",
+			path.resolve(__dirname, "/../templates/emails/password-reset")
+		),
 		this.get("locale"),
 		{ user: this.get() }
 	).then(() => {
@@ -412,7 +416,10 @@ User.prototype.initEmailVerification = function(registration = false) {
 
 	return sendEmail(
 		this.get("emailUnverified"),
-		__dirname + "/../templates/emails/email-confirmation",
+		valueFilter.filter(
+			"email.email-confirmation",
+			path.resolve(__dirname, "/../templates/emails/email-confirmation")
+		),
 		this.get("locale"),
 		{
 			user: this.get()

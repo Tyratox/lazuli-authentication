@@ -60,17 +60,13 @@ const initOauthServerGrant = oauth2Server => {
 
 			const codeValue = OauthCode.generateCode();
 
-			let code = OauthCode.build({
+			// Save the auth code and check for errors
+			OauthCode.create({
 				hash: OauthCode.hashCode(codeValue),
 				expires: Date.now() + AUTH_CODE_LIFETIME * 1000,
 				userId: user.get("id"),
 				oauthClientId: client.get("id")
-			});
-
-			let promises = [code.save()];
-
-			// Save the auth code and check for errors
-			Promise.all(promises)
+			})
 				.then(() => {
 					return callback(null, codeValue);
 				})
