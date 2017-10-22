@@ -1,11 +1,3 @@
-const {
-	PIWIK_TRACKING_SITE_BASE_URL,
-	PIWIK_TRACKING_USER_AGENT,
-	DEFAULT_REDIRECT_URI
-} = require("lazuli-require")("lazuli-config");
-
-const piwikTracker = require("lazuli-require")("lazuli-piwik-tracker");
-
 const User = require("./models/user");
 
 /**
@@ -22,13 +14,6 @@ module.exports.passwordReset = () => {
 					user
 						.updatePassword(request.body.password, request.body.resetCode)
 						.then(() => {
-							piwikTracker.track({
-								url: PIWIK_TRACKING_SITE_BASE_URL + request.path,
-								action_name: "Authentication/PasswordReset",
-								urlref: request.get("Referrer"),
-								ua: PIWIK_TRACKING_USER_AGENT,
-								uid: user.emailVerified
-							});
 							response.redirect("/views/login");
 						})
 						.catch(next);
@@ -113,16 +98,6 @@ const auth = (err, request, response, user, defaultRedirectUri, next) => {
 module.exports.authFacebookCallback = passport => {
 	return (request, response, next) => {
 		passport.authenticate("facebook", (err, user, info) => {
-			if (!err && user) {
-				piwikTracker.track({
-					url: PIWIK_TRACKING_SITE_BASE_URL + request.path,
-					action_name: "Authentication/FacebookLogin",
-					urlref: request.get("Referrer"),
-					ua: PIWIK_TRACKING_USER_AGENT,
-					uid: user.get("emailVerified")
-				});
-			}
-
 			auth(err, request, response, user, DEFAULT_REDIRECT_URI, next);
 		})(request, response, next);
 	};
@@ -136,16 +111,6 @@ module.exports.authFacebookCallback = passport => {
 module.exports.authGoogleCallback = passport => {
 	return (request, response, next) => {
 		passport.authenticate("google", (err, user, info) => {
-			if (!err && user) {
-				piwikTracker.track({
-					url: PIWIK_TRACKING_SITE_BASE_URL + request.path,
-					action_name: "Authentication/GoogleLogin",
-					urlref: request.get("Referrer"),
-					ua: PIWIK_TRACKING_USER_AGENT,
-					uid: user.get("emailVerified")
-				});
-			}
-
 			auth(err, request, response, user, DEFAULT_REDIRECT_URI, next);
 		})(request, response, next);
 	};
@@ -171,13 +136,6 @@ module.exports.verifyEmail = () => {
 							user
 								.updatePassword(password, emailVerificationCode)
 								.then(() => {
-									piwikTracker.track({
-										url: PIWIK_TRACKING_SITE_BASE_URL + request.path,
-										action_name: "Authentication/VerifyEmail",
-										urlref: request.get("Referrer"),
-										ua: PIWIK_TRACKING_USER_AGENT,
-										uid: email
-									});
 									response.redirect("/views/login");
 								})
 								.catch(next);
@@ -207,13 +165,6 @@ module.exports.registration = () => {
 
 		User.register(firstName, email, locale)
 			.then(() => {
-				piwikTracker.track({
-					url: PIWIK_TRACKING_SITE_BASE_URL + request.path,
-					action_name: "Authentication/Registration",
-					urlref: request.get("Referrer"),
-					ua: PIWIK_TRACKING_USER_AGENT,
-					uid: email
-				});
 				return response.redirect(
 					"/views/verify-email?register=true&email=" + email
 				);
@@ -246,16 +197,6 @@ module.exports.isAuthenticated = (request, response, next) => {
 module.exports.authLocal = passport => {
 	return (request, response, next) => {
 		passport.authenticate("local", (err, user, info) => {
-			if (!err && user) {
-				piwikTracker.track({
-					url: PIWIK_TRACKING_SITE_BASE_URL + request.path,
-					action_name: "Authentication/AuthLocal",
-					urlref: request.get("Referrer"),
-					ua: PIWIK_TRACKING_USER_AGENT,
-					uid: user.emailVerified
-				});
-			}
-
 			auth(err, request, response, user, DEFAULT_REDIRECT_URI, next);
 		})(request, response, next);
 	};

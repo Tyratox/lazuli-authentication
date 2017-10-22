@@ -6,7 +6,7 @@
  * @return {Object}                   The protected field object
  */
 const protectGraphqlSchemaFields = (name = "", exclude = [], fields = {}) => {
-	const protected = { ...fields };
+	const protectedFields = { ...fields };
 
 	Object.keys(fields).forEach(key => {
 		if (exclude.indexOf(key) !== -1) {
@@ -15,7 +15,7 @@ const protectGraphqlSchemaFields = (name = "", exclude = [], fields = {}) => {
 
 		const origResolve = fields[key].resolve;
 
-		protected[key].resolve = (model, args, context, info) => {
+		protectedFields[key].resolve = (model, args, context, info) => {
 			const { request } = context;
 
 			return Promise.resolve()
@@ -49,7 +49,7 @@ const protectGraphqlSchemaFields = (name = "", exclude = [], fields = {}) => {
 		};
 	});
 
-	return protected;
+	return protectedFields;
 };
 
 module.exports.protectGraphqlSchemaFields = protectGraphqlSchemaFields;

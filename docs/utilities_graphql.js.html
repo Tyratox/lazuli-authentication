@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: models/permission.js</title>
+    <title>JSDoc: Source: utilities/graphql.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: models/permission.js</h1>
+    <h1 class="page-title">Source: utilities/graphql.js</h1>
 
     
 
@@ -26,56 +26,61 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>const Sequelize = require("sequelize");
-
-const eventEmitter = require("lazuli-require")(
-	"lazuli-core/globals/event-emitter"
-);
-const valueFilter = require("lazuli-require")(
-	"lazuli-core/globals/value-filter"
-);
-const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
-
-const Permission = sequelize.define(
-	"permission",
-	valueFilter.filterable("model.permission.attributes", {
-		permission: {
-			type: Sequelize.STRING,
-			unique: true
-		}
-	}),
-	valueFilter.filterable("model.permission.options", {
-		charset: "utf8",
-		collate: "utf8_unicode_ci"
-	})
-);
-
-/**
- * Associates this model with others
- * @param  {Object} models An object containing all registered database models
- * @return {void}
+            <pre class="prettyprint source linenums"><code>/**
+ * Protects graphql fields by adding a resolver and checking for permissions
+ * @param  {String} [name=""]         The models name, used in the permission string
+ * @param  {Array}  [publicFields=[]] Fields that shouldn't be protected
+ * @param  {Object} [fields={}]       The fields object to protect
+ * @return {Object}                   The protected field object
  */
-Permission.associate = function(models) {
-	eventEmitter.emit("model.permission.association.before", this);
+const protectGraphqlSchemaFields = (name = "", exclude = [], fields = {}) => {
+	const protectedFields = { ...fields };
 
-	this.Users = this.belongsToMany(models.User, {
-		as: "Users",
-		foreignKey: "permissionId",
-		otherKey: "userId",
-		through: "permission_relations"
+	Object.keys(fields).forEach(key => {
+		if (exclude.indexOf(key) !== -1) {
+			return; //continue
+		}
+
+		const origResolve = fields[key].resolve;
+
+		protectedFields[key].resolve = (model, args, context, info) => {
+			const { request } = context;
+
+			return Promise.resolve()
+				.then(() => {
+					if (!request.user) {
+						return Promise.reject(
+							new Error(
+								"Access Denied! You have to be logged in to access this field!"
+							)
+						);
+					}
+					return request.user
+						.doesHavePermission("admin." + name + ".read." + key)
+						.then(havePermission => {
+							if (!havePermission) {
+								return Promise.reject(
+									new Error(
+										"Access Denied! You're not allowed to access this field!"
+									)
+								);
+							}
+
+							return Promise.resolve(model.get(key));
+						});
+				})
+				.then(value => {
+					return origResolve
+						? origResolve(model, args, context, info)
+						: Promise.resolve(value);
+				});
+		};
 	});
 
-	eventEmitter.emit("model.permission.association.after", this);
-
-	this.graphQlType = require("../types/permission");
+	return protectedFields;
 };
 
-eventEmitter.addListener(
-	"model.association",
-	Permission.associate.bind(Permission)
-);
-
-module.exports = Permission;
+module.exports.protectGraphqlSchemaFields = protectGraphqlSchemaFields;
 </code></pre>
         </article>
     </section>

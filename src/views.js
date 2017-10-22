@@ -1,6 +1,5 @@
 const { LOCALES } = require("lazuli-require")("lazuli-config");
 const i18n = require("lazuli-require")("lazuli-i18n");
-const piwikTracker = require("lazuli-require")("lazuli-piwik-tracker");
 
 const ejs = require("ejs");
 
@@ -25,13 +24,6 @@ const loginView = () => {
 				if (err) {
 					return next(err);
 				}
-
-				piwikTracker.track({
-					url: PIWIK_TRACKING_SITE_BASE_URL + request.path,
-					action_name: "Authentication/Login View",
-					urlref: request.get("Referrer"),
-					ua: PIWIK_TRACKING_USER_AGENT
-				});
 
 				response.setHeader("Content-Type", "text/html");
 				response.end(str);
@@ -101,13 +93,6 @@ const mailVerificationView = () => {
 					return next(err);
 				}
 
-				piwikTracker.track({
-					url: PIWIK_TRACKING_SITE_BASE_URL + request.path,
-					action_name: "Authentication/MailVerification View",
-					urlref: request.get("Referrer"),
-					ua: PIWIK_TRACKING_USER_AGENT
-				});
-
 				response.setHeader("Content-Type", "text/html");
 				response.end(str);
 			}
@@ -139,13 +124,6 @@ const passwordResetView = () => {
 				if (err) {
 					return next(err);
 				}
-
-				piwikTracker.track({
-					url: PIWIK_TRACKING_SITE_BASE_URL + request.path,
-					action_name: "Authentication/PasswordReset View",
-					urlref: request.get("Referrer"),
-					ua: PIWIK_TRACKING_USER_AGENT
-				});
 
 				response.setHeader("Content-Type", "text/html");
 				response.end(str);

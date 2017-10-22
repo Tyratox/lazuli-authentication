@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: models/permission.js</title>
+    <title>JSDoc: Source: utilities/sql.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: models/permission.js</h1>
+    <h1 class="page-title">Source: utilities/sql.js</h1>
 
     
 
@@ -26,56 +26,14 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>const Sequelize = require("sequelize");
-
-const eventEmitter = require("lazuli-require")(
-	"lazuli-core/globals/event-emitter"
-);
-const valueFilter = require("lazuli-require")(
-	"lazuli-core/globals/value-filter"
-);
-const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
-
-const Permission = sequelize.define(
-	"permission",
-	valueFilter.filterable("model.permission.attributes", {
-		permission: {
-			type: Sequelize.STRING,
-			unique: true
-		}
-	}),
-	valueFilter.filterable("model.permission.options", {
-		charset: "utf8",
-		collate: "utf8_unicode_ci"
-	})
-);
-
-/**
- * Associates this model with others
- * @param  {Object} models An object containing all registered database models
- * @return {void}
+            <pre class="prettyprint source linenums"><code>/**
+ * Escapes a string for a sql like query
+ * @param  {String} value The string to escape
+ * @return {String}       The escaped string
  */
-Permission.associate = function(models) {
-	eventEmitter.emit("model.permission.association.before", this);
-
-	this.Users = this.belongsToMany(models.User, {
-		as: "Users",
-		foreignKey: "permissionId",
-		otherKey: "userId",
-		through: "permission_relations"
-	});
-
-	eventEmitter.emit("model.permission.association.after", this);
-
-	this.graphQlType = require("../types/permission");
+module.exports.escapeLikeString = value => {
+	return value.replace(/[\%\_]/g, "\\$&amp;");
 };
-
-eventEmitter.addListener(
-	"model.association",
-	Permission.associate.bind(Permission)
-);
-
-module.exports = Permission;
 </code></pre>
         </article>
     </section>

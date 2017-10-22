@@ -42,29 +42,30 @@ const BearerStrategy = require("passport-http-bearer").Strategy;
 const FacebookStrategy = require("passport-facebook").Strategy;
 const GoogleStrategy = require("passport-google-oauth").OAuth2Strategy;
 
+const User = require("./models/user");
+const Permission = require("./models/permission");
+const OauthProvider = require("./models/oauth-provider");
+const OauthClient = require("./models/oauth-client");
+const OauthRedirectUri = require("./models/oauth-redirect-uri");
+const OauthAccessToken = require("./models/oauth-access-token");
+
 /**
  * Enables the oauth client authentication in passport
- * @param  {Object} passport         The passport object which this method should be performed on
- * @param  {Object} OAuthClient      The oauth client database model
- * @param  {Object} OAuthRedirectUri The redirect uri database model
+ * @param  {Object} passport The passport object which this method should be performed on
  * @return {void}
  */
-module.exports.initOAuthClientAuthentication = (
-	passport,
-	OAuthClient,
-	OAuthRedirectUri
-) => {
+const initOauthClientAuthentication = passport => {
 	passport.use(
 		"client-local",
 		new LocalStrategy(
 			{ usernameField: "clientId", passwordField: "clientSecret" },
 			(clientId, clientSecret, callback) => {
-				OAuthClient.findOne({
+				OauthClient.findOne({
 					where: { id: clientId },
 					include: [
 						{
-							model: OAuthRedirectUri,
-							as: "OAuthRedirectUris"
+							model: OauthRedirectUri,
+							as: "OauthRedirectUris"
 						}
 					]
 				})
@@ -87,16 +88,15 @@ module.exports.initOAuthClientAuthentication = (
 		)
 	);
 };
+module.exports.initOauthClientAuthentication = initOauthClientAuthentication;
 
 /**
  * Enables the local user authentication in passport
- * @param  {Object} passport         The passport object which this method should be performed on
- * @param  {Object} User             The user database model
- * @param  {Object} OAuthRedirectUri The redirect uri database model
+ * @param  {Object} passport The passport object which this method should be performed on
  * @return {void}
  */
-module.exports.initLocalAuthentication = (passport, User) => {
-	this._passport.use(
+const initLocalAuthentication = passport => {
+	passport.use(
 		"local",
 		new LocalStrategy((email, password, done) => {
 			User.findOne({
@@ -118,22 +118,14 @@ module.exports.initLocalAuthentication = (passport, User) => {
 		})
 	);
 };
+module.exports.initLocalAuthentication = initLocalAuthentication;
 
 /**
  * Enables the oauth bearer authentication in passport
- * @param  {Object} passport            The passport object which this method should be performed on
- * @param  {Object} OAuthAccessToken    The oauth access token database model
- * @param  {Object} OAuthRedirectUri    The redirect uri database model
- * @param  {Object} User                The user database model
- * @param  {Object} Permission          The permission database model
+ * @param  {Object} passport The passport object which this method should be performed on
  * @return {void}
  */
-module.exports.initOAuthBearerAuthentication = (
-	passport,
-	OAuthAccessToken,
-	User,
-	Permission
-) => {
+const initOauthBearerAuthentication = passport => {
 	passport.use(
 		new BearerStrategy(
 			{
@@ -141,25 +133,17 @@ module.exports.initOAuthBearerAuthentication = (
 			},
 			(request, accessToken, callback) => {
 				//keeping the database clean
-				OAuthAccessToken.destroy({
+				OauthAccessToken.destroy({
 					where: { expires: { $lt: new Date() } }
 				})
 					.then(() => {
-						return OAuthAccessToken.findByToken(accessToken).then(token => {
+						return OauthAccessToken.findByToken(accessToken).then(token => {
 							// No token found
 							if (!token) {
 								return callback(new Error("The sent token is invalid!"));
 							}
 
-							return User.findOne({
-								where: { id: token.get("user_id") },
-								include: [
-									{
-										model: Permission,
-										as: "Permissions"
-									}
-								]
-							}).then(user => {
+							return User.findById(token.get("userId")).then(user => {
 								if (!user) {
 									// No user was found, so the token is invalid
 									return token.destroy().then(() => {
@@ -178,12 +162,22 @@ module.exports.initOAuthBearerAuthentication = (
 									if (
 										!request.requiredPermissions ||
 										request.requiredPermissions.length === 0 ||
-										(request.requiredPermissions &amp;&amp;
-											user.doesHavePermissions(request.requiredPermissions))
+										request.requiredPermissions
 									) {
-										//request.hasPermission not possible yet, as request.user
-										//isn't set yet
-										return callback(null, user);
+										return user
+											.doesHavePermissions(request.requiredPermissions)
+											.then(hasPermission => {
+												if (hasPermission) {
+													return callback(null, user);
+												} else {
+													return callback(
+														new Error(
+															"You don't have the permission to do this!"
+														),
+														false
+													);
+												}
+											});
 									}
 
 									return callback(
@@ -199,15 +193,14 @@ module.exports.initOAuthBearerAuthentication = (
 		)
 	);
 };
+module.exports.initOauthBearerAuthentication = initOauthBearerAuthentication;
 
 /**
  * Enables the facebook authentication in passport
- * @param  {Object} passport            The passport object which this method should be performed on
- * @param  {Object} User                The user database model
- * @param  {Object} OAuthProvider       The oauth provider database model
+ * @param  {Object} passport       The passport object which this method should be performed on
  * @return {void}
  */
-module.exports.initFacebookAuthentication = (passport, User, OAuthProvider) => {
+const initFacebookAuthentication = passport => {
 	passport.use(
 		new FacebookStrategy(
 			{
@@ -226,7 +219,7 @@ module.exports.initFacebookAuthentication = (passport, User, OAuthProvider) => {
 							.save()
 							.then(user => {
 								return user
-									.getOAuthProviders({ where: { type: "facebook" } })
+									.getOauthProviders({ where: { type: "facebook" } })
 									.then(providers => {
 										if (providers.length > 0) {
 											let provider = providers[0];
@@ -238,7 +231,7 @@ module.exports.initFacebookAuthentication = (passport, User, OAuthProvider) => {
 
 											return provider.save();
 										} else {
-											return OAuthProvider.create({
+											return OauthProvider.create({
 												type: "facebook",
 												accessToken,
 												refreshToken
@@ -257,15 +250,14 @@ module.exports.initFacebookAuthentication = (passport, User, OAuthProvider) => {
 		)
 	);
 };
+module.exports.initFacebookAuthentication = initFacebookAuthentication;
 
 /**
  * Enables the google authentication in passport
  * @param  {Object} passport            The passport object which this method should be performed on
- * @param  {Object} User                The user database model
- * @param  {Object} OAuthProvider       The oauth provider database model
  * @return {void}
  */
-module.exports.initGoogleAuthentication = (passport, User, OAuthProvider) => {
+const initGoogleAuthentication = passport => {
 	passport.use(
 		new GoogleStrategy(
 			{
@@ -283,7 +275,7 @@ module.exports.initGoogleAuthentication = (passport, User, OAuthProvider) => {
 							.save()
 							.then(user => {
 								return user
-									.getOAuthProviders({ where: { type: "google" } })
+									.getOauthProviders({ where: { type: "google" } })
 									.then(providers => {
 										if (providers.length > 0) {
 											let provider = providers[0];
@@ -295,7 +287,7 @@ module.exports.initGoogleAuthentication = (passport, User, OAuthProvider) => {
 
 											return provider.save();
 										} else {
-											return OAuthProvider.create({
+											return OauthProvider.create({
 												type: "google",
 												accessToken,
 												refreshToken
@@ -314,12 +306,13 @@ module.exports.initGoogleAuthentication = (passport, User, OAuthProvider) => {
 		)
 	);
 };
+module.exports.initGoogleAuthentication = initGoogleAuthentication;
 
 /**
  * Initializes the user serialization in the passport object
  * @return {void}
  */
-module.exports.initPassportSerialization = (passport, User, Permission) => {
+const initPassportSerialization = passport => {
 	passport.serializeUser((user, done) => {
 		done(null, user.get("id"));
 	});
@@ -340,34 +333,22 @@ module.exports.initPassportSerialization = (passport, User, Permission) => {
 			.catch(done);
 	});
 };
+module.exports.initPassportSerialization = initPassportSerialization;
 
 /**
  * Initializes the passport object
- * @param  {Object} passport         The passport object to initialize
- * @param  {Object} User             The user database model
- * @param  {Object} Permission       The permission database model
- * @param  {Object} OAuthProvider    The oauth provider database model
- * @param  {Object} OAuthClient      The oauth client database model
- * @param  {Object} OAuthRedirectUri The oauth redirect uri database model
- * @param  {Object} OAuthAccessToken The oauth access token database model
+ * @param  {Object} passport The passport object to initialize
  * @return {void}
  */
-module.exports.initPassport = (
-	passport,
-	User,
-	Permission,
-	OAuthProvider,
-	OAuthClient,
-	OAuthRedirectUri,
-	OAuthAccessToken
-) => {
+const initPassport = passport => {
 	initPassportSerialization(passport, User, Permission);
-	initOAuthClientAuthentication(passport, OAuthClient, OAuthRedirectUri);
+	initOauthClientAuthentication(passport, OauthClient, OauthRedirectUri);
 	initLocalAuthentication(passport, User);
-	initOAuthBearerAuthentication(passport, OAuthAccessToken, User, Permission);
-	initFacebookAuthentication(passport, User, OAuthProvider);
-	initGoogleAuthentication(passport, User, OAuthProvider);
+	initOauthBearerAuthentication(passport, OauthAccessToken, User, Permission);
+	initFacebookAuthentication(passport, User, OauthProvider);
+	initGoogleAuthentication(passport, User, OauthProvider);
 };
+module.exports.initPassport = initPassport;
 </code></pre>
         </article>
     </section>
@@ -378,13 +359,13 @@ module.exports.initPassport = (
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOAuthClient">authenticateOAuthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOAuthBearerAuthentication">initOAuthBearerAuthentication</a></li><li><a href="global.html#initOAuthClientAuthentication">initOAuthClientAuthentication</a></li><li><a href="global.html#initOAuthServer">initOAuthServer</a></li><li><a href="global.html#initOAuthServerExchange">initOAuthServerExchange</a></li><li><a href="global.html#initOAuthServerGrant">initOAuthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOauthClient">authenticateOauthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#escapeLikeString">escapeLikeString</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOauthBearerAuthentication">initOauthBearerAuthentication</a></li><li><a href="global.html#initOauthClientAuthentication">initOauthClientAuthentication</a></li><li><a href="global.html#initOauthServer">initOauthServer</a></li><li><a href="global.html#initOauthServerExchange">initOauthServerExchange</a></li><li><a href="global.html#initOauthServerGrant">initOauthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#mutation">mutation</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#pick">pick</a></li><li><a href="global.html#protectGraphqlSchemaFields">protectGraphqlSchemaFields</a></li><li><a href="global.html#query">query</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.4</a> on Sat Sep 02 2017 15:26:52 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Oct 22 2017 21:45:46 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

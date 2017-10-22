@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: models/permission.js</title>
+    <title>JSDoc: Source: types/oauth-code.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: models/permission.js</h1>
+    <h1 class="page-title">Source: types/oauth-code.js</h1>
 
     
 
@@ -26,7 +26,20 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>const Sequelize = require("sequelize");
+            <pre class="prettyprint source linenums"><code>const {
+	GraphQLObjectType,
+	GraphQLString,
+	GraphQLInt,
+	GraphQLEnumType,
+	GraphQLNonNull,
+	GraphQLList
+} = require("graphql");
+
+const {
+	resolver,
+	attributeFields,
+	relay: { sequelizeConnection }
+} = require("graphql-sequelize");
 
 const eventEmitter = require("lazuli-require")(
 	"lazuli-core/globals/event-emitter"
@@ -34,48 +47,67 @@ const eventEmitter = require("lazuli-require")(
 const valueFilter = require("lazuli-require")(
 	"lazuli-core/globals/value-filter"
 );
-const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
-
-const Permission = sequelize.define(
-	"permission",
-	valueFilter.filterable("model.permission.attributes", {
-		permission: {
-			type: Sequelize.STRING,
-			unique: true
-		}
-	}),
-	valueFilter.filterable("model.permission.options", {
-		charset: "utf8",
-		collate: "utf8_unicode_ci"
-	})
+const { nodeInterface, attributeFieldsCache } = require("lazuli-require")(
+	"lazuli-core/globals/sequelize"
 );
+
+const OauthCode = require("../models/oauth-code");
 
 /**
- * Associates this model with others
- * @param  {Object} models An object containing all registered database models
- * @return {void}
+ * The graphql object type for this model
+ * @type {GraphQLObjectType}
  */
-Permission.associate = function(models) {
-	eventEmitter.emit("model.permission.association.before", this);
+module.exports = new GraphQLObjectType({
+	name: OauthCode.name,
+	description: "An oauth code",
+	fields: () => {
+		const UserType = require("../types/user");
+		const OauthClientType = require("./oauth-client");
 
-	this.Users = this.belongsToMany(models.User, {
-		as: "Users",
-		foreignKey: "permissionId",
-		otherKey: "userId",
-		through: "permission_relations"
-	});
+		const oauthCodeUserConnection = sequelizeConnection({
+			name: "oauthCodeUser",
+			nodeType: UserType,
+			target: OauthCode.User,
+			where: function(key, value, currentWhere) {
+				return { [key]: value };
+			},
+			connectionFields: {},
+			edgeFields: {}
+		});
 
-	eventEmitter.emit("model.permission.association.after", this);
+		const oauthCodeOauthClientConnection = sequelizeConnection({
+			name: "oauthCodeOauthClient",
+			nodeType: OauthClientType,
+			target: OauthCode.OauthClient,
+			where: function(key, value, currentWhere) {
+				return { [key]: value };
+			},
+			connectionFields: {},
+			edgeFields: {}
+		});
 
-	this.graphQlType = require("../types/permission");
-};
-
-eventEmitter.addListener(
-	"model.association",
-	Permission.associate.bind(Permission)
-);
-
-module.exports = Permission;
+		return {
+			...attributeFields(OauthCode, {
+				globalId: true,
+				allowNull: false,
+				cache: attributeFieldsCache
+			}),
+			...valueFilter.filterable("graphql.type.oauth-code.association", {
+				user: {
+					type: oauthCodeUserConnection.connectionType,
+					args: oauthCodeUserConnection.connectionArgs,
+					resolve: oauthCodeUserConnection.resolve
+				},
+				oauthClient: {
+					type: oauthCodeOauthClientConnection.connectionType,
+					args: oauthCodeOauthClientConnection.connectionArgs,
+					resolve: oauthCodeOauthClientConnection.resolve
+				}
+			})
+		};
+	},
+	interfaces: [nodeInterface]
+});
 </code></pre>
         </article>
     </section>

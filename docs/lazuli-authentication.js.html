@@ -30,7 +30,9 @@
 	FACEBOOK_CALLBACK_PATH,
 	LOGIN_PATH,
 	GOOGLE_CALLBACK_PATH
-} = require("lazuli-config");
+} = require("lazuli-require")("lazuli-config");
+
+const graphqlHTTP = require("express-graphql");
 
 const {
 	loginView,
@@ -40,8 +42,8 @@ const {
 } = require("./views.js");
 
 const {
-	initOAuthServer,
-	authenticateOAuthClient,
+	initOauthServer,
+	authenticateOauthClient,
 	checkForImmediateApproval
 } = require("./oauth-server.js");
 
@@ -67,23 +69,44 @@ const {
 	verifyMailValidation
 } = require("./validation.js");
 
-import path from "path";
+const eventEmitter = require("lazuli-require")(
+	"lazuli-core/globals/event-emitter"
+);
+const valueFilter = require("lazuli-require")(
+	"lazuli-core/globals/value-filter"
+);
+const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
+const { expressServer, httpServer } = require("lazuli-require")(
+	"lazuli-core/globals/http-server"
+);
 
 /**
  * This is the authentication class which handles the registration and, of
  * course, the authentication of users
  */
 class Authentication {
-	/**
-	 * Creates an instance of the 'Authentication' class
-	 * @param  {Object}   eventEmitter The lazuli event emitter
-	 * @param  {Object}   valueFilter The lazuli value filter
-	 */
-	constructor(eventEmitter, valueFilter) {
-		valueFilter.add("model.directories", this.addModelPath);
+	constructor() {
+		valueFilter.add("sequelize.models", this.registerModels.bind(this));
+		valueFilter.add(
+			"graphql.schema.root.query.fields",
+			this.addGraphQlQueryFields.bind(this)
+		);
+		valueFilter.add(
+			"graphql.schema.root.mutation.fields",
+			this.addGraphQlMutationFields.bind(this)
+		);
 
-		eventEmitter.on("model.init.after", this.modelsAfter);
-		eventEmitter.on("rest.routing", this.routing);
+		eventEmitter.on(
+			"express.init.after",
+			this.addPassportMiddleware.bind(this)
+		);
+
+		valueFilter.add("graphql.middleware.before", middlewares => {
+			return [...middlewares, this.isBearerAuthenticated()];
+		});
+
+		eventEmitter.on("model.init.after", this.modelsAfter.bind(this));
+		eventEmitter.on("express.routing.rest", this.restRouting.bind(this));
 	}
 }
 
@@ -101,59 +124,78 @@ Authentication.prototype._oauth2Server = require("oauth2orize").createServer();
 Authentication.prototype._passport = require("passport");
 
 /**
+ * All models registered by this module
+ * @type {Object}
+ */
+Authentication.prototype._models = {
+	OauthAccessToken: require("./models/oauth-access-token"),
+	OauthClient: require("./models/oauth-client"),
+	OauthCode: require("./models/oauth-code"),
+	OauthProvider: require("./models/oauth-provider"),
+	OauthRedirectUri: require("./models/oauth-redirect-uri"),
+	Permission: require("./models/permission"),
+	User: require("./models/user")
+};
+
+/**
+ * Adds all required passport middleware to the passed express server
+ * @return {void}
+ */
+Authentication.prototype.addPassportMiddleware = function() {
+	expressServer.use(this._passport.initialize());
+	expressServer.use(this._passport.session());
+};
+
+/**
  * Initiates the oauth server and the passport object
  * @param  {Array} models  All registered models
  * @return {void}
  */
-Authentication.prototype.modelsAfter = models => {
-	initOAuthServer(
-		this._oauth2Server,
-		this._models.OAuthClient,
-		this._models.OAuthRedirectUri,
-		this._models.OAuthCode,
-		this._models.OAuthAccessToken
-	);
-	initPassport(
-		this._passport,
-		this._models.User,
-		this._models.Permission,
-		this._models.OAuthProvider,
-		this._models.OAuthClient,
-		this._models.OAuthRedirectUri,
-		this._models.OAuthAccessToken
-	);
+Authentication.prototype.modelsAfter = function(models) {
+	initOauthServer(this._oauth2Server);
+	initPassport(this._passport);
 
 	this.isBearerAuthenticated = isBearerAuthenticated(this._passport);
 };
 
 /**
- * Adds a model path in order to register the authentication related modules
- * @param {Array} paths The model paths to register
+ * Registeres new models
+ * @param  {Object} models All previously registered models
+ * @return {Object}        The new model object, including the old and new
+ */
+Authentication.prototype.registerModels = function(models) {
+	return {
+		...models,
+		...this._models
+	};
+};
+
+/**
+ * Adds a schema path in order to register the authentication related schemas
+ * @param {Array} paths The schema paths to register
  * @return {Array} The modified paths value
  */
-Authentication.prototype.addModelPath = paths => {
-	return [...paths, path.join(__dirname, "models")];
+Authentication.prototype.addSchemaPath = paths => {
+	return [...paths, path.join(__dirname, "schemas")];
 };
 
 /**
  * Sets up all the routing for this module
- * @param  {Object} httpServer The express server object
  * @return {void}
  */
-Authentication.prototype.routing = httpServer => {
-	this._setupGetRouting(httpServer);
-	this._setupPostRouting(httpServer);
+Authentication.prototype.restRouting = function() {
+	this._setupGetRouting();
+	this._setupPostRouting();
 };
 
 /**
  * Sets up all the REST 'GET' calls
  * @private
- * @param  {Object} httpServer The express server object
  * @return {void}
  */
-Authentication.prototype._setupGetRouting = httpServer => {
-	httpServer.get(
-		"/v1/auth/logged-in",
+Authentication.prototype._setupGetRouting = function() {
+	expressServer.get(
+		"/auth/logged-in",
 		this.isBearerAuthenticated(),
 		(request, response, next) => {
 			return response.end('{"loggedIn": true}');
@@ -163,134 +205,114 @@ Authentication.prototype._setupGetRouting = httpServer => {
 		}
 	);
 
-	httpServer.get(
-		"/views/login",
-		loginView(),
-		httpServer.catchInternalErrorView
+	expressServer.get("/views/login", loginView());
+
+	expressServer.get("/views/verify-email", mailVerificationView());
+
+	expressServer.get("/views/password-reset", passwordResetView());
+
+	expressServer.get(
+		"/auth/facebook/login/",
+		this._passport.authenticate("facebook", { scope: ["email"] })
 	);
 
-	httpServer.get(
-		"/views/verify-email",
-		mailVerificationView(),
-		httpServer.catchInternalErrorView
-	);
-
-	httpServer.get(
-		"/views/password-reset",
-		passwordResetView(),
-		httpServer.catchInternalErrorView
-	);
-
-	httpServer.get(
-		"/v1/auth/facebook/login/",
-		this._passport.authenticate("facebook", { scope: ["email"] }),
-		httpServer.serializeValidationErrors()
-	);
-
-	httpServer.get(
+	expressServer.get(
 		FACEBOOK_CALLBACK_PATH,
-		authFacebookCallback(this._passport),
-		httpServer.serializeValidationErrors(LOGIN_PATH)
+		authFacebookCallback(this._passport)
 	);
 
-	httpServer.get(
-		"/v1/auth/google/login/",
+	expressServer.get(
+		"/auth/google/login/",
 		this._passport.authenticate("google", {
 			scope: ["openid profile email"]
-		}),
-		httpServer.serializeValidationErrors(LOGIN_PATH)
+		})
 	);
-	httpServer.get(
-		GOOGLE_CALLBACK_PATH,
-		authGoogleCallback(this._passport),
-		serializeValidationErrors(LOGIN_PATH)
-	);
+	expressServer.get(GOOGLE_CALLBACK_PATH, authGoogleCallback(this._passport));
 
-	httpServer.get(
+	expressServer.get(
 		"/oauth2/authorize",
 		isAuthenticated,
-		authenticateOAuthClient(),
+		authenticateOauthClient(this._oauth2Server),
 		checkForImmediateApproval(),
-		oAuthDialogView(),
-		httpServer.catchInternalErrorView
+		oAuthDialogView()
 	);
 };
 
 /**
  * Sets up all the REST 'POST' calls
  * @private
- * @param  {Object} httpServer The express server object
  * @return {void}
  */
-Authentication.prototype.setupPostRouting = httpServer => {
-	httpServer.post(
-		"/v1/auth/local/login",
-		httpServer.validate(localLoginValidation), //Tracked in analytics
-		authLocal(this._passport),
-		httpServer.catchInternalErrorView
+Authentication.prototype._setupPostRouting = function() {
+	expressServer.post(
+		"/auth/local/login",
+		expressServer.validate(localLoginValidation), //Tracked in analytics
+		authLocal(this._passport)
 	);
 
-	httpServer.post(
-		"/v1/auth/init-password-reset",
-		httpServer.validate(initPasswordResetValidation),
-		initPasswordReset(this._models.User),
-		httpServer.catchInternalErrorView
+	expressServer.post(
+		"/auth/init-password-reset",
+		expressServer.validate(initPasswordResetValidation),
+		initPasswordReset()
 	);
 
-	httpServer.post(
-		"/v1/auth/password-reset",
-		validate(passwordResetValidation),
-		passwordReset(this._models.User),
-		serializeValidationErrors("/views/password-reset"),
-		httpServer.catchInternalErrorView
+	expressServer.post(
+		"/auth/password-reset",
+		expressServer.validate(passwordResetValidation),
+		passwordReset()
 	);
 
-	httpServer.post(
-		"/v1/auth/local/register",
-		httpServer.validate(localRegistrationValidation),
-		registration(this._models.User),
-		httpServer.catchInternalErrorView
+	expressServer.post(
+		"/auth/local/register",
+		expressServer.validate(localRegistrationValidation),
+		registration()
 	);
 
-	httpServer.post(
-		"/v1/auth/local/verify-email",
-		httpServer.validate(verifyMailValidation),
-		verifyEmail(this._models.User),
-		(error, request, response, next) => {
-			if (request.body.register) {
-				serializeValidationErrors("/views/verify-email?register=true")(
-					error,
-					request,
-					response,
-					next
-				);
-			} else {
-				serializeValidationErrors("/views/verify-email")(
-					error,
-					request,
-					response,
-					next
-				);
-			}
-		},
-		httpServer.catchInternalErrorView
+	expressServer.post(
+		"/auth/local/verify-email",
+		expressServer.validate(verifyMailValidation),
+		verifyEmail()
 	);
 
-	httpServer.post(
+	expressServer.post(
 		"/oauth2/authorize",
 		isAuthenticated,
-		this._oauth2Server.decision(),
-		httpServer.catchInternalErrorView
+		this._oauth2Server.decision()
 	);
 
-	httpServer.post(
+	expressServer.post(
 		"/oauth2/token",
 		this._passport.authenticate("client-local", {
 			session: false
 		}),
-		this._oauth2Server.token(),
-		httpServer.serializeValidationErrors(LOGIN_PATH)
+		this._oauth2Server.token()
 	);
+};
+
+/**
+ * Adds authentication related query fields
+ * @param  {Object} fields    The registered fields
+ * @return {Object}           The altered query fields
+ */
+Authentication.prototype.addGraphQlQueryFields = fields => {
+	return {
+		...fields,
+		...require("./schemas/user").query,
+		...require("./schemas/oauth-client").query
+	};
+};
+
+/**
+ * Adds authentication related mutation fields
+ * @param  {Object} fields    The registered fields
+ * @return {Object}           The altered query fields
+ */
+Authentication.prototype.addGraphQlMutationFields = fields => {
+	return {
+		...fields,
+		...require("./schemas/user").mutation,
+		...require("./schemas/oauth-client").mutation
+	};
 };
 
 module.exports = Authentication;
@@ -304,13 +326,13 @@ module.exports = Authentication;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOAuthClient">authenticateOAuthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOAuthBearerAuthentication">initOAuthBearerAuthentication</a></li><li><a href="global.html#initOAuthClientAuthentication">initOAuthClientAuthentication</a></li><li><a href="global.html#initOAuthServer">initOAuthServer</a></li><li><a href="global.html#initOAuthServerExchange">initOAuthServerExchange</a></li><li><a href="global.html#initOAuthServerGrant">initOAuthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOauthClient">authenticateOauthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#escapeLikeString">escapeLikeString</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOauthBearerAuthentication">initOauthBearerAuthentication</a></li><li><a href="global.html#initOauthClientAuthentication">initOauthClientAuthentication</a></li><li><a href="global.html#initOauthServer">initOauthServer</a></li><li><a href="global.html#initOauthServerExchange">initOauthServerExchange</a></li><li><a href="global.html#initOauthServerGrant">initOauthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#mutation">mutation</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#pick">pick</a></li><li><a href="global.html#protectGraphqlSchemaFields">protectGraphqlSchemaFields</a></li><li><a href="global.html#query">query</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.4</a> on Sat Sep 02 2017 15:26:52 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Oct 22 2017 21:45:46 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

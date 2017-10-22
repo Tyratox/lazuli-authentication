@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: schemas/user.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: schemas/user.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const {
+	GraphQLSchema,
+	GraphQLObjectType,
+	GraphQLString,
+	GraphQLBoolean,
+	GraphQLInt,
+	GraphQLNonNull,
+	GraphQLList
+} = require("graphql");
+
+const Joi = require("joi");
+
+const { resolver, attributeFields } = require("graphql-sequelize");
+
+const eventEmitter = require("lazuli-require")(
+	"lazuli-core/globals/event-emitter"
+);
+const valueFilter = require("lazuli-require")(
+	"lazuli-core/globals/value-filter"
+);
+const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
+
+const { escapeLikeString } = require("../utilities/sql");
+
+const User = require("../models/user");
+
+const UserInputType = require("../input-types/user");
+const UserInputTypeValidation = require("../graphql-validation/user");
+
+/**
+ * The user query schema
+ * @type {Object}
+ */
+module.exports.query = {
+	user: {
+		type: User.graphQlType,
+		args: {
+			id: {
+				description: "The id of the user",
+				type: new GraphQLNonNull(GraphQLInt)
+			}
+		},
+		resolve: (root, args, context, info) => {
+			const { request } = context;
+
+			if (!request.user) {
+				return Promise.reject(
+					new Error(
+						"Access Denied! You have to be logged in in order to view users!"
+					)
+				);
+			}
+
+			return resolver(User)(root, args, context, info);
+		}
+	},
+	users: {
+		type: new GraphQLList(User.graphQlType),
+		args: {
+			//generally allow to filter all fields
+			...attributeFields(User, { allowNull: true }),
+			limit: {
+				type: GraphQLInt
+			}
+		},
+		resolve: (root, args, context, info) => {
+			const { request } = context;
+
+			if (!request.user) {
+				return Promise.reject(
+					new Error(
+						"Access Denied! You have to be logged in, in order to list users!"
+					)
+				);
+			}
+
+			return request.user
+				.doesHavePermission("admin.user.list")
+				.then(hasPermission => {
+					return hasPermission
+						? Promise.resolve()
+						: Promise.reject(
+								new Error("Access Denied! You're not allowed to list users!")
+							);
+				})
+				.then(() => {
+					return request.user.doesHavePermission("admin.user");
+				})
+				.then(hasPermission => {
+					if (!hasPermission) {
+						//if the user doesn't have the permission,
+						//only allow uncritical search keys
+						args = pick(
+							args,
+							valueFilter.filterable("graphql.query.user.list.args", [
+								"id",
+								"nameDisplay",
+								"nameFirst",
+								"nameLast"
+							])
+						);
+					}
+
+					return resolver(User, {
+						before: (findOptions, args) => {
+							if (findOptions.where) {
+								if (findOptions.where.nameDisplay) {
+									findOptions.where.nameDisplay = {
+										$like: `%${escapeLikeString(args.nameDisplay)}%`
+									};
+								}
+								if (findOptions.where.nameFirst) {
+									findOptions.where.nameFirst = {
+										$like: `%${escapeLikeString(args.nameFirst)}%`
+									};
+								}
+								if (findOptions.where.nameLast) {
+									findOptions.where.nameLast = {
+										$like: `%${escapeLikeString(args.nameLast)}%`
+									};
+								}
+								if (findOptions.where.emailVerified) {
+									findOptions.where.emailVerified = {
+										$like: `%${args.emailVerified}%`
+									};
+								}
+								if (findOptions.where.locale) {
+									findOptions.where.locale = {
+										$like: `%${escapeLikeString(args.locale)}%`
+									};
+								}
+							}
+
+							return valueFilter.filterable(
+								"graphql.query.users.find-options",
+								findOptions
+							);
+						}
+					})(root, args, context, info);
+				});
+		}
+	}
+};
+
+/**
+ * The user mutation schema
+ * @type {Object}
+ */
+module.exports.mutation = {
+	//update or insert a user
+	upsertUser: {
+		type: User.graphQlType,
+		args: {
+			user: { type: new GraphQLNonNull(UserInputType) }
+		},
+		resolve: (root, { user }, context, info) => {
+			//first check if the passed user object meets all requirements. graphql
+			//only checks the input types.
+			const staticValidation = Joi.validate(user, UserInputTypeValidation);
+			const { request } = context;
+
+			if (staticValidation.error) {
+				return Promise.reject(staticValidation.error);
+			}
+
+			return Promise.resolve()
+				.then(() => {
+					//If there's no error check what we need to do: update or insert
+
+					if (user.id) {
+						//if the user object contains an id it's not sure yet what action
+						//should be taken.
+						//should a user with the given id exist, it will be updated
+						return User.findById(user.id).then(userModel => {
+							if (userModel) {
+								if (!request.user) {
+									return Promise.reject(
+										new Error(
+											"Access Denied! You are not allowed to update this user!"
+										)
+									);
+								}
+								return request.user
+									.doesHavePermission("admin.user.update")
+									.then(hasPermission => {
+										if (
+											!hasPermission &amp;&amp;
+											userModel.get("id") !== request.user.get("id")
+										) {
+											return Promise.reject(
+												new Error(
+													"Access Denied! You are not allowed to update this user!"
+												)
+											);
+										}
+
+										return Promise.resolve(userModel);
+									});
+							} else {
+								//if not, a new user with the given id will be created
+								return request.user
+									.doesHavePermission("admin.user.create")
+									.then(hasPermission => {
+										if (!hasPermission) {
+											return Promise.reject(
+												new Error(
+													"Access Denied! You're not allowed to create a new user!"
+												)
+											);
+										}
+										return User.create({ id: user.id });
+									});
+							}
+						});
+					} else {
+						//if the user object doesn't contain an id, a new user will be created
+						if (!request.user) {
+							return Promise.reject(
+								new Error(
+									"Access Denied! You're not allowed to create a new user!"
+								)
+							);
+						}
+						return request.user
+							.doesHavePermission("admin.user.create")
+							.then(hasPermission => {
+								if (!hasPermission) {
+									return Promise.reject(
+										new Error(
+											"Access Denied! You're not allowed to create a new user!"
+										)
+									);
+								}
+								return User.create();
+							});
+					}
+				})
+				.then(userModel => {
+					//all of the previous possibilities will return a promise returning the
+					//user model to update
+
+					//if the user posseses required permission, all given keys will be
+					//updated
+					return request.user
+						.doesHavePermission("admin.user.upsert")
+						.then(hasPermission => {
+							if (hasPermission) {
+								userModel.set(user);
+							} else {
+								//otherwise we pick a few. these keys can be changed by using a
+								//filter
+								userModel.set(
+									pick(
+										user,
+										valueFilter.filterable(
+											"graphql.mutation.user.upsert.keys",
+											["nameDisplay", "nameFirst", "nameLast", "locale"]
+										)
+									)
+								);
+							}
+
+							//after setting the new values, save the user model to the database
+							return userModel
+								.save()
+								.then(() => {
+									//after saving all columns in the user table we also have to
+									//update the associations
+
+									if (!user.permissions) {
+										return Promise.resolve();
+									}
+									//if the user is allowed to, we update the models permissions
+									return request.user
+										.doesHavePermission("admin")
+										.then(hasPermission => {
+											if (hasPermission) {
+												return userModel.setPermissionArray(user.permissions);
+											} else {
+												return Promise.reject();
+											}
+										});
+								})
+								.then(() => {
+									//in the end, we return the updated user object by using
+									//graphql-sequelize's resolver
+									return resolver(User)(
+										root,
+										{ id: userModel.get("id") },
+										context,
+										info
+									);
+								});
+						});
+				});
+		}
+	},
+	deleteUser: {
+		type: GraphQLBoolean,
+		args: {
+			id: { type: GraphQLInt }
+		},
+		resolve: (root, { id }, { request }, info) => {
+			if (request.user) {
+				return request.user
+					.doesHavePermission("admin.user.delete")
+					.then(hasPermission => {
+						if (hasPermission || request.user.get("id") == id) {
+							return Promise.resolve();
+						} else {
+							return Promise.reject(
+								"Access Denied! You're not allowed to delete this user!"
+							);
+						}
+					})
+					.then(() => {
+						return User.findById(id).then(userModel => {
+							if (userModel) {
+								//triggers hooks and deletes associations
+								return userModel.destroy().then(() => {
+									return Promise.resolve(true);
+								});
+							} else {
+								return Promise.reject(
+									new Error("The given user couldn't be found!")
+								);
+							}
+						});
+					});
+			} else {
+				return Promise.reject(
+					"Access Denied! You have to be logged in in order delete this user!"
+				);
+			}
+		}
+	}
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOauthClient">authenticateOauthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#escapeLikeString">escapeLikeString</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOauthBearerAuthentication">initOauthBearerAuthentication</a></li><li><a href="global.html#initOauthClientAuthentication">initOauthClientAuthentication</a></li><li><a href="global.html#initOauthServer">initOauthServer</a></li><li><a href="global.html#initOauthServerExchange">initOauthServerExchange</a></li><li><a href="global.html#initOauthServerGrant">initOauthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#mutation">mutation</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#pick">pick</a></li><li><a href="global.html#protectGraphqlSchemaFields">protectGraphqlSchemaFields</a></li><li><a href="global.html#query">query</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Oct 22 2017 21:45:46 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

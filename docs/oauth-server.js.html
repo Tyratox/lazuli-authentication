@@ -32,29 +32,28 @@
 
 const oauth2orize = require("oauth2orize");
 
+const OauthClient = require("./models/oauth-client");
+const OauthRedirectUri = require("./models/oauth-redirect-uri");
+const OauthCode = require("./models/oauth-code");
+const OauthAccessToken = require("./models/oauth-access-token");
+
 /**
  * Initializes the oauth2orize powered oauth server and its endpoints
  * @return {void}
  */
-module.exports.initOAuthServer = (
-	oauth2Server,
-	OAuthClient,
-	OAuthRedirectUri,
-	OAuthCode,
-	OAuthAccessToken
-) => {
+const initOauthServer = oauth2Server => {
 	//init the oauth 2 server
 	oauth2Server.serializeClient((client, callback) => {
 		return callback(null, client.get("id"));
 	});
 
 	oauth2Server.deserializeClient((id, callback) => {
-		OAuthClient.findOne({
+		OauthClient.findOne({
 			where: { id: id },
 			include: [
 				{
-					model: OAuthRedirectUri,
-					as: "OAuthRedirectUris"
+					model: OauthRedirectUri,
+					as: "OauthRedirectUris"
 				}
 			]
 		})
@@ -64,15 +63,17 @@ module.exports.initOAuthServer = (
 			.catch(callback);
 	});
 
-	initOAuthServerGrant(oauth2Server, OAuthCode);
-	initOAuthServerExchange(oauth2Server, OAuthCode, OAuthAccessToken);
+	initOauthServerGrant(oauth2Server);
+	initOauthServerExchange(oauth2Server);
 };
+module.exports.initOauthServer = initOauthServer;
 
 /**
  * Initializes the granting part of the oauth server
+ * @param {Object} oauth2Server The oauth2 server
  * @return {void}
  */
-const initOAuthServerGrant = (oauth2Server, OAuthCode) => {
+const initOauthServerGrant = oauth2Server => {
 	oauth2Server.grant(
 		oauth2orize.grant.code((client, redirectUri, user, ares, callback) => {
 			// Create a new authorization code
@@ -85,21 +86,15 @@ const initOAuthServerGrant = (oauth2Server, OAuthCode) => {
 				);
 			}
 
-			let codeValue = OAuthCode.generateCode();
-
-			let expirationDate = Date.now() + AUTH_CODE_LIFETIME * 1000;
-
-			let code = OAuthCode.build({
-				hash: OAuthCode.hashCode(codeValue),
-				expires: expirationDate,
-				user_id: user.get("id"),
-				oauth_client_id: client.get("id")
-			});
-
-			let promises = [code.save()];
+			const codeValue = OauthCode.generateCode();
 
 			// Save the auth code and check for errors
-			Promise.all(promises)
+			OauthCode.create({
+				hash: OauthCode.hashCode(codeValue),
+				expires: Date.now() + AUTH_CODE_LIFETIME * 1000,
+				userId: user.get("id"),
+				oauthClientId: client.get("id")
+			})
 				.then(() => {
 					return callback(null, codeValue);
 				})
@@ -107,31 +102,43 @@ const initOAuthServerGrant = (oauth2Server, OAuthCode) => {
 		})
 	);
 };
+module.exports.initOauthServerGrant = initOauthServerGrant;
 
 /**
  * Initializes the exchange part of the oauth server
+ * @param {Object} oauth2Server The oauth2 server
  * @return {void}
  */
-module.exports.initOAuthServerExchange = (
-	oauth2Server,
-	OAuthCode,
-	OAuthAccessToken
-) => {
+const initOauthServerExchange = oauth2Server => {
 	return oauth2Server.exchange(
 		oauth2orize.exchange.code((client, code, redirectUri, callback) => {
-			OAuthCode.findByCode(code)
+			OauthCode.findByCode(code)
 				.then(authCode => {
 					if (authCode.get("expires") &lt; Date.now()) {
-						return callback(
+						return Promise.reject(
 							new Error("The sent auth code has already expired!")
 						);
 					}
-					//Delete the auth code now that it has been used
-					let clientId = authCode.get("oauth_client_id"),
-						userId = authCode.get("user_id");
 
-					let promises = [
-						OAuthCode.destroy({
+					//Delete the auth code now that it has been used
+					const clientId = authCode.get("oauthClientId"),
+						userId = authCode.get("userId");
+
+					return OauthAccessToken.generateToken(
+						userId,
+						clientId,
+						Date.now() + ACCESS_TOKEN_LIFETIME * 1000
+					).then(({ model, token }) => {
+						// Create an access token
+
+						const tokenData = {
+							token,
+							clientId: clientId,
+							userId: userId,
+							expires: expirationDate
+						};
+
+						return OauthCode.destroy({
 							where: {
 								$or: [
 									{
@@ -142,56 +149,30 @@ module.exports.initOAuthServerExchange = (
 									}
 								]
 							}
-						})
-					];
-
-					let expirationDate = Date.now() + ACCESS_TOKEN_LIFETIME * 1000;
-
-					// Create an access token
-					let tokenData = {
-						token: OAuthAccessToken.generateToken(),
-						clientId: clientId,
-						userId: userId,
-						expires: expirationDate
-					};
-
-					//the 'key' here is 'hash' and not 'token' as in 'tokenData'!
-					promises.push(
-						OAuthAccessToken.create({
-							hash: OAuthAccessToken.hashToken(tokenData.token),
-							expires: expirationDate,
-							user_id: userId,
-							oauth_client_id: clientId
-						})
-					);
-
-					Promise.all(promises)
-						.then(() => {
+						}).then(() => {
 							callback(null, tokenData);
-						})
-						.catch(callback);
+						});
+					});
 				})
 				.catch(callback);
 		})
 	);
 };
+module.exports.initOauthServerExchange = initOauthServerExchange;
 
 /**
  * Authenticates the oauth client during the oauth2 authorization
+ * @param {Object} oauth2Server The oauth2 server
  * @return {Function} The express middleware to authenticate the oauth client
  */
-module.exports.authenticateOAuthClient = (
-	oauth2Server,
-	OAuthClient,
-	OAuthRedirectUri
-) => {
+const authenticateOauthClient = oauth2Server => {
 	return oauth2Server.authorization((clientId, redirectUri, callback) => {
-		OAuthClient.findOne({
+		OauthClient.findOne({
 			where: { id: clientId },
 			include: [
 				{
-					model: OAuthRedirectUri,
-					as: "OAuthRedirectUris"
+					model: OauthRedirectUri,
+					as: "OauthRedirectUris"
 				}
 			]
 		})
@@ -209,18 +190,19 @@ module.exports.authenticateOAuthClient = (
 			.catch(callback);
 	});
 };
+module.exports.authenticateOauthClient = authenticateOauthClient;
 
 /**
  * Checks whether a oauth request can immediately be approved
  * @return {Function} The express middleware to either prompt the user or directly approve the oauth2 request
  */
-module.exports.checkForImmediateApproval = () => {
+const checkForImmediateApproval = () => {
 	return (request, response, next) => {
 		let { client } = request.oauth2;
 
 		//Or the user already approved to this client
 		client
-			.getOAuthAccessTokens()
+			.getOauthAccessTokens()
 			.then(tokens => {
 				//If the client is trusted or there's already a token issued
 				if (client.get("trusted") === true || tokens.length > 0) {
@@ -234,6 +216,8 @@ module.exports.checkForImmediateApproval = () => {
 			.catch(next);
 	};
 };
+
+module.exports.checkForImmediateApproval = checkForImmediateApproval;
 </code></pre>
         </article>
     </section>
@@ -244,13 +228,13 @@ module.exports.checkForImmediateApproval = () => {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOAuthClient">authenticateOAuthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOAuthBearerAuthentication">initOAuthBearerAuthentication</a></li><li><a href="global.html#initOAuthClientAuthentication">initOAuthClientAuthentication</a></li><li><a href="global.html#initOAuthServer">initOAuthServer</a></li><li><a href="global.html#initOAuthServerExchange">initOAuthServerExchange</a></li><li><a href="global.html#initOAuthServerGrant">initOAuthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOauthClient">authenticateOauthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#escapeLikeString">escapeLikeString</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOauthBearerAuthentication">initOauthBearerAuthentication</a></li><li><a href="global.html#initOauthClientAuthentication">initOauthClientAuthentication</a></li><li><a href="global.html#initOauthServer">initOauthServer</a></li><li><a href="global.html#initOauthServerExchange">initOauthServerExchange</a></li><li><a href="global.html#initOauthServerGrant">initOauthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#mutation">mutation</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#pick">pick</a></li><li><a href="global.html#protectGraphqlSchemaFields">protectGraphqlSchemaFields</a></li><li><a href="global.html#query">query</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.4</a> on Sat Sep 02 2017 15:26:52 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Oct 22 2017 21:45:46 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: models/permission.js</title>
+    <title>JSDoc: Source: utilities/crypto.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: models/permission.js</h1>
+    <h1 class="page-title">Source: utilities/crypto.js</h1>
 
     
 
@@ -26,56 +26,55 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>const Sequelize = require("sequelize");
+            <pre class="prettyprint source linenums"><code>const crypto = require("crypto");
 
-const eventEmitter = require("lazuli-require")(
-	"lazuli-core/globals/event-emitter"
-);
-const valueFilter = require("lazuli-require")(
-	"lazuli-core/globals/value-filter"
-);
-const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
-
-const Permission = sequelize.define(
-	"permission",
-	valueFilter.filterable("model.permission.attributes", {
-		permission: {
-			type: Sequelize.STRING,
-			unique: true
-		}
-	}),
-	valueFilter.filterable("model.permission.options", {
-		charset: "utf8",
-		collate: "utf8_unicode_ci"
-	})
+const { HASH_ALGORITHM, SALT_LENGTH } = require("lazuli-require")(
+	"lazuli-config"
 );
 
 /**
- * Associates this model with others
- * @param  {Object} models An object containing all registered database models
- * @return {void}
+ * Generates random string of characters
+ * @function generateRandomString
+ * @param {number} length Length of the random string.
+ * @return {String} A random string of a given length
  */
-Permission.associate = function(models) {
-	eventEmitter.emit("model.permission.association.before", this);
-
-	this.Users = this.belongsToMany(models.User, {
-		as: "Users",
-		foreignKey: "permissionId",
-		otherKey: "userId",
-		through: "permission_relations"
-	});
-
-	eventEmitter.emit("model.permission.association.after", this);
-
-	this.graphQlType = require("../types/permission");
+const generateRandomString = length => {
+	return crypto
+		.randomBytes(length)
+		.toString("base64")
+		.slice(0, length);
 };
 
-eventEmitter.addListener(
-	"model.association",
-	Permission.associate.bind(Permission)
-);
+module.exports.generateRandomString = generateRandomString;
 
-module.exports = Permission;
+/**
+ * Hash data
+ * @function generateHash
+ * @param {string} data The data to hash
+ * @param {string} [salt=null] The salt which should be used
+ * @param {string} [algorithm=HASH_ALGORITHM] The hash algorithm that should be used
+ * @return {Object} The hashed string, the generated salt and the
+ * used hash algorithm {hash: '', salt: '', algorithm: ''}
+ */
+const generateHash = (data, salt = null, algorithm = HASH_ALGORITHM) => {
+	if (!salt &amp;&amp; salt !== false) {
+		salt = generateRandomString(SALT_LENGTH);
+	}
+
+	let hmacOrHash;
+
+	if (salt) {
+		hmacOrHash = crypto.createHmac(algorithm, salt);
+	} else {
+		hmacOrHash = crypto.createHash(algorithm);
+	}
+
+	hmacOrHash.update(data);
+
+	return { hash: hmacOrHash.digest("hex"), salt: salt, algorithm: algorithm };
+};
+
+module.exports.generateHash = generateHash;
 </code></pre>
         </article>
     </section>

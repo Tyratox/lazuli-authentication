@@ -27,6 +27,7 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>const {
+	GraphQLSchema,
 	GraphQLObjectType,
 	GraphQLString,
 	GraphQLBoolean,
@@ -35,85 +36,372 @@
 	GraphQLList
 } = require("graphql");
 
-const { resolver } = require("graphql-sequelize");
+const Joi = require("joi");
+
+const { attributeFields, resolver } = require("graphql-sequelize");
+
+const eventEmitter = require("lazuli-require")(
+	"lazuli-core/globals/event-emitter"
+);
+const valueFilter = require("lazuli-require")(
+	"lazuli-core/globals/value-filter"
+);
+const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
+
+const { pick } = require("../utilities/object");
+const { escapeLikeString } = require("../utilities/sql");
+
+const OauthClient = require("../models/oauth-client");
+const OauthRedirectUri = require("../models/oauth-redirect-uri");
+
+const OauthClientInputType = require("../input-types/oauth-client");
+const OauthClientInputTypeValidation = require("../graphql-validation/oauth-client");
 
 /**
-  * Generates the oauth client graphql schema
-  * @param {Object} eventEmitter The global event emitter
-  * @param {Object} valueFilter The global value filter object
-  * @param {Object} models An object containing all registered database models
-  */
-module.exports = (eventEmitter, valueFilter, models) => {
-	const OAuthClientSchema = new GraphQLSchema({
-		query: new GraphQLObjectType({
-			name: "OAuthClientQuery",
-			fields: {
-				oauthClient: {
-					type: OAuthClient.graphQLObjectType,
-					args: {
-						id: {
-							description: "The id of the oauth client",
-							type: new GraphQLNonNull(GraphQLInt)
-						}
-					},
-					resolve: resolver(OAuthClient)
-				},
-				oauthClients: {
-					type: new GraphQLList(OAuthClient.graphQLObjectType),
-					args: {},
-					resolve: resolver(OAuthClient)
-				}
+ * The oauth client query schema
+ * @type {Object}
+ */
+module.exports.query = {
+	oauthClient: {
+		type: OauthClient.graphQlType,
+		args: {
+			id: {
+				description: "The id of the oauth client",
+				type: new GraphQLNonNull(GraphQLInt)
 			}
-		}),
-		mutation: new GraphQLObjectType({
-			name: "OAuthClientMutation",
-			fields: {
-				createoOAuthClient: {
-					type: OAuthClient.graphQlType,
-					args: {
-						oauthClient: { type: OAuthClient.graphQlType }
-					},
-					resolve: (root, { oauthClient }, info) => {
-						return OAuthClient.create(oauthClient).then(oauthClientModel => {
-							return resolver(OAuthClient)(
-								root,
-								{ id: oauthClientModel.get("id") },
-								info
-							);
-						});
-					}
-				},
-				updateUser: {
-					type: OAuthClient.graphQlType,
-					args: {
-						user: { type: OAuthClient.graphQlType }
-					},
-					resolve: (root, { oauthClient }, info) => {
-						return OAuthClient.update(oauthClient).then(oauthClientModel => {
-							return resolver(OAuthClient)(
-								root,
-								{ id: oauthClientModel.get("id") },
-								info
-							);
-						});
-					}
-				},
-				deleteUser: {
-					type: GraphQLBoolean,
-					args: {
-						userId: { type: GraphQLInt }
-					},
-					resolve: (root, { userId }, info) => {
-						return OAuthClient.findById(userId).then(oauthClientModel => {
-							return oauthClientModel.destroy();
-						});
-					}
-				}
+		},
+		resolve: resolver(OauthClient)
+	},
+	oauthClients: {
+		type: new GraphQLList(OauthClient.graphQlType),
+		args: {
+			//generally allow to filter all fields
+			...attributeFields(OauthClient, { allowNull: true }),
+			limit: {
+				type: GraphQLInt
 			}
-		})
-	});
+		},
+		resolve: (root, args, context, info) => {
+			const { request } = context;
 
-	return OAuthClientSchema;
+			if (!request.user) {
+				return Promise.reject(
+					new Error(
+						"Access Denied! You have to be logged in, in order to list users!"
+					)
+				);
+			}
+
+			return request.user
+				.doesHavePermission("admin.oauth-client.list")
+				.then(hasPermission => {
+					if (!hasPermission) {
+						return Promise.reject(
+							new Error(
+								"Access Denied! You're not allowed to list oauth clients!"
+							)
+						);
+					}
+
+					return request.user.doesHavePermission("admin.oauth-client.get");
+				})
+				.then(havePermission => {
+					if (!havePermission) {
+						//only allow uncritical search keys
+						args = pick(
+							args,
+							valueFilter.filterable("graphql.query.oauth-client.list.args", [
+								"id",
+								"name"
+							])
+						);
+					}
+
+					return resolver(OauthClient, {
+						before: (findOptions, args) => {
+							if (findOptions.where) {
+								if (findOptions.where.name) {
+									findOptions.where.name = {
+										$like: `%${escapeLikeString(args.name)}%`
+									};
+								}
+							}
+
+							return valueFilter.filterable(
+								"graphql.query.oauth-client.list.find-options",
+								findOptions
+							);
+						}
+					})(root, args, context, info);
+				});
+		}
+	}
+};
+
+/**
+ * The oauth client mutation schema
+ * @type {Object}
+ */
+module.exports.mutation = {
+	upsertOauthClient: {
+		type: OauthClient.graphQlType,
+		args: {
+			oauthClient: { type: new GraphQLNonNull(OauthClientInputType) }
+		},
+		resolve: (root, { oauthClient }, context, info) => {
+			//first check if the passed oauthClient object meets all requirements.
+			//graphql only checks the input types.
+			const staticValidation = Joi.validate(
+				oauthClient,
+				OauthClientInputTypeValidation
+			);
+
+			const { request } = context;
+
+			if (staticValidation.error) {
+				return Promise.reject(staticValidation.error);
+			}
+
+			let secret = null;
+
+			//If there's no error check what we need to do: update or insert
+			return Promise.resolve()
+				.then(() => {
+					if (oauthClient.id) {
+						//if the oauthClient object contains an id it's not sure yet what
+						//action should be taken.
+						//should a oauth client with the given id exist, it will be
+						//updated
+						return OauthClient.findById(
+							oauthClient.id
+						).then(oauthClientModel => {
+							if (oauthClientModel) {
+								if (!request.user) {
+									return Promise.reject(
+										new Error(
+											"Access Denied! You have to be logged in in order to update this oauth client!"
+										)
+									);
+								}
+
+								return request.user
+									.doesHavePermission("admin.oauth-client.update")
+									.then(hasPermission => {
+										if (
+											hasPermission ||
+											oauthClientModel.get("userId") === request.user.get("id")
+										) {
+											return Promise.resolve(oauthClientModel);
+										} else {
+											return Promise.reject(
+												new Error(
+													"Access Denied! You are not allowed to update this oauth client!"
+												)
+											);
+										}
+									});
+							} else {
+								//if not, a new oauth client with the given id will be created
+								return request.user
+									.doesHavePermission("admin.oauth-client.create")
+									.then(hasPermission => {
+										if (!hasPermission) {
+											return Promise.reject(
+												new Error(
+													"Access Denied! You're not allowed to create a new oauth client!"
+												)
+											);
+										}
+
+										return OauthClient.create({
+											id: oauthClient.id
+										}).then(model => {
+											secret = oauthClient.generateSecret();
+
+											return oauthClient.setSecret(secret).then(() => {
+												return Promise.resolve(model);
+											});
+										});
+									});
+							}
+						});
+					} else {
+						//if the oauth client object doesn't contain an id,
+						//a new oauth client will be created
+						if (!request.user) {
+							return Promise.reject(
+								new Error(
+									"Access Denied! You have to be logged in in order to create a new oauth client!"
+								)
+							);
+						}
+
+						return request.user
+							.doesHavePermission("admin.oauth-client.create")
+							.then(hasPermission => {
+								if (!hasPermission) {
+									return Promise.reject(
+										new Error(
+											"Access Denied! You're not allowed to create a new oauth client!"
+										)
+									);
+								}
+								return OauthClient.create().then(model => {
+									secret = OauthClient.generateSecret();
+
+									return model.setSecret(secret).then(() => {
+										return Promise.resolve(model);
+									});
+								});
+							});
+					}
+				})
+				.then(oauthClientModel => {
+					//all of the previous possibilities will return a promise returning
+					//the oauth client model to update
+
+					//if the user posseses the required permission, all given
+					//keys will be updated
+					return request.user
+						.doesHavePermission("admin.oauth-client.upsert")
+						.then(hasPermission => {
+							if (hasPermission) {
+								oauthClientModel.set(oauthClient);
+							} else if (
+								request.user.get("id") == oauthClientModel.get("userId")
+							) {
+								//otherwise we pick a few
+								oauthClientModel.set(
+									pick(
+										user,
+										valueFilter.filterable(
+											"graphql.mutation.oauth-client.upsert.keys",
+											["name"]
+										)
+									)
+								);
+							}
+
+							//after setting the new values, save the oauth client model to
+							//the database
+							return oauthClientModel
+								.save()
+								.then(() => {
+									//after saving all columns in the oauth client table we also
+									//have to update the associations
+
+									if (!oauthClient.oauthRedirectUris) {
+										return Promise.resolve();
+									}
+
+									//if the user is allowed to, we update the redirect uris
+									return request.user
+										.doesHavePermission("admin.oauth-client.upsert")
+										.then(havePermission => {
+											if (
+												!havePermission &amp;&amp;
+												request.user.get("id") !== oauthClient.get("userId")
+											) {
+												return Promise.reject(
+													new Error(
+														"You're not allowed to update the oauth redirect uris"
+													)
+												);
+											}
+											return oauthClientModel.getOauthRedirectUris();
+										})
+										.then(redirectUriModels => {
+											//diff existing and sent
+											const toDelete = redirectUriModels.filter(
+												redirectUriModel => {
+													return (
+														oauthClient.oauthRedirectUris.indexOf(
+															redirectUriModel.get("uri")
+														) === -1
+													);
+												}
+											);
+
+											const existing = redirectUriModels.map(redirectUriModel =>
+												redirectUriModel.get("uri")
+											);
+											const toAdd = oauthClient.oauthRedirectUris.filter(
+												redirectUri => {
+													return existing.indexOf(redirectUri) === -1;
+												}
+											);
+
+											return Promise.all([
+												...toDelete.map(redirectUriModel => {
+													return redirectUriModel.destroy();
+												}),
+												...toAdd.map(redirectUri =>
+													OauthRedirectUri.create({
+														uri: redirectUri,
+														oauthClientId: oauthClientModel.get("id")
+													})
+												)
+											]);
+										});
+								})
+								.then(() => {
+									//in the end, we return the updated oauth client object by
+									//using graphql-sequelize's resolver
+
+									return resolver(OauthClient)(
+										root,
+										{ id: oauthClientModel.get("id") },
+										context,
+										info
+									).then(model => {
+										if (secret) {
+											model.dataValues.secret = secret;
+										}
+										return Promise.resolve(model);
+									});
+								});
+						});
+				});
+		}
+	},
+	deleteOauthClient: {
+		type: GraphQLBoolean,
+		args: {
+			id: { type: GraphQLInt }
+		},
+		resolve: (root, { id }, { request }, info) => {
+			if (!request.user) {
+				return Promise.reject(
+					new Error(
+						"Access Denied! You have to be logged in to delete this oauth client"
+					)
+				);
+			}
+			return OauthClient.findById(id).then(oauthClientModel => {
+				if (!oauthClientModel) {
+					return Promise.reject(
+						new Error("The given oauth client couldn't be found!")
+					);
+				}
+				return request.user
+					.doesHavePermission("admin.oauth-client.delete")
+					.then(havePermission => {
+						if (
+							!havePermission &amp;&amp;
+							oauthClientModel.get("userId") !== request.user.get("id")
+						) {
+							return Promise.reject(
+								new Error(
+									"Access Denied! You're not allowed to delete this oauth client"
+								)
+							);
+						}
+
+						return oauthClientModel.destroy();
+					});
+			});
+		}
+	}
 };
 </code></pre>
         </article>
@@ -125,13 +413,13 @@ module.exports = (eventEmitter, valueFilter, models) => {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOAuthClient">authenticateOAuthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOAuthBearerAuthentication">initOAuthBearerAuthentication</a></li><li><a href="global.html#initOAuthClientAuthentication">initOAuthClientAuthentication</a></li><li><a href="global.html#initOAuthServer">initOAuthServer</a></li><li><a href="global.html#initOAuthServerExchange">initOAuthServerExchange</a></li><li><a href="global.html#initOAuthServerGrant">initOAuthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOauthClient">authenticateOauthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#escapeLikeString">escapeLikeString</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOauthBearerAuthentication">initOauthBearerAuthentication</a></li><li><a href="global.html#initOauthClientAuthentication">initOauthClientAuthentication</a></li><li><a href="global.html#initOauthServer">initOauthServer</a></li><li><a href="global.html#initOauthServerExchange">initOauthServerExchange</a></li><li><a href="global.html#initOauthServerGrant">initOauthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#mutation">mutation</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#pick">pick</a></li><li><a href="global.html#protectGraphqlSchemaFields">protectGraphqlSchemaFields</a></li><li><a href="global.html#query">query</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.4</a> on Sat Sep 02 2017 15:26:52 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Oct 22 2017 21:45:46 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -51,8 +51,7 @@
 	"peerDependencies": {
 		"lazuli-config": "tyratox/lazuli-config",
 		"lazuli-core": "tyratox/lazuli-core",
-		"lazuli-filters": "tyratox/lazuli-filters",
-		"lazuli-piwick-tacker": "tyratox/lazuli-piwik-tracker"
+		"lazuli-filters": "tyratox/lazuli-filters"
 	},
 	"devDependencies": {
 		"ava": "^0.22.0",
@@ -61,7 +60,6 @@
 		"lazuli-core": "tyratox/lazuli-core",
 		"lazuli-email": "tyratox/lazuli-email",
 		"lazuli-filters": "tyratox/lazuli-filters",
-		"lazuli-i18n": "tyratox/lazuli-i18n",
-		"lazuli-piwik-tracker": "tyratox/lazuli-piwik-tracker"
+		"lazuli-i18n": "tyratox/lazuli-i18n"
 	}
 }

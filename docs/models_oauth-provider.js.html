@@ -26,100 +26,69 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>const {
-	generateRandomString,
-	generateHash
-} = require("../utilities/crypto-utilities.js");
+            <pre class="prettyprint source linenums"><code>const Sequelize = require("sequelize");
 
 const { TOKEN_LENGTH, HASH_ALGORITHM, SALT_LENGTH } = require("lazuli-require")(
 	"lazuli-config"
 );
 
+const eventEmitter = require("lazuli-require")(
+	"lazuli-core/globals/event-emitter"
+);
+const valueFilter = require("lazuli-require")(
+	"lazuli-core/globals/value-filter"
+);
+const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
+
 const {
-	GraphQLObjectType,
-	GraphQLString,
-	GraphQLInt,
-	GraphQLNonNull,
-	GraphQLList
-} = require("graphql");
+	generateRandomString,
+	generateHash
+} = require("../utilities/crypto.js");
 
-const { resolver, attributeFields } = require("graphql-sequelize");
-
-// graphql-js prototypes are automatically extended
-require("graphql-schema-utils");
-
-const pick = require("lodash/pick");
+const OauthProvider = sequelize.define(
+	"oauth_provider",
+	valueFilter.filterable("authentication-models-oauth-provider-attributes", {
+		provider: {
+			type: Sequelize.ENUM,
+			values: ["google", "facebook"]
+		},
+		accessToken: {
+			type: Sequelize.STRING
+		},
+		refreshToken: {
+			type: Sequelize.STRING
+		}
+	}),
+	valueFilter.filterable("authentication-models-oauth-provider-options", {
+		charset: "utf8",
+		collate: "utf8_unicode_ci"
+	})
+);
 
 /**
- * Generates the oauth provider sequelize model
- * @param {Object} eventEmitter The global event emitter
- * @param {Object} valueFilter The global value filter object
- * @param {Object} sequelize The sequelize object to define the model on
- * @param {Object} DataTypes Sequelize datatypes
+ * Associates this model with others
+ * @param  {Object} models An object containing all registered database models
+ * @return {void}
  */
-module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
-	let OAuthProvider = sequelize.define(
-		"oauth-provider",
-		valueFilter.filterable("authentication-models-oauth-provider-attributes", {
-			type: {
-				type: DataTypes.ENUM,
-				values: ["google", "facebook"]
-			},
-			accessToken: {
-				type: DataTypes.STRING
-			},
-			refreshToken: {
-				type: DataTypes.STRING
-			}
-		}),
-		valueFilter.filterable("authentication-models-oauth-provider-options", {
-			charset: "utf8",
-			collate: "utf8_unicode_ci"
-		})
-	);
+OauthProvider.associate = function(models) {
+	eventEmitter.emit("model.oauth-provider.association.before", this);
 
-	/**
-	 * The graphql object type for this model
-	 * @type {GraphQLObjectType}
-	 */
-	OAuthProvider.graphQLType = attributeFields(OAuthProvider, {
-		allowNull: false
+	this.User = this.belongsTo(models.User, {
+		as: "User",
+		foreignKey: "userId"
 	});
 
-	/**
-	 * Associates this model with others
-	 * @param  {Object} models An object containing all registered database models
-	 * @return {void}
-	 */
-	OAuthProvider.associate = function({ User }) {
-		eventEmitter.emit("model.oauth-provider.association.before", this);
-		this.belongsTo(User, {
-			as: "User",
-			foreignKey: "user_id"
-		});
-		eventEmitter.emit("model.oauth-provider.association.before", this);
+	eventEmitter.emit("model.oauth-provider.association.before", this);
 
-		eventEmitter.emit("graphql.type.oauth-provider.association.before", this);
-		OAuthProvider.graphQLType = OAuthProvider.graphQLType.merge(
-			new GraphQLObjectType({
-				fields: valueFilter.filterable(
-					"graphql.type.oauth-provider.association",
-					{
-						user: {
-							type: GraphQLNonNull(User.graphQLType),
-							resolve: resolver(User)
-						}
-					}
-				)
-			})
-		);
-		eventEmitter.emit("graphql.type.oauth-provider.association.after", this);
-	};
-
-	eventEmitter.addListener("model.association", OAuthProvider.associate);
-
-	return OAuthProvider;
+	this.graphQlType = require("../types/oauth-provider");
 };
+
+eventEmitter.addListener(
+	"model.association",
+	OauthProvider.associate.bind(OauthProvider)
+);
+
+module.exports = OauthProvider;
 </code></pre>
         </article>
     </section>
@@ -130,13 +99,13 @@ module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOAuthClient">authenticateOAuthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOAuthBearerAuthentication">initOAuthBearerAuthentication</a></li><li><a href="global.html#initOAuthClientAuthentication">initOAuthClientAuthentication</a></li><li><a href="global.html#initOAuthServer">initOAuthServer</a></li><li><a href="global.html#initOAuthServerExchange">initOAuthServerExchange</a></li><li><a href="global.html#initOAuthServerGrant">initOAuthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOauthClient">authenticateOauthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#escapeLikeString">escapeLikeString</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOauthBearerAuthentication">initOauthBearerAuthentication</a></li><li><a href="global.html#initOauthClientAuthentication">initOauthClientAuthentication</a></li><li><a href="global.html#initOauthServer">initOauthServer</a></li><li><a href="global.html#initOauthServerExchange">initOauthServerExchange</a></li><li><a href="global.html#initOauthServerGrant">initOauthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#mutation">mutation</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#pick">pick</a></li><li><a href="global.html#protectGraphqlSchemaFields">protectGraphqlSchemaFields</a></li><li><a href="global.html#query">query</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.4</a> on Sat Sep 02 2017 15:26:52 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Oct 22 2017 21:45:46 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

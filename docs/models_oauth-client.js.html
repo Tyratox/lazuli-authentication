@@ -26,239 +26,195 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>const {
-	generateRandomString,
-	generateHash
-} = require("../utilities/crypto-utilities.js");
+            <pre class="prettyprint source linenums"><code>const Sequelize = require("sequelize");
 
 const { CLIENT_SECRET_LENGTH } = require("lazuli-require")("lazuli-config");
 
+const eventEmitter = require("lazuli-require")(
+	"lazuli-core/globals/event-emitter"
+);
+const valueFilter = require("lazuli-require")(
+	"lazuli-core/globals/value-filter"
+);
+const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
+
 const {
-	GraphQLObjectType,
-	GraphQLString,
-	GraphQLInt,
-	GraphQLBoolean,
-	GraphQLNonNull,
-	GraphQLList
-} = require("graphql");
+	generateRandomString,
+	generateHash
+} = require("../utilities/crypto.js");
 
-const { resolver, attributeFields } = require("graphql-sequelize");
+const OauthRedirectUri = require("./oauth-redirect-uri");
 
-// graphql-js prototypes are automatically extended
-require("graphql-schema-utils");
+const OauthClient = sequelize.define(
+	"oauth_client",
+	{
+		name: {
+			type: Sequelize.STRING
+		},
 
-const pick = require("lodash/pick");
+		secretHash: {
+			type: Sequelize.STRING
+		},
+
+		secretSalt: {
+			type: Sequelize.STRING
+		},
+
+		secretAlgorithm: {
+			type: Sequelize.STRING
+		},
+
+		trusted: {
+			type: Sequelize.BOOLEAN,
+			default: false
+		}
+	},
+	{
+		charset: "utf8",
+		collate: "utf8_unicode_ci"
+	}
+);
 
 /**
- * Generates the oauth client sequelize model
- * @param {Object} eventEmitter The global event emitter
- * @param {Object} valueFilter The global value filter object
- * @param {Object} sequelize The sequelize object to define the model on
- * @param {Object} DataTypes Sequelize datatypes
+ * Associates this model with others
+ * @param  {Object} models An object containing all registered database models
+ * @return {void}
  */
-module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
-	let OAuthClient = sequelize.define(
-		"oauth-client",
-		{
-			name: {
-				type: DataTypes.STRING
-			},
+OauthClient.associate = function(models) {
+	eventEmitter.emit("model.oauth-client.association.before", this);
 
-			secretHash: {
-				type: DataTypes.STRING
-			},
-
-			secretSalt: {
-				type: DataTypes.STRING
-			},
-
-			secretAlgorithm: {
-				type: DataTypes.STRING
-			},
-
-			trusted: {
-				type: DataTypes.BOOLEAN,
-				default: false
-			}
-		},
-		{
-			charset: "utf8",
-			collate: "utf8_unicode_ci"
-		}
-	);
-
-	/**
-	 * The graphql object type for this model
-	 * @type {GraphQLObjectType}
-	 */
-	OAuthCode.graphQLType = attributeFields(OAuthClient, {
-		allowNull: false
+	this.User = this.belongsTo(models.User, {
+		as: "User",
+		foreignKey: "userId"
 	});
 
-	/**
-	 * Associates this model with others
-	 * @param  {Object} models An object containing all registered database models
-	 * @return {void}
-	 */
-	OAuthClient.associate = function({
-		User,
-		OAuthCode,
-		OAuthAccessToken,
-		OAuthRedirectUri
-	}) {
-		eventEmitter.emit("model.oauth-client.association.before", this);
+	this.OauthCodes = this.hasMany(models.OauthCode, {
+		as: "OauthCodes",
+		foreignKey: "oauthClientId",
+		onDelete: "cascade",
+		hooks: true
+	});
 
-		this.belongsTo(User, {
-			as: "User",
-			foreignKey: "user_id"
-		});
-		this.hasMany(OAuthCode, {
-			as: "OAuthCodes",
-			foreignKey: "oauth_client_id",
-			onDelete: "cascade",
-			hooks: true
-		});
-		this.hasMany(OAuthAccessToken, {
-			as: "OAuthAccessTokens",
-			foreignKey: "oauth_client_id",
-			onDelete: "cascade",
-			hooks: true
-		});
-		this.hasMany(OAuthRedirectUri, {
-			as: "OAuthRedirectUris",
-			foreignKey: "oauth_client_id",
-			onDelete: "cascade",
-			hooks: true
-		});
+	this.OauthAccessTokens = this.hasMany(models.OauthAccessToken, {
+		as: "OauthAccessTokens",
+		foreignKey: "oauthClientId",
+		onDelete: "cascade",
+		hooks: true
+	});
 
-		eventEmitter.emit("model.oauth-client.association.after", this);
+	this.OauthRedirectUris = this.hasMany(models.OauthRedirectUri, {
+		as: "OauthRedirectUris",
+		foreignKey: "oauthClientId",
+		onDelete: "cascade",
+		hooks: true
+	});
 
-		eventEmitter.emit("graphql.type.oauth-client.association.before", this);
+	eventEmitter.emit("model.oauth-client.association.after", this);
 
-		OAuthClient.graphQLType = OAuthClient.graphQLType.merge(
-			new GraphQLObjectType({
-				fields: valueFilter.filterable(
-					"graphql.type.oauth-client.association",
-					{
-						user: {
-							type: GraphQLNonNull(User.graphQLType),
-							resolve: resolver(User)
-						},
-						oauthCodes: {
-							type: GraphQLNonNull(
-								GraphQLList(GraphQLNonNull(OAuthCode.graphQLType))
-							),
-							resolve: resolver(OAuthCode)
-						},
-						oauthAccessTokens: {
-							type: GraphQLNonNull(
-								GraphQLList(GraphQLNonNull(OAuthAccessToken.graphQLType))
-							),
-							resolve: resolver(OAuthAccessToken)
-						},
-						oauthRedirectUris: {
-							type: GraphQLNonNull(
-								GraphQLList(GraphQLNonNull(OAuthRedirectUri.graphQLType))
-							),
-							resolve: resolver(OAuthRedirectUri)
-						}
-					}
-				)
-			})
-		);
+	this.graphQlType = require("../types/oauth-client");
+};
 
-		eventEmitter.emit("graphql.type.oauth-client.association.after", this);
-	};
+eventEmitter.addListener(
+	"model.association",
+	OauthClient.associate.bind(OauthClient)
+);
 
-	eventEmitter.addListener("model.association", OAuthClient.associate);
+/**
+ * Generates a random secret
+ * @return {String} The random secret
+ */
+OauthClient.generateSecret = function() {
+	return generateRandomString(CLIENT_SECRET_LENGTH);
+};
 
-	/**
-	 * Generates a random secret
-	 * @return {String} The random secret
-	 */
-	OAuthClient.generateSecret = function() {
-		return cryptoUtilities.generateRandomString(CLIENT_SECRET_LENGTH);
-	};
+/**
+ * Sets the secret after hashing it
+ * @param  {String} secret The secret to hash and store
+ * @return {Promise}
+ */
+OauthClient.prototype.setSecret = function(secret) {
+	let { hash, salt, algorithm } = generateHash(secret);
 
-	/**
-	 * Sets the secret after hashing it
-	 * @param  {String} secret The secret to hash and store
-	 * @return {void}
-	 */
-	OAuthClient.prototype.setSecret = function(secret) {
-		let { hash, salt, algorithm } = cryptoUtilities.generateHash(secret);
+	this.set({
+		secretHash: hash,
+		secretSalt: salt,
+		secretAlgorithm: algorithm
+	});
 
-		this.set({
-			secretHash: hash,
-			secretSalt: salt,
-			secretAlgorithm: algorithm
-		});
-	};
+	return this.save();
+};
 
-	/**
-	 * Verifies a secret
-	 * @param  {String} secret Checks whether this secret matches the stored one by hashing it with the stored salt
-	 * @return {Boolean}        Whether the secrets match
-	 */
-	OAuthClient.prototype.verifySecret = function(secret) {
-		let { hash } = cryptoUtilities.generateHash(
-			secret,
-			this.get("secretSalt"),
-			this.get("secretAlgorithm")
-		);
+/**
+ * Verifies a secret
+ * @param  {String} secret Checks whether this secret matches the stored one by hashing it with the stored salt
+ * @return {Promise}       Whether the secrets match
+ */
+OauthClient.prototype.verifySecret = function(secret) {
+	let { hash } = generateHash(
+		secret,
+		this.get("secretSalt"),
+		this.get("secretAlgorithm")
+	);
 
-		let {
-			hash: newHash,
-			algorithm: newAlgorithm
-		} = cryptoUtilities.generateHash(secret, this.get("secretSalt"));
+	let { hash: newHash, algorithm: newAlgorithm } = generateHash(
+		secret,
+		this.get("secretSalt")
+	);
 
-		if (this.get("secretHash") &amp;&amp; hash === this.get("secretHash")) {
-			if (this.get("secretAlgorithm") !== newAlgorithm) {
-				//if the algorithm changed, update the hash
-				this.set({
-					secretHash: newHash,
-					secretSalt: salt,
-					secretAlgorithm: newAlgorithm
-				});
+	if (this.get("secretHash") &amp;&amp; hash === this.get("secretHash")) {
+		if (this.get("secretAlgorithm") !== newAlgorithm) {
+			//if the algorithm changed, update the hash
+			this.set({
+				secretHash: newHash,
+				secretSalt: salt,
+				secretAlgorithm: newAlgorithm
+			});
 
-				return this.save().then(() => {
-					return true;
-				});
-			}
-			return Promise.resolve();
+			return this.save().then(() => {
+				return Promise.resolve(true);
+			});
 		}
-		return Promise.reject();
-	};
+		return Promise.resolve(true);
+	}
+	return Promise.resolve(false);
+};
 
-	/**
-	 * Checks whether the passed uri is stored in the model as redirectUri
-	 * @param  {String} redirectUri The redirect uri to verify
-	 * @return {Boolean}            Whether the redirect uri is registered with this object
-	 */
-	OAuthClient.prototype.verifyRedirectUri = function(redirectUri) {
-		if (!this.get("OAuthRedirectUris")) {
-			console.log(
-				"OAuthRedirectUris wasn't included in this instance of OAuthClient!"
-			);
+/**
+ * Checks whether the passed uri is stored in the model as redirectUri
+ * @param  {String} redirectUri The redirect uri to verify
+ * @return {Promise}
+ */
+OauthClient.prototype.verifyRedirectUri = function(redirectUri) {
+	let promise;
+	if (!this.get("OauthRedirectUris")) {
+		promise = this.reload({
+			include: [
+				{
+					model: OauthRedirectUri,
+					as: "OauthRedirectUris"
+				}
+			]
+		});
+	} else {
+		promise = Promise.resolve(this);
+	}
 
-			return false;
-		}
-
-		let uris = this.get("OAuthRedirectUris").map(uri => {
+	return promise.then(() => {
+		let uris = this.get("OauthRedirectUris").map(uri => {
 			return uri.get("uri");
 		});
 
-		for (var i = 0; i &lt; uris.length; i++) {
+		for (let i = 0; i &lt; uris.length; i++) {
 			if (uris[i] === redirectUri) {
-				return true;
+				return Promise.resolve(true);
 			}
 		}
 
-		return false;
-	};
-
-	return OAuthClient;
+		return Promise.resolve(false);
+	});
 };
+
+module.exports = OauthClient;
 </code></pre>
         </article>
     </section>
@@ -269,13 +225,13 @@ module.exports = (eventEmitter, valueFilter, sequelize, DataTypes) => {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOAuthClient">authenticateOAuthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOAuthBearerAuthentication">initOAuthBearerAuthentication</a></li><li><a href="global.html#initOAuthClientAuthentication">initOAuthClientAuthentication</a></li><li><a href="global.html#initOAuthServer">initOAuthServer</a></li><li><a href="global.html#initOAuthServerExchange">initOAuthServerExchange</a></li><li><a href="global.html#initOAuthServerGrant">initOAuthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOauthClient">authenticateOauthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#escapeLikeString">escapeLikeString</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOauthBearerAuthentication">initOauthBearerAuthentication</a></li><li><a href="global.html#initOauthClientAuthentication">initOauthClientAuthentication</a></li><li><a href="global.html#initOauthServer">initOauthServer</a></li><li><a href="global.html#initOauthServerExchange">initOauthServerExchange</a></li><li><a href="global.html#initOauthServerGrant">initOauthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#loginView">loginView</a></li><li><a href="global.html#mailVerificationView">mailVerificationView</a></li><li><a href="global.html#mutation">mutation</a></li><li><a href="global.html#oAuthDialogView">oAuthDialogView</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#passwordResetView">passwordResetView</a></li><li><a href="global.html#pick">pick</a></li><li><a href="global.html#protectGraphqlSchemaFields">protectGraphqlSchemaFields</a></li><li><a href="global.html#query">query</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.4</a> on Sat Sep 02 2017 15:26:52 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Oct 22 2017 21:45:46 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>
