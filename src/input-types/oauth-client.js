@@ -9,9 +9,7 @@ const {
 	GraphQLInputObjectType
 } = require("graphql");
 
-const valueFilter = require("lazuli-require")(
-	"lazuli-core/globals/value-filter"
-);
+const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
 
 module.exports = new GraphQLInputObjectType({
 	name: "OauthClient",

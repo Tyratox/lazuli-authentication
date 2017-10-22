@@ -2,13 +2,9 @@ const Sequelize = require("sequelize");
 
 const { TOKEN_LENGTH } = require("lazuli-require")("lazuli-config");
 
-const eventEmitter = require("lazuli-require")(
-	"lazuli-core/globals/event-emitter"
-);
-const valueFilter = require("lazuli-require")(
-	"lazuli-core/globals/value-filter"
-);
-const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
+const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");
+const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
+const sequelize = require("lazuli-require")("lazuli-core/sequelize");
 
 const {
 	generateRandomString,

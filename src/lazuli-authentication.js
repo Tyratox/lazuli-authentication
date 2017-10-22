@@ -41,16 +41,10 @@ const {
 	verifyMailValidation
 } = require("./validation.js");
 
-const eventEmitter = require("lazuli-require")(
-	"lazuli-core/globals/event-emitter"
-);
-const valueFilter = require("lazuli-require")(
-	"lazuli-core/globals/value-filter"
-);
-const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
-const { expressServer, httpServer } = require("lazuli-require")(
-	"lazuli-core/globals/http-server"
-);
+const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");
+const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
+const sequelize = require("lazuli-require")("lazuli-core/sequelize");
+const expressServer = require("lazuli-require")("lazuli-core/express");
 
 /**
  * This is the authentication class which handles the registration and, of

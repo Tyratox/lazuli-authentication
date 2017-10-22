@@ -12,13 +12,9 @@ const Joi = require("joi");
 
 const { attributeFields, resolver } = require("graphql-sequelize");
 
-const eventEmitter = require("lazuli-require")(
-	"lazuli-core/globals/event-emitter"
-);
-const valueFilter = require("lazuli-require")(
-	"lazuli-core/globals/value-filter"
-);
-const sequelize = require("lazuli-require")("lazuli-core/globals/sequelize");
+const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");
+const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
+const sequelize = require("lazuli-require")("lazuli-core/sequelize");
 
 const { pick } = require("../utilities/object");
 const { escapeLikeString } = require("../utilities/sql");

@@ -1,9 +1,7 @@
 const { toGlobalId, fromGlobalId } = require("graphql-relay");
 
 const Lazuli = require("lazuli-require")("lazuli-core");
-const eventEmitter = require("lazuli-require")(
-	"lazuli-core/globals/event-emitter"
-);
+const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");
 
 const Authentication = new (require("../../src/lazuli-authentication"))();
 

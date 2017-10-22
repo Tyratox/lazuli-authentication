@@ -1,4 +1,4 @@
-const logger = require("lazuli-require")("lazuli-core/globals/logger");
+const logger = require("lazuli-require")("lazuli-core/logger");
 
 const ACCESS_DENIED = "Access Denied!";
 
