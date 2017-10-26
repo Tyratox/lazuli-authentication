@@ -3,42 +3,12 @@ const { AUTH_CODE_LIFETIME, ACCESS_TOKEN_LIFETIME } = require("lazuli-require")(
 );
 
 const oauth2orize = require("oauth2orize");
+const oauthServer = oauth2orize.createServer();
 
 const OauthClient = require("./models/oauth-client");
 const OauthRedirectUri = require("./models/oauth-redirect-uri");
 const OauthCode = require("./models/oauth-code");
 const OauthAccessToken = require("./models/oauth-access-token");
-
-/**
- * Initializes the oauth2orize powered oauth server and its endpoints
- * @return {void}
- */
-const initOauthServer = oauth2Server => {
-	//init the oauth 2 server
-	oauth2Server.serializeClient((client, callback) => {
-		return callback(null, client.get("id"));
-	});
-
-	oauth2Server.deserializeClient((id, callback) => {
-		OauthClient.findOne({
-			where: { id: id },
-			include: [
-				{
-					model: OauthRedirectUri,
-					as: "OauthRedirectUris"
-				}
-			]
-		})
-			.then(client => {
-				return callback(null, client);
-			})
-			.catch(callback);
-	});
-
-	initOauthServerGrant(oauth2Server);
-	initOauthServerExchange(oauth2Server);
-};
-module.exports.initOauthServer = initOauthServer;
 
 /**
  * Initializes the granting part of the oauth server
@@ -74,7 +44,6 @@ const initOauthServerGrant = oauth2Server => {
 		})
 	);
 };
-module.exports.initOauthServerGrant = initOauthServerGrant;
 
 /**
  * Initializes the exchange part of the oauth server
@@ -130,7 +99,36 @@ const initOauthServerExchange = oauth2Server => {
 		})
 	);
 };
-module.exports.initOauthServerExchange = initOauthServerExchange;
+
+/**
+ * Initializes the oauth2orize powered oauth server and its endpoints
+ * @return {void}
+ */
+const initOauthServer = oauth2Server => {
+	//init the oauth 2 server
+	oauth2Server.serializeClient((client, callback) => {
+		return callback(null, client.get("id"));
+	});
+
+	oauth2Server.deserializeClient((id, callback) => {
+		OauthClient.findOne({
+			where: { id: id },
+			include: [
+				{
+					model: OauthRedirectUri,
+					as: "OauthRedirectUris"
+				}
+			]
+		})
+			.then(client => {
+				return callback(null, client);
+			})
+			.catch(callback);
+	});
+
+	initOauthServerGrant(oauth2Server);
+	initOauthServerExchange(oauth2Server);
+};
 
 /**
  * Authenticates the oauth client during the oauth2 authorization
@@ -162,7 +160,6 @@ const authenticateOauthClient = oauth2Server => {
 			.catch(callback);
 	});
 };
-module.exports.authenticateOauthClient = authenticateOauthClient;
 
 /**
  * Checks whether a oauth request can immediately be approved
@@ -189,4 +186,9 @@ const checkForImmediateApproval = () => {
 	};
 };
 
+initOauthServer(oauthServer);
+
+module.exports.authenticateOauthClient = authenticateOauthClient(oauthServer);
 module.exports.checkForImmediateApproval = checkForImmediateApproval;
+
+module.exports.oauthServer = oauthServer;

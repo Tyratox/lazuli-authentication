@@ -21,6 +21,8 @@ const OauthClient = require("./models/oauth-client");
 const OauthRedirectUri = require("./models/oauth-redirect-uri");
 const OauthAccessToken = require("./models/oauth-access-token");
 
+const passport = require("passport");
+
 /**
  * Enables the oauth client authentication in passport
  * @param  {Object} passport The passport object which this method should be performed on
@@ -60,7 +62,6 @@ const initOauthClientAuthentication = passport => {
 		)
 	);
 };
-module.exports.initOauthClientAuthentication = initOauthClientAuthentication;
 
 /**
  * Enables the local user authentication in passport
@@ -90,7 +91,6 @@ const initLocalAuthentication = passport => {
 		})
 	);
 };
-module.exports.initLocalAuthentication = initLocalAuthentication;
 
 /**
  * Enables the oauth bearer authentication in passport
@@ -165,7 +165,6 @@ const initOauthBearerAuthentication = passport => {
 		)
 	);
 };
-module.exports.initOauthBearerAuthentication = initOauthBearerAuthentication;
 
 /**
  * Enables the facebook authentication in passport
@@ -222,7 +221,6 @@ const initFacebookAuthentication = passport => {
 		)
 	);
 };
-module.exports.initFacebookAuthentication = initFacebookAuthentication;
 
 /**
  * Enables the google authentication in passport
@@ -278,7 +276,6 @@ const initGoogleAuthentication = passport => {
 		)
 	);
 };
-module.exports.initGoogleAuthentication = initGoogleAuthentication;
 
 /**
  * Initializes the user serialization in the passport object
@@ -305,7 +302,6 @@ const initPassportSerialization = passport => {
 			.catch(done);
 	});
 };
-module.exports.initPassportSerialization = initPassportSerialization;
 
 /**
  * Initializes the passport object
@@ -320,4 +316,7 @@ const initPassport = passport => {
 	initFacebookAuthentication(passport, User, OauthProvider);
 	initGoogleAuthentication(passport, User, OauthProvider);
 };
-module.exports.initPassport = initPassport;
+
+initPassport(passport);
+
+module.exports = { passport };

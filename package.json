@@ -4,17 +4,14 @@
 	"description": "A lazuli authentication module",
 	"main": "src/lazuli-authentication.js",
 	"scripts": {
-		"docs": "jsdoc src -r -c jsdoc.json -R README.md -d docs",
+		"docs": "rm -rf docs/* jsdoc src -c jsdoc.json",
 		"test": "ava test/test.js"
 	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/tyratox/lazuli-authentication.git"
 	},
-	"keywords": [
-		"lazuli",
-		"authentication"
-	],
+	"keywords": ["lazuli", "authentication"],
 	"author": "Nico Hauser",
 	"contributors": [
 		{
@@ -58,7 +55,6 @@
 		"jsdoc": "^3.5.4",
 		"lazuli-config": "tyratox/lazuli-config",
 		"lazuli-core": "tyratox/lazuli-core",
-		"lazuli-email": "tyratox/lazuli-email",
 		"lazuli-filters": "tyratox/lazuli-filters",
 		"lazuli-i18n": "tyratox/lazuli-i18n"
 	}

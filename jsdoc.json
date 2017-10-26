@@ -11,7 +11,14 @@
 		"dictionaries": ["jsdoc", "closure"]
 	},
 	"templates": {
-		"cleverLinks": false,
-		"monospaceLinks": false
+		"cleverLinks": true,
+		"monospaceLinks": true
+	},
+	"opts": {
+		"encoding": "utf8",
+		"private": true,
+		"recurse": true,
+		"readme": "./README.md",
+		"destination": "./docs/"
 	}
 }
