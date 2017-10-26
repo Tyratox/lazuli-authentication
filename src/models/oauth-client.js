@@ -1,4 +1,4 @@
-const Sequelize = require("sequelize");
+const { STRING, BOOLEAN } = require("sequelize");
 
 const { CLIENT_SECRET_LENGTH } = require("lazuli-require")("lazuli-config");
 
@@ -13,92 +13,180 @@ const {
 
 const OauthRedirectUri = require("./oauth-redirect-uri");
 
-const OauthClient = sequelize.define(
-	"oauth_client",
-	{
-		name: {
-			type: Sequelize.STRING
-		},
-
-		secretHash: {
-			type: Sequelize.STRING
-		},
-
-		secretSalt: {
-			type: Sequelize.STRING
-		},
-
-		secretAlgorithm: {
-			type: Sequelize.STRING
-		},
-
-		trusted: {
-			type: Sequelize.BOOLEAN,
-			default: false
-		}
+/**
+ * The oauth client sequelize model
+ * @module lazuli-authentication/models/oauth-client
+ * 
+ * @type {OauthClient}
+ * @class
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @see module:lazuli-authentication/models/user
+ * @see module:lazuli-authentication/models/oauth-code
+ * @see module:lazuli-authentication/models/oauth-access-token
+ * @see module:lazuli-authentication/models/oauth-redirect-uri
+ */
+const OauthClient = sequelize.define("oauth_client", {
+	name: {
+		type: STRING
 	},
-	{
-		charset: "utf8",
-		collate: "utf8_unicode_ci"
+
+	secretHash: {
+		type: STRING
+	},
+
+	secretSalt: {
+		type: STRING
+	},
+
+	secretAlgorithm: {
+		type: STRING
+	},
+
+	trusted: {
+		type: BOOLEAN,
+		default: false
 	}
-);
+});
 
 /**
  * Associates this model with others
- * @param  {Object} models An object containing all registered database models
- * @return {void}
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OauthClient
+ * @static
+ * @public
+ * 
+ * @fires "authentication.model.oauth-client.association"
+ * 
+ * @param {object} models The models to associate with
+ * @param {object} models.User The user model
+ * @param {object} models.OauthCode The oauth code model
+ * @param {object} models.OauthAccessToken The oauth access token model
+ * @param {object} models.OauthRedirectUri The oauth redirect uri model
+ * @return {promise<void>}
  */
-OauthClient.associate = function(models) {
-	eventEmitter.emit("model.oauth-client.association.before", this);
-
-	this.User = this.belongsTo(models.User, {
+OauthClient.associate = function({
+	User,
+	OauthCode,
+	OauthAccessToken,
+	OauthRedirectUri
+}) {
+	/**
+	 * The OauthClient - User relation
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthClient
+	 */
+	this.User = this.belongsTo(User, {
 		as: "User",
 		foreignKey: "userId"
 	});
 
-	this.OauthCodes = this.hasMany(models.OauthCode, {
+	/**
+	 * The OauthClient - OauthCode relation
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthClient
+	 */
+	this.OauthCodes = this.hasMany(OauthCode, {
 		as: "OauthCodes",
 		foreignKey: "oauthClientId",
 		onDelete: "cascade",
 		hooks: true
 	});
 
-	this.OauthAccessTokens = this.hasMany(models.OauthAccessToken, {
+	/**
+	 * The OauthClient - OauthAccessToken relation
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthClient
+	 */
+	this.OauthAccessTokens = this.hasMany(OauthAccessToken, {
 		as: "OauthAccessTokens",
 		foreignKey: "oauthClientId",
 		onDelete: "cascade",
 		hooks: true
 	});
 
-	this.OauthRedirectUris = this.hasMany(models.OauthRedirectUri, {
+	/**
+	 * The OauthClient - OauthRedirectUri relation
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthClient
+	 */
+	this.OauthRedirectUris = this.hasMany(OauthRedirectUri, {
 		as: "OauthRedirectUris",
 		foreignKey: "oauthClientId",
 		onDelete: "cascade",
 		hooks: true
 	});
 
-	eventEmitter.emit("model.oauth-client.association.after", this);
-
+	/**
+	 * The related graphql type
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthClient
+	 * 
+	 * @see module:lazuli-authentication/types/oauth-client
+	 */
 	this.graphQlType = require("../types/oauth-client");
-};
 
-eventEmitter.addListener(
-	"model.association",
-	OauthClient.associate.bind(OauthClient)
-);
+	/**
+     * Event that is fired before the password reset code and
+	 * its expiration date are set during a password reset.
+	 * This event can (and should) be used to hand the reset code
+	 * the the user via e.g. email.
+     *
+     * @event "authentication.model.oauth-client.association"
+	 * @version 1.0
+	 * @since 1.0
+     * @type {object}
+     * @property {object} OauthClient The oauth client model
+     */
+	return eventEmitter.emit("authentication.model.oauth-client.association", {
+		OauthClient: this
+	});
+};
 
 /**
  * Generates a random secret
- * @return {String} The random secret
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OauthClient
+ * @public
+ * @static
+ * 
+ * @return {string} The random secret
  */
 OauthClient.generateSecret = function() {
 	return generateRandomString(CLIENT_SECRET_LENGTH);
 };
 
 /**
- * Sets the secret after hashing it
- * @param  {String} secret The secret to hash and store
- * @return {Promise}
+ * Sets the secret for this oauth client (after hashing it)
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OauthClient
+ * @public
+ * @static
+ * 
+ * @param  {string} secret The secret to hash and store
+ * @return {promise<OauthClient>} The random secret
  */
 OauthClient.prototype.setSecret = function(secret) {
 	let { hash, salt, algorithm } = generateHash(secret);
@@ -114,8 +202,15 @@ OauthClient.prototype.setSecret = function(secret) {
 
 /**
  * Verifies a secret
- * @param  {String} secret Checks whether this secret matches the stored one by hashing it with the stored salt
- * @return {Promise}       Whether the secrets match
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OauthClient
+ * @public
+ * @static
+ * 
+ * @param {string} secret Checks whether this secret matches the stored one by hashing it with the stored salt
+ * @return {promise<boolean>} The random secret
  */
 OauthClient.prototype.verifySecret = function(secret) {
 	let { hash } = generateHash(
@@ -148,9 +243,16 @@ OauthClient.prototype.verifySecret = function(secret) {
 };
 
 /**
- * Checks whether the passed uri is stored in the model as redirectUri
- * @param  {String} redirectUri The redirect uri to verify
- * @return {Promise}
+ * Verifies a redirect uri
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OauthClient
+ * @public
+ * @static
+ * 
+ * @param  {string} redirectUri The redirect uri to verify
+ * @return {promise<boolean>} The random secret
  */
 OauthClient.prototype.verifyRedirectUri = function(redirectUri) {
 	let promise;

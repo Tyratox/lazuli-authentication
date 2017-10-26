@@ -1,4 +1,4 @@
-const Sequelize = require("sequelize");
+const { ENUM, STRING } = require("sequelize");
 
 const { TOKEN_LENGTH, HASH_ALGORITHM, SALT_LENGTH } = require("lazuli-require")(
 	"lazuli-config"
@@ -13,47 +13,86 @@ const {
 	generateHash
 } = require("../utilities/crypto.js");
 
-const OauthProvider = sequelize.define(
-	"oauth_provider",
-	valueFilter.filterable("authentication-models-oauth-provider-attributes", {
-		provider: {
-			type: Sequelize.ENUM,
-			values: ["google", "facebook"]
-		},
-		accessToken: {
-			type: Sequelize.STRING
-		},
-		refreshToken: {
-			type: Sequelize.STRING
-		}
-	}),
-	valueFilter.filterable("authentication-models-oauth-provider-options", {
-		charset: "utf8",
-		collate: "utf8_unicode_ci"
-	})
-);
+/**
+ * The oauth provider sequelize model
+ * @module lazuli-authentication/models/user
+ * 
+ * @type {OauthProvider}
+ * @class
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @see module:lazuli-authentication/models/user
+ */
+const OauthProvider = sequelize.define("oauth_provider", {
+	provider: {
+		type: ENUM,
+		values: ["google", "facebook"]
+	},
+	accessToken: {
+		type: STRING
+	},
+	refreshToken: {
+		type: STRING
+	}
+});
 
 /**
  * Associates this model with others
- * @param  {Object} models An object containing all registered database models
- * @return {void}
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof User
+ * @static
+ * @public
+ * 
+ * @fires "authentication.model.oauth-provider.association"
+ * 
+ * @param {object} models The models to associate with
+ * @param {object} models.User The user model
+ * @return {promise<void>}
  */
-OauthProvider.associate = function(models) {
-	eventEmitter.emit("model.oauth-provider.association.before", this);
-
-	this.User = this.belongsTo(models.User, {
+OauthProvider.associate = function({ User }) {
+	/**
+	 * The OauthProivder - User relation
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthProvider
+	 */
+	this.User = this.belongsTo(User, {
 		as: "User",
 		foreignKey: "userId"
 	});
 
-	eventEmitter.emit("model.oauth-provider.association.before", this);
-
+	/**
+	 * The related graphql type
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthProvider
+	 * 
+	 * @see module:lazuli-authentication/types/oauth-provider
+	 */
 	this.graphQlType = require("../types/oauth-provider");
-};
 
-eventEmitter.addListener(
-	"model.association",
-	OauthProvider.associate.bind(OauthProvider)
-);
+	/**
+     * Event that is fired before the password reset code and
+	 * its expiration date are set during a password reset.
+	 * This event can (and should) be used to hand the reset code
+	 * the the user via e.g. email.
+     *
+     * @event "authentication.model.oauth-provider.association"
+	 * @version 1.0
+	 * @since 1.0
+     * @type {object}
+     * @property {object} OauthProvider The user model
+     */
+	return eventEmitter.emit("authentication.model.oauth-provider.association", {
+		OauthProvider: this
+	});
+};
 
 module.exports = OauthProvider;

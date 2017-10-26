@@ -1,4 +1,4 @@
-const Sequelize = require("sequelize");
+const { STRING, DATE } = require("sequelize");
 
 const { TOKEN_LENGTH } = require("lazuli-require")("lazuli-config");
 
@@ -11,53 +11,109 @@ const {
 	generateHash
 } = require("../utilities/crypto.js");
 
-const OauthCode = sequelize.define(
-	"oauth_code",
-	{
-		hash: {
-			type: Sequelize.STRING
-		},
-		expires: {
-			type: Sequelize.DATE
-		}
+/**
+ * The oauth code sequelize model
+ * @module lazuli-authentication/models/oauth-code
+ * 
+ * @type {OauthCode}
+ * @class
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @see module:lazuli-authentication/models/user
+ * @see module:lazuli-authentication/models/oauth-client
+ */
+const OauthCode = sequelize.define("oauth_code", {
+	hash: {
+		type: STRING
 	},
-	{
-		charset: "utf8",
-		collate: "utf8_unicode_ci"
+	expires: {
+		type: DATE
 	}
-);
+});
 
 /**
  * Associates this model with others
- * @param  {Object} models An object containing all registered database models
- * @return {void}
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OauthCode
+ * @static
+ * @public
+ * 
+ * @fires "authentication.model.oauth-code.association"
+ * 
+ * @param {object} models The models to associate with
+ * @param {object} models.User The user model
+ * @param {object} models.OauthClient The oauth client model
+ * @return {promise<void>}
  */
-OauthCode.associate = function(models) {
-	eventEmitter.emit("model.oauth-code.association.before", this);
-
-	this.User = this.belongsTo(models.User, {
+OauthCode.associate = function({ User, OauthClient }) {
+	/**
+	 * The OauthCode - User relation
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthCode
+	 */
+	this.User = this.belongsTo(User, {
 		as: "User",
 		foreignKey: "userId"
 	});
 
-	this.OauthClient = this.belongsTo(models.OauthClient, {
+	/**
+	 * The OauthCode - OauthClient relation
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthCode
+	 */
+	this.OauthClient = this.belongsTo(OauthClient, {
 		as: "OauthClient",
 		foreignKey: "oauthClientId"
 	});
 
-	eventEmitter.emit("model.oauth-code.association.after", this);
+	/**
+	 * The related graphql type
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthClient
+	 * 
+	 * @see module:lazuli-authentication/types/oauth-code
+	 */
+	this.graphQlType = require("../types/oauth-code");
 
-	this.graphQlType = require("../types/oauth-client");
+	/**
+     * Event that is fired before the password reset code and
+	 * its expiration date are set during a password reset.
+	 * This event can (and should) be used to hand the reset code
+	 * the the user via e.g. email.
+     *
+     * @event "authentication.model.oauth-code.association"
+	 * @version 1.0
+	 * @since 1.0
+     * @type {object}
+     * @property {object} OauthCode The oauth client model
+     */
+	return eventEmitter.emit("authentication.model.oauth-code.association", {
+		OauthCode: this
+	});
 };
-
-eventEmitter.addListener(
-	"model.association",
-	OauthCode.associate.bind(OauthCode)
-);
 
 /**
  * Generates a oauth code
- * @return {String} The generated oauth code
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OauthCode
+ * @public
+ * @static
+ * 
+ * @return {string} The generated oauth code
  */
 OauthCode.generateCode = function() {
 	return generateRandomString(TOKEN_LENGTH);
@@ -65,8 +121,15 @@ OauthCode.generateCode = function() {
 
 /**
  * Hashes an oauth code without salt
- * @param  {String} code      The code to hash
- * @return {String}           The unsalted hash
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OauthCode
+ * @public
+ * @static
+ * 
+ * @param  {string} code The code to hash
+ * @return {string} The unsalted hash
  */
 OauthCode.hashCode = function(code) {
 	return generateHash(code, false).hash;
@@ -74,8 +137,15 @@ OauthCode.hashCode = function(code) {
 
 /**
  * Searches for an oauth code entry
- * @param  {String} code  The unhashed oauth code
- * @return {Promise}      A sequelize find promise
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OauthCode
+ * @public
+ * @static
+ * 
+ * @param  {string} code  The unhashed oauth code
+ * @return {promise<OauthCode>} A sequelize find promise
  */
 OauthCode.findByCode = function(code) {
 	return this.findOne({

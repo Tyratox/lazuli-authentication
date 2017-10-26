@@ -1,4 +1,4 @@
-const Sequelize = require("sequelize");
+const { STRING, DATE } = require("sequelize");
 
 const { TOKEN_LENGTH, HASH_ALGORITHM, SALT_LENGTH } = require("lazuli-require")(
 	"lazuli-config"
@@ -13,57 +13,115 @@ const {
 	generateHash
 } = require("../utilities/crypto.js");
 
-const OauthAccessToken = sequelize.define(
-	"oauth_access_token",
-	{
-		hash: {
-			type: Sequelize.STRING,
-			unique: true
-		},
-		expires: {
-			type: Sequelize.DATE
-		}
+/**
+ * The access token sequelize model
+ * @module lazuli-authentication/models/oauth-access-token
+ * 
+ * @type {OauthAccessToken}
+ * @class
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @see module:lazuli-authentication/models/user
+ * @see module:lazuli-authentication/models/oauth-client
+ */
+const OauthAccessToken = sequelize.define("oauth_access_token", {
+	hash: {
+		type: STRING,
+		unique: true
 	},
-	{
-		charset: "utf8",
-		collate: "utf8_unicode_ci"
+	expires: {
+		type: DATE
 	}
-);
+});
 
 /**
  * Associates this model with others
- * @param  {Object} models An object containing all registered database models
- * @return {void}
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OauthAccessToken
+ * @static
+ * @public
+ * 
+ * @fires "authentication.model.oauth-access-token.association"
+ * 
+ * @param {object} models The models to associate with
+ * @param {object} models.User The user model
+ * @param {object} models.OauthClient The oauth client model
+ * @return {promise<void>}
  */
-OauthAccessToken.associate = function(models) {
-	eventEmitter.emit("model.oauth-access-token.association.before", this);
-
-	this.User = this.belongsTo(models.User, {
+OauthAccessToken.associate = function({ User, OauthClient }) {
+	/**
+	 * The OauthAccessToken - User relation
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthAccessToken
+	 */
+	this.User = this.belongsTo(User, {
 		as: "User",
 		foreignKey: "userId"
 	});
 
-	this.OauthClient = this.belongsTo(models.OauthClient, {
+	/**
+	 * The OauthAccessToken - OauthClient relation
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthAccessToken
+	 */
+	this.OauthClient = this.belongsTo(OauthClient, {
 		as: "OauthClient",
 		foreignKey: "oauthClientId"
 	});
 
-	eventEmitter.emit("model.oauth-access-token.association.after", this);
-
+	/**
+	 * The related graphql type
+	 * @since 1.0
+	 * @type {object}
+	 * @public
+	 * @static
+	 * @memberof OauthAccessToken
+	 * 
+	 * @see module:lazuli-authentication/types/oauth-access-token
+	 */
 	this.graphQlType = require("../types/oauth-access-token");
+
+	/**
+     * Event that is fired before the password reset code and
+	 * its expiration date are set during a password reset.
+	 * This event can (and should) be used to hand the reset code
+	 * the the user via e.g. email.
+     *
+     * @event "authentication.model.oauth-access-token.association"
+	 * @version 1.0
+	 * @since 1.0
+     * @type {object}
+     * @property {object} OauthAccessToken The access token model
+     */
+	return eventEmitter.emit(
+		"authentication.model.oauth-access-token.association",
+		{
+			OauthAccessToken: this
+		}
+	);
 };
-
-eventEmitter.addListener(
-	"model.association",
-	OauthAccessToken.associate.bind(OauthAccessToken)
-);
-
 /**
  * Generates a random access token string
- * @param userId
- * @param oauthClientId
- * @param expires
- * @return {Promise} A promise that will return the generated token and the model
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OauthAccessToken
+ * @public
+ * @static
+ * 
+ * @param {number} userId The user id to associate the new token with
+ * @param {number} oauthClientId The oauth client id to associate the new token with
+ * @param {number} expires The expiration date of the new token
+ * @return {promise<object>} A promise that will return the generated token and the model
  */
 OauthAccessToken.generateToken = function(userId, oauthClientId, expires) {
 	let token = generateRandomString(TOKEN_LENGTH * 2);
@@ -85,7 +143,7 @@ OauthAccessToken.generateToken = function(userId, oauthClientId, expires) {
 				userId,
 				oauthClientId
 			}).then(model => {
-				return { token, model };
+				return Promise.resolve({ token, model });
 			});
 		}
 	});
@@ -93,8 +151,15 @@ OauthAccessToken.generateToken = function(userId, oauthClientId, expires) {
 
 /**
  * Hashes a token (without) a salt because we couldn't determine the related user otherwise
- * @param  {String} token The token to hash
- * @return {String}       The generated hash
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OautAccessToken
+ * @public
+ * @static
+ * 
+ * @param  {string} token The token to hash
+ * @return {string} The generated hash
  */
 OauthAccessToken.hashToken = function(token) {
 	return generateHash(token, false, HASH_ALGORITHM, SALT_LENGTH).hash;
@@ -102,8 +167,15 @@ OauthAccessToken.hashToken = function(token) {
 
 /**
  * Tries to find the database model based on the passed token
- * @param  {String} token The received access token
- * @return {Promise}      The sequelize find response
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @memberof OauthAccessToken
+ * @public
+ * @static
+ * 
+ * @param  {string} token The received access token
+ * @return {promise<OauthAccessToken>} The sequelize find response
  */
 OauthAccessToken.findByToken = function(token) {
 	return this.findOne({ where: { hash: this.hashToken(token) } });

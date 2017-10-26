@@ -1,6 +1,6 @@
 const async = require("async");
 const path = require("path");
-const Sequelize = require("sequelize");
+const { STRING, DATE } = require("sequelize");
 
 const {
 	LOCALES,
@@ -21,7 +21,7 @@ const {
 const Permission = require("./permission");
 
 /**
- * The lazuli sequelize model
+ * The user sequelize model
  * @module lazuli-authentication/models/user
  * 
  * @type {User}
@@ -37,45 +37,45 @@ const Permission = require("./permission");
  */
 const User = sequelize.define("user", {
 	nameDisplay: {
-		type: Sequelize.STRING,
+		type: STRING,
 		default: ""
 	},
 	nameFirst: {
-		type: Sequelize.STRING,
+		type: STRING,
 		default: ""
 	},
 	nameLast: {
-		type: Sequelize.STRING,
+		type: STRING,
 		default: ""
 	},
 	emailVerified: {
-		type: Sequelize.STRING,
+		type: STRING,
 		unique: true
 	},
 	emailUnverified: {
-		type: Sequelize.STRING,
+		type: STRING,
 		unique: true
 	},
 	emailVerificationCode: {
-		type: Sequelize.STRING
+		type: STRING
 	},
 	passwordHash: {
-		type: Sequelize.STRING
+		type: STRING
 	},
 	passwordSalt: {
-		type: Sequelize.STRING
+		type: STRING
 	},
 	passwordAlgorithm: {
-		type: Sequelize.STRING
+		type: STRING
 	},
 	passwordResetCode: {
-		type: Sequelize.STRING
+		type: STRING
 	},
 	passwordResetCodeExpirationDate: {
-		type: Sequelize.DATE
+		type: DATE
 	},
 	locale: {
-		type: Sequelize.STRING,
+		type: STRING,
 		default: "en-us",
 		validate: {
 			isIn: [LOCALES]
@@ -112,7 +112,7 @@ User.associate = function({
 	/**
 	 * The User - Permission relation
 	 * @since 1.0
-	 * @type {Object}
+	 * @type {object}
 	 * @public
 	 * @static
 	 * @memberof User
@@ -129,7 +129,7 @@ User.associate = function({
 	/**
 	 * The User - OauthProvider relation
 	 * @since 1.0
-	 * @type {Object}
+	 * @type {object}
 	 * @public
 	 * @static
 	 * @memberof User
@@ -144,7 +144,7 @@ User.associate = function({
 	/**
 	 * The User - OauthAccessToken relation
 	 * @since 1.0
-	 * @type {Object}
+	 * @type {object}
 	 * @public
 	 * @static
 	 * @memberof User
@@ -159,7 +159,7 @@ User.associate = function({
 	/**
 	 * The User - OauthCode relation
 	 * @since 1.0
-	 * @type {Object}
+	 * @type {object}
 	 * @public
 	 * @static
 	 * @memberof User
@@ -174,7 +174,7 @@ User.associate = function({
 	/**
 	 * The User - OauthClient relation
 	 * @since 1.0
-	 * @type {Object}
+	 * @type {object}
 	 * @public
 	 * @static
 	 * @memberof User
@@ -189,10 +189,12 @@ User.associate = function({
 	/**
 	 * The related graphql type
 	 * @since 1.0
-	 * @type {Object}
+	 * @type {object}
 	 * @public
 	 * @static
 	 * @memberof User
+	 * 
+	 * @see module:lazuli-authentication/types/user
 	 */
 	this.graphQlType = require("../types/user");
 
