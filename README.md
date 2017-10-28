@@ -2,7 +2,7 @@
 
 An authentication module for creating an oauth2 service powered by [oauth2orize](https://github.com/jaredhanson/oauth2orize) combined with [sequelize](https://github.com/sequelize/sequelize) models, [passport](https://github.com/jaredhanson/passport) authentication strategies and [graphql](https://github.com/graphql/graphql-js) endpoints.
 
-#Models
+# Models
 
 ## OauthAccessToken
 Model: `lazuli-authentication/models/oauth-access-token`
