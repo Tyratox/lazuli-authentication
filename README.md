@@ -162,3 +162,8 @@ Passport will first try to login the client based on the passed id and secret. `
 		}
 	}
 The `token` property is the most important one. This token can now be used in an HTTP Header called `Authorization` with the content `Bearer xxx` where xxx is your access token. This header will bypass `isBearerAuthenticated` middlewares.
+
+# TODO
+- modularize passport addons
+- move redirect uris to config
+- add events for registration/password reset/email verification
