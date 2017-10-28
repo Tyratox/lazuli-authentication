@@ -47,7 +47,7 @@
 
     <section class="readme">
         <article><h1>lazuli-authentication</h1><p>An authentication module for creating an oauth2 service powered by <a href="https://github.com/jaredhanson/oauth2orize">oauth2orize</a> combined with <a href="https://github.com/sequelize/sequelize">sequelize</a> models, <a href="https://github.com/jaredhanson/passport">passport</a> authentication strategies and <a href="https://github.com/graphql/graphql-js">graphql</a> endpoints.</p>
-<p>This module registers the following models on the global sequlize object (<code>lazuli-core/sequelize</code>):</p>
+<p>#Models</p>
 <h2>OauthAccessToken</h2><p>Model: <code>lazuli-authentication/models/oauth-access-token</code>
 GraphqlType: <code>lazuli-authentication/types/oauth-access-token</code></p>
 <p>The oauth access token is a the token that is needed in order to use the api. An access token is generated at the end the oauth2 process and is related to an <code>oauth-client</code> and a <code>user</code>. The token is stored as a unsalted hash. Salting isn't possible as the token is the only lookup key on a request. (Yes, hashing also isn't important for the access token as it is random anyways.). <code>hash</code> and <code>expires</code> are the two only properties of this type.</p>
@@ -69,22 +69,22 @@ GraphqlType: <code>lazuli-authentication/types/permission</code></p>
 <h2>OauthProvider</h2><p>Model: <code>lazuli-authentication/models/oauth-provider</code>
 GraphqlType: <code>lazuli-authentication/types/oauth-provider</code></p>
 <p>As this module should also work with other oauth apis, this model is capable of storing an access token together with an refresh token for a certain provider and user.</p>
-<h2>Setup</h2><p>This is a small summary of the capabilities of this module. Unnecessary code was stripped, but in production you should always add input validation to prevent surprises. Also it's not mandatory to use the provided functions, you can always swap some of them for custom ones.</p>
-<h3>Local registration</h3><p><code>lazuli-authentication/endpoint</code> also provides an <code>registration</code> which accepts the fields <code>firstName</code>, <code>email</code> and <code>locale</code>.</p>
+<h1>Setup</h1><p>This is a small summary of the capabilities of this module. Unnecessary code was stripped, but in production you should always add input validation to prevent surprises. Also it's not mandatory to use the provided functions, you can always swap some of them for custom ones.</p>
+<h2>Local registration</h2><p><code>lazuli-authentication/endpoint</code> also provides an <code>registration</code> which accepts the fields <code>firstName</code>, <code>email</code> and <code>locale</code>.</p>
 <p>//TODO</p>
-<h3>Local login</h3><p>In order to be able to login with a local account, you'll need to setup an endpoint to render the login, e.g.</p>
+<h2>Local login</h2><p>In order to be able to login with a local account, you'll need to setup an endpoint to render the login, e.g.</p>
 <pre class="prettyprint source"><code>app.get(&quot;/views/login&quot;, loginView);</code></pre><p>This page has to contain a form which posts the fields <code>username</code> (email) and <code>password</code> to the following endpoint:</p>
 <pre class="prettyprint source"><code>expressServer.post(
     &quot;/auth/local/login&quot;,
     authLocal
 );</code></pre><p><code>authLocal</code> is already provided in the <code>lazuli-authentication/endpoint</code> module and just needs to be imported.</p>
-<h3>Email verification</h3><p>Again, you'll need to render a form with for example</p>
+<h2>Email verification</h2><p>Again, you'll need to render a form with for example</p>
 <pre class="prettyprint source"><code>app.get(&quot;/views/verify-email&quot;, mailVerificationView);</code></pre><p>This form has to pass the fields <code>email</code>, <code>password</code> and <code>emailVerificationCode</code> to the</p>
 <pre class="prettyprint source"><code>app.post(
     &quot;/auth/local/verify-email&quot;,
     verifyEmail
 );</code></pre><p>endpoint. The <code>verifyEmail</code> can also be imported from <code>lazuli-authentication/endpoint</code>.</p>
-<h3>Password reset</h3><p>The field <code>email</code> needs to be passed from a rendered from to</p>
+<h2>Password reset</h2><p>The field <code>email</code> needs to be passed from a rendered from to</p>
 <pre class="prettyprint source"><code>app.post(
     &quot;/auth/init-password-reset&quot;,
     initPasswordReset
@@ -94,8 +94,8 @@ GraphqlType: <code>lazuli-authentication/types/oauth-provider</code></p>
     &quot;/auth/init-password-reset&quot;,
     passwordReset
 );</code></pre><p>Again, <code>passwordReset</code> can be imported from <code>lazuli-authentication/endpoint</code>.</p>
-<h3>3-party oauth callbacks</h3><p>//TODO</p>
-<h3>Oauth 2</h3><p>In order to create an oauth2 dialog you need to setup an endpoint with something like</p>
+<h2>3-party oauth callbacks</h2><p>//TODO</p>
+<h2>Oauth 2</h2><p>In order to create an oauth2 dialog you need to setup an endpoint with something like</p>
 <pre class="prettyprint source"><code>app.get(
     &quot;/oauth2/authorize&quot;,
     isAuthenticated,
@@ -129,7 +129,12 @@ GraphqlType: <code>lazuli-authentication/types/oauth-provider</code></p>
         userId: 0,
         expires: 0
     }
-}</code></pre><p>The <code>token</code> property is the most important one. This token can now be used in an HTTP Header called <code>Authorization</code> with the content <code>Bearer xxx</code> where xxx is your access token. This header will bypass <code>isBearerAuthenticated</code> middlewares.</p></article>
+}</code></pre><p>The <code>token</code> property is the most important one. This token can now be used in an HTTP Header called <code>Authorization</code> with the content <code>Bearer xxx</code> where xxx is your access token. This header will bypass <code>isBearerAuthenticated</code> middlewares.</p>
+<h1>TODO</h1><ul>
+<li>modularize passport addons</li>
+<li>move redirect uris to config</li>
+<li>add events for registration/password reset/email verification</li>
+</ul></article>
     </section>
 
 
@@ -142,7 +147,7 @@ GraphqlType: <code>lazuli-authentication/types/oauth-provider</code></p>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Oct 29 2017 00:42:51 GMT+0200 (CEST) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Oct 29 2017 00:49:25 GMT+0200 (CEST) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>
