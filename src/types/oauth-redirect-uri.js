@@ -22,10 +22,22 @@ const { nodeInterface, attributeFieldsCache } = require("lazuli-require")(
 const OauthRedirectUri = require("../models/oauth-redirect-uri");
 
 /**
- * The graphql object type for this model
- * @type {GraphQLObjectType}
+ * The oauth redirect uri type module
+ * @module lazuli-authentication/types/oauth-redirect-uri
  */
-module.exports = new GraphQLObjectType({
+
+/**
+ * The graphql type for the oauth redirect uri
+ * @class
+ * @memberof module:lazuli-authentication/types/oauth-redirect-uri
+ *
+ * @type {GraphQLObjectType}
+ * @version 1.0
+ * @since 1.0
+ *
+ * @see module:lazuli-authentication/models/oauth-redirect-uri
+ */
+const OauthRedirectUriType = new GraphQLObjectType({
 	name: OauthRedirectUri.name,
 	description: "An oauth redirect uri",
 	fields: () => {
@@ -59,3 +71,5 @@ module.exports = new GraphQLObjectType({
 	},
 	interfaces: [nodeInterface]
 });
+
+module.exports = OauthRedirectUriType;

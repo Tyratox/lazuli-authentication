@@ -18,10 +18,8 @@ const {
 	generateHash
 } = require("../utilities/crypto.js");
 
-const Permission = require("./permission");
-
 /**
- * The user module
+ * The user sequelize module
  * @module lazuli-authentication/models/user
  */
 
@@ -29,11 +27,11 @@ const Permission = require("./permission");
  * The user sequelize model
  * @class
  * @memberof module:lazuli-authentication/models/user
- * 
+ *
  * @type {User}
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @see module:lazuli-authentication/models/permission
  * @see module:lazuli-authentication/models/oauth-provider
  * @see module:lazuli-authentication/models/oauth-access-token
@@ -92,12 +90,12 @@ const User = sequelize.define("user", {
  * Associates this model with others
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @static
  * @public
- * 
+ *
  * @fires "authentication.model.user.association"
- * 
+ *
  * @param {object} models The models to associate with
  * @param {module:lazuli-authentication/models/permission.Permission} models.Permission The permission model
  * @param {module:lazuli-authentication/models/oauth-provider.OauthProvider} models.OauthProvider The oauth provider model
@@ -205,7 +203,7 @@ User.associate = function({
 	 * @public
 	 * @static
 	 * @memberof module:lazuli-authentication/models/user.User
-	 * 
+	 *
 	 * @see module:lazuli-authentication/types/user
 	 */
 	this.graphQlType = require("../types/user");
@@ -231,10 +229,10 @@ User.associate = function({
  * Gets the sequelize user a passport profile
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @public
  * @static
- * 
+ *
  * @param  {Profile} profile The passport profile of the user to search for
  * @return {promise<module:lazuli-authentication/models/user.User>} A sequelize search promise
  */
@@ -250,10 +248,10 @@ User.getUserByPassportProfile = function(profile) {
  * Registers a user
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @public
  * @static
- * 
+ *
  * @param  {string} firstName The user's first name
  * @param  {string} email The user's email address
  * @param  {string} locale The user's locale
@@ -301,13 +299,13 @@ User.register = function(firstName, email, locale) {
  * Finds or creates a user based on a passport profile
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @public
  * @static
- * 
+ *
  * @fires "authentication.model.user.from-passport-profile.before"
  * @fires "authentication.model.user.from-passport-profile.after"
- * 
+ *
  * @param  {Profile} profile The passport profile to base to user on
  * @return {promise<module:lazuli-authentication/models/user.User>} The promise to check for the success of the action
  */
@@ -327,13 +325,13 @@ User.findOrCreateUserByPassportProfile = function(profile) {
  * Creates a user based on a passport profile
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @private
  * @static
- * 
+ *
  * @fires "authentication.model.user.from-passport-profile.before"
  * @fires "authentication.model.user.from-passport-profile.after"
- * 
+ *
  * @param  {PassportProfile} profile The passport profile to base the user on
  * @return {promise<module:lazuli-authentication/models/user.User>} A promise to check for the success of the action
  */
@@ -386,13 +384,13 @@ User._createFromPassportProfile = function(profile) {
  * Updates a user based on a passport profile
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @private
  * @instance
- * 
+ *
  * @fires "authentication.model.user.from-passport-profile.before"
  * @fires "authentication.model.user.from-passport-profile.after"
- * 
+ *
  * @param  {PassportProfile} profile The passport profile to base the user on
  * @return {promise<module:lazuli-authentication/models/user.User>} A promise to check for the success of the action
  */
@@ -433,11 +431,11 @@ User.prototype._updateFromPassportProfile = function(profile) {
  * Verifies if the passed password is equal to the stored one
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @instance
  * @public
  * @instance
- * 
+ *
  * @param  {string} password The password to verify
  * @return {promise<boolean>} A promise to check whether the password could be verified
  */
@@ -474,10 +472,10 @@ User.prototype.verifyPassword = function(password) {
  * Updates the user's password
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @public
  * @instance
- * 
+ *
  * @param  {string} password The new password
  * @param  {string} passwordResetCode The received password reset code
  * @return {promise<void>} A promise to check whether the password could be updated
@@ -512,12 +510,12 @@ User.prototype.updatePassword = function(password, passwordResetCode) {
  * Initiates a passowrd reset
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @public
  * @instance
- * 
+ *
  * @fires "authentication.model.user.password-reset.init"
- * 
+ *
  * @return {promise<void>} A promise to check whether the email was sent
  */
 User.prototype.initPasswordReset = function() {
@@ -552,12 +550,12 @@ User.prototype.initPasswordReset = function() {
  * Initiates the email verification
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @public
  * @instance
- * 
+ *
  * @fires "authentication.model.user.email-verification"
- * 
+ *
  * @param {boolean} [registration=false] Whether this is the initial email verification (registration)
  * @return {promise<void>} A promise to check whether the email was sent
  */
@@ -565,7 +563,7 @@ User.prototype.initEmailVerification = function(registration = false) {
 	const emailVerificationCode = generateRandomString(CONFIRM_TOKEN_LENGTH);
 
 	/**
-     * Event that is fired before the email verification code is 
+     * Event that is fired before the email verification code is
 	 * set during the email verification.
 	 * This event can (and should) be used to hand the verification code
 	 * the the user via email.
@@ -599,10 +597,10 @@ User.prototype.initEmailVerification = function(registration = false) {
  * Verifies an email
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @public
  * @instance
- * 
+ *
  * @param  {string} [email=""] The email to verify
  * @param  {string} [emailVerificationCode=null] The received email verification code
  * @return {promise<void>} A promise to check whether the email could be verified
@@ -633,31 +631,16 @@ User.prototype.verifyEmail = function(
  * Checks whether the user has all of the passed permissions
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @public
  * @instance
- * 
+ *
  * @param  {array} [permissionsNeeded=[]] The permissions to check for
  * @return {promise<boolean>} Whether the user has the given permissions
  */
 User.prototype.doesHavePermissions = function(permissionsNeeded = []) {
-	let promise;
-
-	if (!this.get("Permissions")) {
-		promise = this.reload({
-			include: [
-				{
-					model: Permission,
-					as: "Permissions"
-				}
-			]
-		});
-	} else {
-		promise = Promise.resolve(this);
-	}
-
-	return promise.then(() => {
-		const permissions = this.get("Permissions").map(permission =>
+	return this.getPermissions().then(permissionModels => {
+		const permissions = permissionModels.map(permission =>
 			permission.get("permission")
 		);
 
@@ -684,10 +667,10 @@ User.prototype.doesHavePermissions = function(permissionsNeeded = []) {
  * Checks whether the user has the passed permission
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @public
  * @instance
- * 
+ *
  * @param  {array}  [permissionsNeeded=[]] The permission to check for
  * @return {promise<boolean>} Whether the user has the given permissions
  */
@@ -699,10 +682,10 @@ User.prototype.doesHavePermission = function(permission) {
  * Sets the permissions of the user
  * @version 1.0
  * @since 1.0
- * 
+ *
  * @public
  * @instance
- * 
+ *
  * @param  {array} [permissions=[]] An array of permissions to set to the user
  * @return {promise<boolean>} A promise whether the update was successfull
  */

@@ -22,11 +22,22 @@ const { nodeInterface, attributeFieldsCache } = require("lazuli-require")(
 const Permission = require("../models/permission");
 
 /**
- * The graphql object type for this model
- * @type {GraphQLObjectType}
+ * The permission type module
+ * @module lazuli-authentication/types/permission
  */
 
-module.exports = new GraphQLObjectType({
+/**
+ * The graphql type for the permission
+ * @class
+ * @memberof module:lazuli-authentication/types/permission
+ *
+ * @type {GraphQLObjectType}
+ * @version 1.0
+ * @since 1.0
+ *
+ * @see module:lazuli-authentication/models/permission
+ */
+const PermissionType = new GraphQLObjectType({
 	name: Permission.name,
 	description: "A permission",
 	fields: () => {
@@ -71,3 +82,5 @@ module.exports = new GraphQLObjectType({
 	},
 	interfaces: [nodeInterface]
 });
+
+module.exports = PermissionType;

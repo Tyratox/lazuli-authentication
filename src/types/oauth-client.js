@@ -24,13 +24,26 @@ const { protectGraphqlSchemaFields } = require("../utilities/graphql");
 const OauthClient = require("../models/oauth-client");
 
 /**
- * The graphql object type for this model
- * @type {GraphQLObjectType}
+ * The oauth client type module
+ * @module lazuli-authentication/types/oauth-client
  */
-module.exports = new GraphQLObjectType({
+
+/**
+ * The graphql type for the oauth client
+ * @class
+ * @memberof module:lazuli-authentication/types/oauth-client
+ *
+ * @type {GraphQLObjectType}
+ * @version 1.0
+ * @since 1.0
+ *
+ * @see module:lazuli-authentication/models/oauth-client
+ */
+const OauthClientType = new GraphQLObjectType({
 	name: OauthClient.name,
 	description: "An oauth client",
 	fields: () => {
+		//lazy loaded
 		const UserType = require("./user");
 		const OauthCodeType = require("./oauth-code");
 		const OauthAccessTokenType = require("./oauth-access-token");
@@ -133,3 +146,5 @@ module.exports = new GraphQLObjectType({
 	},
 	interfaces: [nodeInterface]
 });
+
+module.exports = OauthClientType;

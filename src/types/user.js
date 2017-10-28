@@ -23,10 +23,22 @@ const { protectGraphqlSchemaFields } = require("../utilities/graphql");
 const User = require("../models/user");
 
 /**
- * The graphql object type for this model
- * @type {GraphQLObjectType}
+ * The user type module
+ * @module lazuli-authentication/types/user
  */
-module.exports = new GraphQLObjectType({
+
+/**
+ * The graphql type for the user
+ * @class
+ * @memberof module:lazuli-authentication/types/user
+ *
+ * @type {GraphQLObjectType}
+ * @version 1.0
+ * @since 1.0
+ *
+ * @see module:lazuli-authentication/models/user
+ */
+const UserType = new GraphQLObjectType({
 	name: User.name,
 	description: "A user",
 	fields: () => {
@@ -187,3 +199,5 @@ module.exports = new GraphQLObjectType({
 	},
 	interfaces: [nodeInterface]
 });
+
+module.exports = UserType;

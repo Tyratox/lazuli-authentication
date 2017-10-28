@@ -22,13 +22,26 @@ const { nodeInterface, attributeFieldsCache } = require("lazuli-require")(
 const OauthAccessToken = require("../models/oauth-access-token");
 
 /**
- * The graphql object type for this model
- * @type {GraphQLObjectType}
+ * The oauth access token type module
+ * @module lazuli-authentication/types/oauth-acccess-token
  */
-module.exports = oauthClientType = new GraphQLObjectType({
+
+/**
+ * The graphql type for the oauth access token
+ * @class
+ * @memberof module:lazuli-authentication/types/oauth-acccess-token
+ *
+ * @type {GraphQLObjectType}
+ * @version 1.0
+ * @since 1.0
+ *
+ * @see module:lazuli-authentication/models/oauth-access-token
+ */
+const OauthAccessTokenType = new GraphQLObjectType({
 	name: OauthAccessToken.name,
 	description: "An oauth access token",
 	fields: () => {
+		//lazy loaded
 		const UserType = require("./user");
 		const OauthClientType = require("./oauth-client");
 
@@ -60,19 +73,24 @@ module.exports = oauthClientType = new GraphQLObjectType({
 				allowNull: false,
 				cache: attributeFieldsCache
 			}),
-			...valueFilter.filterable("graphql.type.oauth-access-token.association", {
-				user: {
-					type: oauthAccessTokenUserConnection.connectionType,
-					args: oauthAccessTokenUserConnection.connectionArgs,
-					resolve: oauthAccessTokenUserConnection.resolve
-				},
-				oauthClient: {
-					type: oauthAccessTokenOauthClientConnection.connectionType,
-					args: oauthAccessTokenOauthClientConnection.connectionArgs,
-					resolve: oauthAccessTokenOauthClientConnection.resolve
+			...valueFilter.filterable(
+				"authentication.graphql.type.oauth-access-token.association",
+				{
+					user: {
+						type: oauthAccessTokenUserConnection.connectionType,
+						args: oauthAccessTokenUserConnection.connectionArgs,
+						resolve: oauthAccessTokenUserConnection.resolve
+					},
+					oauthClient: {
+						type: oauthAccessTokenOauthClientConnection.connectionType,
+						args: oauthAccessTokenOauthClientConnection.connectionArgs,
+						resolve: oauthAccessTokenOauthClientConnection.resolve
+					}
 				}
-			})
+			)
 		};
 	},
 	interfaces: [nodeInterface]
 });
+
+module.exports = OauthAccessTokenType;

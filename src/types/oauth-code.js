@@ -22,10 +22,22 @@ const { nodeInterface, attributeFieldsCache } = require("lazuli-require")(
 const OauthCode = require("../models/oauth-code");
 
 /**
- * The graphql object type for this model
- * @type {GraphQLObjectType}
+ * The oauth code type module
+ * @module lazuli-authentication/types/oauth-code
  */
-module.exports = new GraphQLObjectType({
+
+/**
+ * The graphql type for the oauth code
+ * @class
+ * @memberof module:lazuli-authentication/types/oauth-code
+ *
+ * @type {GraphQLObjectType}
+ * @version 1.0
+ * @since 1.0
+ *
+ * @see module:lazuli-authentication/models/oauth-code
+ */
+const OauthCodeType = new GraphQLObjectType({
 	name: OauthCode.name,
 	description: "An oauth code",
 	fields: () => {
@@ -76,3 +88,5 @@ module.exports = new GraphQLObjectType({
 	},
 	interfaces: [nodeInterface]
 });
+
+module.exports = OauthCodeType;

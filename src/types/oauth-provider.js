@@ -22,10 +22,22 @@ const { nodeInterface, attributeFieldsCache } = require("lazuli-require")(
 const OauthProvider = require("../models/oauth-provider");
 
 /**
- * The graphql object type for this model
- * @type {GraphQLObjectType}
+ * The oauth provider type module
+ * @module lazuli-authentication/types/oauth-provider
  */
-module.exports = new GraphQLObjectType({
+
+/**
+ * The graphql type for the oauth provider
+ * @class
+ * @memberof module:lazuli-authentication/types/oauth-provider
+ *
+ * @type {GraphQLObjectType}
+ * @version 1.0
+ * @since 1.0
+ *
+ * @see module:lazuli-authentication/models/oauth-provider
+ */
+const OauthProviderType = new GraphQLObjectType({
 	name: OauthProvider.name,
 	description: "An oauth provider",
 	fields: () => {
@@ -59,3 +71,5 @@ module.exports = new GraphQLObjectType({
 	},
 	interfaces: [nodeInterface]
 });
+
+module.exports = OauthProviderType;

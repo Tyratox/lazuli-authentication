@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: middleware.js</title>
+    <title>JSDoc: Class: OauthCodeType</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,42 +17,149 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: middleware.js</h1>
+    <h1 class="page-title">Class: OauthCodeType</h1>
 
     
 
 
 
+
+<section>
+
+<header>
     
-    <section>
-        <article>
-            <pre class="prettyprint source linenums"><code>const passport = require("./passport");
+        <h2><span class="attribs"><span class="type-signature"></span></span>
+            <span class="ancestors"><a href="module-lazuli-authentication_types_oauth-code.html">lazuli-authentication/types/oauth-code</a>.</span>OauthCodeType<span class="signature">()</span><span class="type-signature"></span></h2>
+        
+    
+</header>
 
-/**
- * Generates a middleware that checks for the passed permissions
- * @param  {Array} permissions The express request object
- * @return {Function} The express middleware generator accepting a permissions array
- */
-module.exports.isBearerAuthenticated = (permissions = []) => {
-	return (request, response, next) => {
-		request.requiredPermissions = permissions;
+<article>
+    <div class="container-overview">
+    
+        
 
-		passport.authenticate("bearer", { session: false }, (err, user, info) => {
-			if (err) {
-				return next(err);
-			}
+    
 
-			if (!user) {
-				return next(new Error("The sent access token is invalid!"));
-			}
+    
+    <h4 class="name" id="OauthCodeType"><span class="type-signature"></span>new OauthCodeType<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
-			request.logIn(user, next);
-		})(request, response, next);
-	};
-};
-</code></pre>
-        </article>
-    </section>
+    
+
+
+
+<div class="description">
+    The graphql type for the oauth code
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-version">Version:</dt>
+    <dd class="tag-version"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+    <dt class="tag-since">Since:</dt>
+    <dd class="tag-since"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="types_oauth-code.js.html">types/oauth-code.js</a>, <a href="types_oauth-code.js.html#line40">line 40</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="module-lazuli-authentication_models_oauth-code.html">module:lazuli-authentication/models/oauth-code</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</article>
+
+</section>
 
 
 
