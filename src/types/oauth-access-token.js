@@ -34,6 +34,8 @@ const OauthAccessToken = require("../models/oauth-access-token");
  * @type {GraphQLObjectType}
  * @version 1.0
  * @since 1.0
+ * 
+ * @filterable {object} authentication.graphql.type.oauth-access-token.association The association fields inside the graphql schema
  *
  * @see module:lazuli-authentication/models/oauth-access-token
  */

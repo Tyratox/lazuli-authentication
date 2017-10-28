@@ -1,8 +1,13 @@
 /**
+ * Small object utilities
+ * @module lazuli-authentication/utilities/object
+ */
+
+/**
  * Picks selected keys from an object
- * @param  {Object} obj  The object to pick the keys from
- * @param  {Array} keys  The array of keys to pick
- * @return {Object}      The new object only containing the picked keys
+ * @param  {object} obj The object to pick the keys from
+ * @param  {array} keys The array of keys to pick
+ * @return {object} The new object only containing the picked keys
  */
 module.exports.pick = (obj, keys) => {
 	let o = {};

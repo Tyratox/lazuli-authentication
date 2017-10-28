@@ -1,6 +1,17 @@
 const Joi = require("joi");
 const { LOCALES } = require("lazuli-require")("lazuli-config");
 
+/**
+ * Validates the graphql input for an user type in detail
+ * @module lazuli-authentication/graphql-validation/user
+ * 
+ * @see module:lazuli-authentication/types/user.UserType
+ */
+
+/**
+ * The joi validation object
+ * @type {object}
+ */
 module.exports = {
 	id: Joi.number()
 		.integer()

@@ -377,7 +377,6 @@ User._createFromPassportProfile = function(profile) {
 			})
 		)
 		.then(() => Promise.resolve(user));
-	user;
 };
 
 /**
@@ -387,6 +386,8 @@ User._createFromPassportProfile = function(profile) {
  *
  * @private
  * @instance
+ * @method _updateFromPassportProfile
+ * @memberof module:lazuli-authentication/models/user.User
  *
  * @fires "authentication.model.user.from-passport-profile.before"
  * @fires "authentication.model.user.from-passport-profile.after"
@@ -432,9 +433,10 @@ User.prototype._updateFromPassportProfile = function(profile) {
  * @version 1.0
  * @since 1.0
  *
- * @instance
  * @public
  * @instance
+ * @method verifyPassword
+ * @memberof module:lazuli-authentication/models/user.User
  *
  * @param  {string} password The password to verify
  * @return {promise<boolean>} A promise to check whether the password could be verified
@@ -475,6 +477,8 @@ User.prototype.verifyPassword = function(password) {
  *
  * @public
  * @instance
+ * @method updatePassword
+ * @memberof module:lazuli-authentication/models/user.User
  *
  * @param  {string} password The new password
  * @param  {string} passwordResetCode The received password reset code
@@ -513,6 +517,8 @@ User.prototype.updatePassword = function(password, passwordResetCode) {
  *
  * @public
  * @instance
+ * @method initPasswordReset
+ * @memberof module:lazuli-authentication/models/user.User
  *
  * @fires "authentication.model.user.password-reset.init"
  *
@@ -553,6 +559,8 @@ User.prototype.initPasswordReset = function() {
  *
  * @public
  * @instance
+ * @method initEmailVerification
+ * @memberof module:lazuli-authentication/models/user.User
  *
  * @fires "authentication.model.user.email-verification"
  *
@@ -600,6 +608,8 @@ User.prototype.initEmailVerification = function(registration = false) {
  *
  * @public
  * @instance
+ * @method verifyEmail
+ * @memberof module:lazuli-authentication/models/user.User
  *
  * @param  {string} [email=""] The email to verify
  * @param  {string} [emailVerificationCode=null] The received email verification code
@@ -634,6 +644,8 @@ User.prototype.verifyEmail = function(
  *
  * @public
  * @instance
+ * @method doesHavePermissions
+ * @memberof module:lazuli-authentication/models/user.User
  *
  * @param  {array} [permissionsNeeded=[]] The permissions to check for
  * @return {promise<boolean>} Whether the user has the given permissions
@@ -670,6 +682,8 @@ User.prototype.doesHavePermissions = function(permissionsNeeded = []) {
  *
  * @public
  * @instance
+ * @method doesHavePermission
+ * @memberof module:lazuli-authentication/models/user.User
  *
  * @param  {array}  [permissionsNeeded=[]] The permission to check for
  * @return {promise<boolean>} Whether the user has the given permissions
@@ -685,6 +699,8 @@ User.prototype.doesHavePermission = function(permission) {
  *
  * @public
  * @instance
+ * @method setPermissionArray
+ * @memberof module:lazuli-authentication/models/user.User
  *
  * @param  {array} [permissions=[]] An array of permissions to set to the user
  * @return {promise<boolean>} A promise whether the update was successfull

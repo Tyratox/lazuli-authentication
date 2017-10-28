@@ -36,6 +36,8 @@ const OauthClient = require("../models/oauth-client");
  * @type {GraphQLObjectType}
  * @version 1.0
  * @since 1.0
+ * 
+ * @filterable {object} authentication.graphql.type.oauth-client.association The association fields inside the graphql schema
  *
  * @see module:lazuli-authentication/models/oauth-client
  */

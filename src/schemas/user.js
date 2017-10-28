@@ -17,6 +17,7 @@ const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
 const sequelize = require("lazuli-require")("lazuli-core/sequelize");
 
 const { escapeLikeString } = require("../utilities/sql");
+const { pick } = require("../utilities/object");
 
 const User = require("../models/user");
 
@@ -24,8 +25,20 @@ const UserInputType = require("../input-types/user");
 const UserInputTypeValidation = require("../graphql-validation/user");
 
 /**
+ * The graphql schema for the user model
+ * @module lazuli-authentication/schema/user
+ * 
+ * @filterable {object} authentication.graphql.query.user.list.args The user properties everyone can query
+ * @filterable {object} authentication.graphql.mutation.user.upsert.keys The user properties the owner can update
+ * 
+ * @see module:lazuli-authentication/types/user
+ * @see module:lazuli-authentication/input-types/user
+ * @see module:lazuli-authentication/models/user
+ */
+
+/**
  * The user query schema
- * @type {Object}
+ * @type {object}
  */
 module.exports.query = {
 	user: {
@@ -88,12 +101,10 @@ module.exports.query = {
 						//only allow uncritical search keys
 						args = pick(
 							args,
-							valueFilter.filterable("graphql.query.user.list.args", [
-								"id",
-								"nameDisplay",
-								"nameFirst",
-								"nameLast"
-							])
+							valueFilter.filterable(
+								"authentication.graphql.query.user.list.args",
+								["id", "nameDisplay", "nameFirst", "nameLast"]
+							)
 						);
 					}
 
@@ -127,10 +138,7 @@ module.exports.query = {
 								}
 							}
 
-							return valueFilter.filterable(
-								"graphql.query.users.find-options",
-								findOptions
-							);
+							return findOptions;
 						}
 					})(root, args, context, info);
 				});
@@ -140,7 +148,7 @@ module.exports.query = {
 
 /**
  * The user mutation schema
- * @type {Object}
+ * @type {object}
  */
 module.exports.mutation = {
 	//update or insert a user
@@ -249,7 +257,7 @@ module.exports.mutation = {
 									pick(
 										user,
 										valueFilter.filterable(
-											"graphql.mutation.user.upsert.keys",
+											"authentication.graphql.mutation.user.upsert.keys",
 											["nameDisplay", "nameFirst", "nameLast", "locale"]
 										)
 									)

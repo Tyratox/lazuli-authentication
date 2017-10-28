@@ -35,6 +35,8 @@ const User = require("../models/user");
  * @type {GraphQLObjectType}
  * @version 1.0
  * @since 1.0
+ * 
+ * @filterable {object} authentication.graphql.type.user.association The association fields inside the graphql schema
  *
  * @see module:lazuli-authentication/models/user
  */
@@ -168,33 +170,36 @@ const UserType = new GraphQLObjectType({
 				allowNull: false,
 				cache: attributeFieldsCache
 			}),
-			...valueFilter.filterable("graphql.type.user.association", {
-				permissions: {
-					type: userPermissionConnection.connectionType,
-					args: userPermissionConnection.connectionArgs,
-					resolve: userPermissionConnection.resolve
-				},
-				oauthProviders: {
-					type: userOauthProviderConnection.connectionType,
-					args: userOauthProviderConnection.connectionArgs,
-					resolve: userOauthProviderConnection.resolve
-				},
-				oauthAccessTokens: {
-					type: userOauthAccessTokenConnection.connectionType,
-					args: userOauthAccessTokenConnection.connectionArgs,
-					resolve: userOauthAccessTokenConnection.resolve
-				},
-				oauthCodes: {
-					type: userOauthCodeConnection.connectionType,
-					args: userOauthCodeConnection.connectionArgs,
-					resolve: userOauthCodeConnection.resolve
-				},
-				oauthClients: {
-					type: userOauthClientConnection.connectionType,
-					args: userOauthClientConnection.connectionArgs,
-					resolve: userOauthClientConnection.resolve
+			...valueFilter.filterable(
+				"authentication.graphql.type.user.association",
+				{
+					permissions: {
+						type: userPermissionConnection.connectionType,
+						args: userPermissionConnection.connectionArgs,
+						resolve: userPermissionConnection.resolve
+					},
+					oauthProviders: {
+						type: userOauthProviderConnection.connectionType,
+						args: userOauthProviderConnection.connectionArgs,
+						resolve: userOauthProviderConnection.resolve
+					},
+					oauthAccessTokens: {
+						type: userOauthAccessTokenConnection.connectionType,
+						args: userOauthAccessTokenConnection.connectionArgs,
+						resolve: userOauthAccessTokenConnection.resolve
+					},
+					oauthCodes: {
+						type: userOauthCodeConnection.connectionType,
+						args: userOauthCodeConnection.connectionArgs,
+						resolve: userOauthCodeConnection.resolve
+					},
+					oauthClients: {
+						type: userOauthClientConnection.connectionType,
+						args: userOauthClientConnection.connectionArgs,
+						resolve: userOauthClientConnection.resolve
+					}
 				}
-			})
+			)
 		});
 	},
 	interfaces: [nodeInterface]

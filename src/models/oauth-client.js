@@ -185,7 +185,9 @@ OauthClient.generateSecret = function() {
  * @since 1.0
  * 
  * @public
- * @static
+ * @instance
+ * @method setSecret
+ * @memberof module:lazuli-authentication/models/oauth-client.OauthClient
  * 
  * @param  {string} secret The secret to hash and store
  * @return {promise<module:lazuli-authentication/models/oauth-client.OauthClient>} The random secret
@@ -208,7 +210,9 @@ OauthClient.prototype.setSecret = function(secret) {
  * @since 1.0
  * 
  * @public
- * @static
+ * @instance
+ * @method verifySecret
+ * @memberof module:lazuli-authentication/models/oauth-client.OauthClient
  * 
  * @param {string} secret Checks whether this secret matches the stored one by hashing it with the stored salt
  * @return {promise<boolean>} The random secret
@@ -249,7 +253,9 @@ OauthClient.prototype.verifySecret = function(secret) {
  * @since 1.0
  * 
  * @public
- * @static
+ * @instance
+ * @method verifyRedirectUri
+ * @memberof module:lazuli-authentication/models/oauth-client.OauthClient
  * 
  * @param  {string} redirectUri The redirect uri to verify
  * @return {promise<boolean>} The random secret

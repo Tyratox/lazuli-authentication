@@ -26,8 +26,20 @@ const OauthClientInputType = require("../input-types/oauth-client");
 const OauthClientInputTypeValidation = require("../graphql-validation/oauth-client");
 
 /**
- * The oauth client query schema
- * @type {Object}
+ * The graphql schema for the oauth client model
+ * @module lazuli-authentication/schema/oauth-client
+ * 
+ * @filterable {object} authentication.graphql.query.oauth-client.list.args The client properties everyone can query
+ * @filterable {object} authentication.graphql.mutation.oauth-client.upsert.keys The client properties the owner can update
+ * 
+ * @see module:lazuli-authentication/types/oauth-client
+ * @see module:lazuli-authentication/input-types/oauth-client
+ * @see module:lazuli-authentication/models/oauth-client
+ */
+
+/**
+ * The graphql query schema
+ * @type {object}
  */
 module.exports.query = {
 	oauthClient: {
@@ -78,10 +90,10 @@ module.exports.query = {
 						//only allow uncritical search keys
 						args = pick(
 							args,
-							valueFilter.filterable("graphql.query.oauth-client.list.args", [
-								"id",
-								"name"
-							])
+							valueFilter.filterable(
+								"authentication.graphql.query.oauth-client.list.args",
+								["id", "name"]
+							)
 						);
 					}
 
@@ -95,10 +107,7 @@ module.exports.query = {
 								}
 							}
 
-							return valueFilter.filterable(
-								"graphql.query.oauth-client.list.find-options",
-								findOptions
-							);
+							return findOptions;
 						}
 					})(root, args, context, info);
 				});
@@ -107,8 +116,8 @@ module.exports.query = {
 };
 
 /**
- * The oauth client mutation schema
- * @type {Object}
+ * The graphql mutation schema
+ * @type {object}
  */
 module.exports.mutation = {
 	upsertOauthClient: {
@@ -243,7 +252,7 @@ module.exports.mutation = {
 									pick(
 										user,
 										valueFilter.filterable(
-											"graphql.mutation.oauth-client.upsert.keys",
+											"authentication.graphql.mutation.oauth-client.upsert.keys",
 											["name"]
 										)
 									)

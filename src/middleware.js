@@ -1,9 +1,14 @@
 const passport = require("./passport");
 
 /**
+ * A set of general authentication middlewares
+ * @module lazuli-authentication/middleware
+ */
+
+/**
  * Generates a middleware that checks for the passed permissions
- * @param  {Array} permissions The express request object
- * @return {Function} The express middleware generator accepting a permissions array
+ * @param  {array} permissions The express request object
+ * @return {function} The express middleware generator accepting a permissions array
  */
 module.exports.isBearerAuthenticated = (permissions = []) => {
 	return (request, response, next) => {

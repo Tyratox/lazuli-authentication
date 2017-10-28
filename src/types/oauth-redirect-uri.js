@@ -34,6 +34,8 @@ const OauthRedirectUri = require("../models/oauth-redirect-uri");
  * @type {GraphQLObjectType}
  * @version 1.0
  * @since 1.0
+ * 
+ * @filterable {object} authentication.graphql.type.oauth-redirect-uri.association The association fields inside the graphql schema
  *
  * @see module:lazuli-authentication/models/oauth-redirect-uri
  */
@@ -60,13 +62,16 @@ const OauthRedirectUriType = new GraphQLObjectType({
 				allowNull: false,
 				cache: attributeFieldsCache
 			}),
-			...valueFilter.filterable("graphql.type.oauth-redirect-uri.association", {
-				oauthClients: {
-					type: oauthRedirectUriConnection.connectionType,
-					arsg: oauthRedirectUriConnection.connectionArgs,
-					resolve: oauthRedirectUriConnection.resolve
+			...valueFilter.filterable(
+				"authentication.graphql.type.oauth-redirect-uri.association",
+				{
+					oauthClients: {
+						type: oauthRedirectUriConnection.connectionType,
+						arsg: oauthRedirectUriConnection.connectionArgs,
+						resolve: oauthRedirectUriConnection.resolve
+					}
 				}
-			})
+			)
 		};
 	},
 	interfaces: [nodeInterface]

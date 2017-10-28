@@ -1,5 +1,6 @@
 {
-	"plugins": [],
+	//has to be relative to the theme
+	"plugins": ["../lazuli-filters/jsdoc-plugin.js"],
 	"recurseDepth": 10,
 	"source": {
 		"includePattern": ".+\\.m?js(doc|x)?$",
@@ -15,6 +16,7 @@
 		"monospaceLinks": true
 	},
 	"opts": {
+		"template": "./node_modules/docdash",
 		"encoding": "utf8",
 		"private": true,
 		"recurse": true,

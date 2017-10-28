@@ -5,10 +5,15 @@ const { HASH_ALGORITHM, SALT_LENGTH } = require("lazuli-require")(
 );
 
 /**
+ * Crypto utilities
+ * @module lazuli-authentication/utilities/crypto
+ */
+
+/**
  * Generates random string of characters
  * @function generateRandomString
  * @param {number} length Length of the random string.
- * @return {String} A random string of a given length
+ * @return {string} A random string of a given length
  */
 const generateRandomString = length => {
 	return crypto
@@ -25,7 +30,7 @@ module.exports.generateRandomString = generateRandomString;
  * @param {string} data The data to hash
  * @param {string} [salt=null] The salt which should be used
  * @param {string} [algorithm=HASH_ALGORITHM] The hash algorithm that should be used
- * @return {Object} The hashed string, the generated salt and the
+ * @return {object} The hashed string, the generated salt and the
  * used hash algorithm {hash: '', salt: '', algorithm: ''}
  */
 const generateHash = (data, salt = null, algorithm = HASH_ALGORITHM) => {

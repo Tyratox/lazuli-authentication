@@ -15,25 +15,31 @@ const sequelize = require("lazuli-require")("lazuli-core/sequelize");
 const expressServer = require("lazuli-require")("lazuli-core/express");
 
 /**
+ * An authentication module
+ * @module lazuli-authentication
+ */
+
+/**
  * This is the authentication class which handles the registration and, of
  * course, the authentication of users
+ * @class
+ * @memberof module:lazuli-authentication
+ * 
+ * @type {Authentication}
+ * @version 1.0
+ * @since 1.0
  */
 class Authentication {
 	constructor() {
 		valueFilter.add("sequelize.models", this.registerModels.bind(this));
-		valueFilter.add(
-			"graphql.schema.root.query.fields",
-			this.addGraphQlQueryFields.bind(this)
-		);
-		valueFilter.add(
-			"graphql.schema.root.mutation.fields",
-			this.addGraphQlMutationFields.bind(this)
-		);
 	}
 }
 
 /**
  * All models registered by this module
+ * @since 1.0
+ * @static
+ * @memberof module:lazuli-authentication.Authentication
  * @type {Object}
  */
 Authentication.prototype._models = {
@@ -47,7 +53,13 @@ Authentication.prototype._models = {
 };
 
 /**
- * Registeres new models
+ * Callback function for registering models. Will be hooked to 'sequelize.models'.
+ * @version 1.0
+ * @since 1.0
+ * @instance
+ * @method registerModels
+ * @memberof module:lazuli-authentication.Authentication
+ * 
  * @param  {Object} models All previously registered models
  * @return {Object}        The new model object, including the old and new
  */
@@ -55,32 +67,6 @@ Authentication.prototype.registerModels = function(models) {
 	return {
 		...models,
 		...this._models
-	};
-};
-
-/**
- * Adds authentication related query fields
- * @param  {Object} fields    The registered fields
- * @return {Object}           The altered query fields
- */
-Authentication.prototype.addGraphQlQueryFields = fields => {
-	return {
-		...fields,
-		...require("./schemas/user").query,
-		...require("./schemas/oauth-client").query
-	};
-};
-
-/**
- * Adds authentication related mutation fields
- * @param  {Object} fields    The registered fields
- * @return {Object}           The altered query fields
- */
-Authentication.prototype.addGraphQlMutationFields = fields => {
-	return {
-		...fields,
-		...require("./schemas/user").mutation,
-		...require("./schemas/oauth-client").mutation
 	};
 };
 

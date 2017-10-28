@@ -34,6 +34,8 @@ const OauthCode = require("../models/oauth-code");
  * @type {GraphQLObjectType}
  * @version 1.0
  * @since 1.0
+ * 
+ * @filterable {object} authentication.graphql.type.oauth-code.association The association fields inside the graphql schema
  *
  * @see module:lazuli-authentication/models/oauth-code
  */
@@ -72,18 +74,21 @@ const OauthCodeType = new GraphQLObjectType({
 				allowNull: false,
 				cache: attributeFieldsCache
 			}),
-			...valueFilter.filterable("graphql.type.oauth-code.association", {
-				user: {
-					type: oauthCodeUserConnection.connectionType,
-					args: oauthCodeUserConnection.connectionArgs,
-					resolve: oauthCodeUserConnection.resolve
-				},
-				oauthClient: {
-					type: oauthCodeOauthClientConnection.connectionType,
-					args: oauthCodeOauthClientConnection.connectionArgs,
-					resolve: oauthCodeOauthClientConnection.resolve
+			...valueFilter.filterable(
+				"authentication.graphql.type.oauth-code.association",
+				{
+					user: {
+						type: oauthCodeUserConnection.connectionType,
+						args: oauthCodeUserConnection.connectionArgs,
+						resolve: oauthCodeUserConnection.resolve
+					},
+					oauthClient: {
+						type: oauthCodeOauthClientConnection.connectionType,
+						args: oauthCodeOauthClientConnection.connectionArgs,
+						resolve: oauthCodeOauthClientConnection.resolve
+					}
 				}
-			})
+			)
 		};
 	},
 	interfaces: [nodeInterface]

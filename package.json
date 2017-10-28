@@ -11,7 +11,10 @@
 		"type": "git",
 		"url": "https://github.com/tyratox/lazuli-authentication.git"
 	},
-	"keywords": ["lazuli", "authentication"],
+	"keywords": [
+		"lazuli",
+		"authentication"
+	],
 	"author": "Nico Hauser",
 	"contributors": [
 		{
@@ -52,6 +55,7 @@
 	},
 	"devDependencies": {
 		"ava": "^0.22.0",
+		"docdash": "^0.4.0",
 		"jsdoc": "^3.5.4",
 		"lazuli-config": "tyratox/lazuli-config",
 		"lazuli-core": "tyratox/lazuli-core",

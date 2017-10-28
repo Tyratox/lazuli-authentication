@@ -2,10 +2,15 @@ const User = require("./models/user");
 const passport = require("./passport");
 
 /**
+ * A set of general authentication endpoints
+ * @module lazuli-authentication/endpoint
+ */
+
+/**
  * An express middleware/endpoint that resets a users password
- * @param {Object} request The express request object
- * @param {Object} response The express response object
- * @param {Object} next The middleware callback function 
+ * @param {object} request The express request object
+ * @param {object} response The express response object
+ * @param {object} next The middleware callback function 
  * @return {void}
  */
 module.exports.passwordReset = (request, response, next) => {
@@ -31,9 +36,9 @@ module.exports.passwordReset = (request, response, next) => {
 
 /**
   *An express endpoint that initiates a passwort reset
-  * @param {Object} request The express request object
-  * @param {Object} response The express response object
-  * @param {Object} next The middleware callback function
+  * @param {object} request The express request object
+  * @param {object} response The express response object
+  * @param {object} next The middleware callback function
   * @return {void}
   */
 module.exports.initPasswordReset = (request, response, next) => {
@@ -63,11 +68,11 @@ module.exports.initPasswordReset = (request, response, next) => {
 
 /**
  * Express middleware/endpoint that does the last authentication step
- * @param  {Object}   err                 An error object
- * @param  {Object}   request             The express request object
- * @param  {Object}   response            The express response object
- * @param  {Object}   user                The passport user
- * @param  {Function} next                The middleware callback function
+ * @param  {object}   err An error object
+ * @param  {object}   request The express request object
+ * @param  {object}   response The express response object
+ * @param  {object}   user The passport user
+ * @param  {function} next The middleware callback function
  * @return {void}
  */
 const auth = (err, request, response, user, next) => {
@@ -94,9 +99,9 @@ const auth = (err, request, response, user, next) => {
 
 /**
  * An express endpoint that is the callback of the facebook authentication
- * @param {Object} request The express request object
- * @param {Object} response The express response object
- * @param {Object} next The middleware callback function 
+ * @param {object} request The express request object
+ * @param {object} response The express response object
+ * @param {object} next The middleware callback function 
  * @return {void}
  */
 module.exports.authFacebookCallback = (request, response, next) => {
@@ -107,9 +112,9 @@ module.exports.authFacebookCallback = (request, response, next) => {
 
 /**
   * An express endpoint that is the callback of the google authentication
-  * @param {Object} request The express request object
-  * @param {Object} response The express response object
-  * @param {Object} next The middleware callback function 
+  * @param {object} request The express request object
+  * @param {object} response The express response object
+  * @param {object} next The middleware callback function 
   * @return {void}
   */
 module.exports.authGoogleCallback = (request, response, next) => {
@@ -120,9 +125,9 @@ module.exports.authGoogleCallback = (request, response, next) => {
 
 /**
  * An express endpoint that verifies the users email
- * @param {Object} request The express request object
- * @param {Object} response The express response object
- * @param {Object} next The middleware callback function 
+ * @param {object} request The express request object
+ * @param {object} response The express response object
+ * @param {object} next The middleware callback function 
  * @return {void}
  */
 module.exports.verifyEmail = (request, response, next) => {
@@ -152,9 +157,9 @@ module.exports.verifyEmail = (request, response, next) => {
 
 /**
  * An express endpoint that registers a user
- * @param {Object} request The express request object
- * @param {Object} response The express response object
- * @param {Object} next The middleware callback function 
+ * @param {object} request The express request object
+ * @param {object} response The express response object
+ * @param {object} next The middleware callback function 
  * @return {void}
  */
 module.exports.registration = (request, response, next) => {
@@ -177,9 +182,9 @@ module.exports.registration = (request, response, next) => {
 
 /**
  * Middleware to check whether the user is authenticated. If not, redirect the user to the login screen
- * @param  {Object}   request  The express request object
- * @param  {Object}   response The express response object
- * @param  {Function} next     The middleware callback function
+ * @param  {object}   request  The express request object
+ * @param  {object}   response The express response object
+ * @param  {function} next     The middleware callback function
  * @return {void}
  */
 module.exports.isAuthenticated = (request, response, next) => {
@@ -193,9 +198,9 @@ module.exports.isAuthenticated = (request, response, next) => {
 
 /**
  * Express middleware for local authentication
- * @param  {Object}   request  The express request object
- * @param  {Object}   response The express response object
- * @param  {Function} next     The middleware callback function
+ * @param  {object}   request  The express request object
+ * @param  {object}   response The express response object
+ * @param  {function} next     The middleware callback function
  * @return {void}
  */
 module.exports.authLocal = (request, response, next) => {

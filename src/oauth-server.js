@@ -11,6 +11,11 @@ const OauthCode = require("./models/oauth-code");
 const OauthAccessToken = require("./models/oauth-access-token");
 
 /**
+ * The oauth server module
+ * @module lazuli-authentication/oauth-server
+ */
+
+/**
  * Initializes the granting part of the oauth server
  * @param {Object} oauth2Server The oauth2 server
  * @return {void}
@@ -191,4 +196,7 @@ initOauthServer(oauthServer);
 module.exports.authenticateOauthClient = authenticateOauthClient(oauthServer);
 module.exports.checkForImmediateApproval = checkForImmediateApproval;
 
+/**
+ * The actual oauth server object. Based on oauth2orize
+ */
 module.exports.oauthServer = oauthServer;

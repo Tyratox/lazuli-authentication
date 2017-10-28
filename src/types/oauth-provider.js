@@ -34,6 +34,8 @@ const OauthProvider = require("../models/oauth-provider");
  * @type {GraphQLObjectType}
  * @version 1.0
  * @since 1.0
+ * 
+ * @filterable {object} authentication.graphql.type.oauth-provider.association The association fields inside the graphql schema
  *
  * @see module:lazuli-authentication/models/oauth-provider
  */
@@ -60,13 +62,16 @@ const OauthProviderType = new GraphQLObjectType({
 				allowNull: false,
 				cache: attributeFieldsCache
 			}),
-			...valueFilter.filterable("graphql.type.oauth-provider.association", {
-				oauthClients: {
-					type: oauthProviderUserConnection.connectionType,
-					arsg: oauthProviderUserConnection.connectionArgs,
-					resolve: oauthProviderUserConnection.resolve
+			...valueFilter.filterable(
+				"authentication.graphql.type.oauth-provider.association",
+				{
+					oauthClients: {
+						type: oauthProviderUserConnection.connectionType,
+						arsg: oauthProviderUserConnection.connectionArgs,
+						resolve: oauthProviderUserConnection.resolve
+					}
 				}
-			})
+			)
 		};
 	},
 	interfaces: [nodeInterface]

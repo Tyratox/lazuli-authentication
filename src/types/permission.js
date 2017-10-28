@@ -34,6 +34,8 @@ const Permission = require("../models/permission");
  * @type {GraphQLObjectType}
  * @version 1.0
  * @since 1.0
+ * 
+ * @filterable {object} authentication.graphql.type.permission.association The association fields inside the graphql schema
  *
  * @see module:lazuli-authentication/models/permission
  */
@@ -71,13 +73,16 @@ const PermissionType = new GraphQLObjectType({
 				allowNull: false,
 				cache: attributeFieldsCache
 			}),
-			...valueFilter.filterable("graphql.type.permission.association", {
-				users: {
-					type: permissionUsersConnection.connectionType,
-					arsg: permissionUsersConnection.connectionArgs,
-					resolve: permissionUsersConnection.resolve
+			...valueFilter.filterable(
+				"authentication.graphql.type.permission.association",
+				{
+					users: {
+						type: permissionUsersConnection.connectionType,
+						arsg: permissionUsersConnection.connectionArgs,
+						resolve: permissionUsersConnection.resolve
+					}
 				}
-			})
+			)
 		};
 	},
 	interfaces: [nodeInterface]

@@ -24,8 +24,13 @@ const OauthAccessToken = require("./models/oauth-access-token");
 const passport = require("passport");
 
 /**
+ * The passport module
+ * @module lazuli-authentication/passport
+ */
+
+/**
  * Enables the oauth client authentication in passport
- * @param  {Object} passport The passport object which this method should be performed on
+ * @param  {object} passport The passport object which this method should be performed on
  * @return {void}
  */
 const initOauthClientAuthentication = passport => {
@@ -65,7 +70,7 @@ const initOauthClientAuthentication = passport => {
 
 /**
  * Enables the local user authentication in passport
- * @param  {Object} passport The passport object which this method should be performed on
+ * @param  {object} passport The passport object which this method should be performed on
  * @return {void}
  */
 const initLocalAuthentication = passport => {
@@ -94,7 +99,7 @@ const initLocalAuthentication = passport => {
 
 /**
  * Enables the oauth bearer authentication in passport
- * @param  {Object} passport The passport object which this method should be performed on
+ * @param  {object} passport The passport object which this method should be performed on
  * @return {void}
  */
 const initOauthBearerAuthentication = passport => {
@@ -168,7 +173,7 @@ const initOauthBearerAuthentication = passport => {
 
 /**
  * Enables the facebook authentication in passport
- * @param  {Object} passport       The passport object which this method should be performed on
+ * @param  {object} passport       The passport object which this method should be performed on
  * @return {void}
  */
 const initFacebookAuthentication = passport => {
@@ -224,7 +229,7 @@ const initFacebookAuthentication = passport => {
 
 /**
  * Enables the google authentication in passport
- * @param  {Object} passport            The passport object which this method should be performed on
+ * @param  {object} passport            The passport object which this method should be performed on
  * @return {void}
  */
 const initGoogleAuthentication = passport => {
@@ -305,7 +310,7 @@ const initPassportSerialization = passport => {
 
 /**
  * Initializes the passport object
- * @param  {Object} passport The passport object to initialize
+ * @param  {object} passport The passport object to initialize
  * @return {void}
  */
 const initPassport = passport => {
@@ -319,4 +324,7 @@ const initPassport = passport => {
 
 initPassport(passport);
 
+/**
+ * The shared passport module
+ */
 module.exports = { passport };

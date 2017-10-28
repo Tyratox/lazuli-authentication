@@ -1182,6 +1182,10 @@ dns-prefetch-control@0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/dns-prefetch-control/-/dns-prefetch-control-0.1.0.tgz#60ddb457774e178f1f9415f0cabb0e85b0b300b2"
 
+docdash@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/docdash/-/docdash-0.4.0.tgz#05c3a50d83189981699ee0c076d3a3950db7ec00"
+
 dont-sniff-mimetype@1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/dont-sniff-mimetype/-/dont-sniff-mimetype-1.0.0.tgz#5932890dc9f4e2f19e5eb02a20026e5e5efc8f58"
@@ -1697,8 +1701,8 @@ graphql-relay@^0.5.2:
   resolved "https://registry.yarnpkg.com/graphql-relay/-/graphql-relay-0.5.3.tgz#56a78ac07c87d89795a34db6b8e9681b827be5b5"
 
 graphql-sequelize@^5.4.2:
-  version "5.4.4"
-  resolved "https://registry.yarnpkg.com/graphql-sequelize/-/graphql-sequelize-5.4.4.tgz#644ed7336f12a0f67bf356cebf94158b243cb17f"
+  version "5.5.0"
+  resolved "https://registry.yarnpkg.com/graphql-sequelize/-/graphql-sequelize-5.5.0.tgz#c1241ca0193994e25814232d9582ba854d17a315"
   dependencies:
     bluebird "^3.4.0"
     dataloader-sequelize "^1.5.0"
@@ -2292,7 +2296,7 @@ lazuli-core@tyratox/lazuli-core:
 
 lazuli-filters@tyratox/lazuli-filters:
   version "1.0.0"
-  resolved "https://codeload.github.com/tyratox/lazuli-filters/tar.gz/8997425f99cbbdd7a8410075c2154d7b0e3c437a"
+  resolved "https://codeload.github.com/tyratox/lazuli-filters/tar.gz/883728766b79779d7bb800373ee0f1359924ec4a"
 
 lazuli-i18n@tyratox/lazuli-i18n:
   version "1.0.0"
@@ -2303,7 +2307,7 @@ lazuli-i18n@tyratox/lazuli-i18n:
 
 lazuli-require@tyratox/lazuli-require:
   version "1.0.1"
-  resolved "https://codeload.github.com/tyratox/lazuli-require/tar.gz/6d3a6020a70f048ac6aa3ed66996140584c214d4"
+  resolved "https://codeload.github.com/tyratox/lazuli-require/tar.gz/84e25d32d22b6b5d29ffeb3f2f2f0f4fb55b6f36"
 
 load-json-file@^1.0.0:
   version "1.1.0"
@@ -3367,8 +3371,8 @@ seq-queue@0.0.5:
   resolved "https://registry.yarnpkg.com/seq-queue/-/seq-queue-0.0.5.tgz#d56812e1c017a6e4e7c3e3a37a1da6d78dd3c93e"
 
 sequelize@^4.7.5:
-  version "4.15.2"
-  resolved "https://registry.yarnpkg.com/sequelize/-/sequelize-4.15.2.tgz#1fa2fd7fa67cf72c4fa6c824f989c76165fdbffa"
+  version "4.19.0"
+  resolved "https://registry.yarnpkg.com/sequelize/-/sequelize-4.19.0.tgz#761b77c1fbe48e54b3fe058ebab446b9eaaec0e9"
   dependencies:
     bluebird "^3.4.6"
     cls-bluebird "^2.0.1"
@@ -3385,7 +3389,7 @@ sequelize@^4.7.5:
     terraformer-wkt-parser "^1.1.2"
     toposort-class "^1.0.1"
     uuid "^3.0.0"
-    validator "^8.0.0"
+    validator "^9.1.0"
     wkx "^0.4.1"
 
 serve-static@1.13.1:
@@ -3887,9 +3891,9 @@ validate-npm-package-license@^3.0.1:
     spdx-correct "~1.0.0"
     spdx-expression-parse "~1.0.0"
 
-validator@^8.0.0:
-  version "8.2.0"
-  resolved "https://registry.yarnpkg.com/validator/-/validator-8.2.0.tgz#3c1237290e37092355344fef78c231249dab77b9"
+validator@^9.1.0:
+  version "9.1.1"
+  resolved "https://registry.yarnpkg.com/validator/-/validator-9.1.1.tgz#3bdd1065cbd28f9d96ac806dee01030d32fd97ef"
 
 vary@~1.1.1:
   version "1.1.1"
