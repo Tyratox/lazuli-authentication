@@ -2,7 +2,7 @@
 
 An authentication module for creating an oauth2 service powered by [oauth2orize](https://github.com/jaredhanson/oauth2orize) combined with [sequelize](https://github.com/sequelize/sequelize) models, [passport](https://github.com/jaredhanson/passport) authentication strategies and [graphql](https://github.com/graphql/graphql-js) endpoints.
 
-This module registers the following models on the global sequlize object (`lazuli-core/sequelize`):
+#Models
 
 ## OauthAccessToken
 Model: `lazuli-authentication/models/oauth-access-token`
@@ -46,17 +46,17 @@ GraphqlType: `lazuli-authentication/types/oauth-provider`
 
 As this module should also work with other oauth apis, this model is capable of storing an access token together with an refresh token for a certain provider and user.
 
-## Setup
+# Setup
 
 This is a small summary of the capabilities of this module. Unnecessary code was stripped, but in production you should always add input validation to prevent surprises. Also it's not mandatory to use the provided functions, you can always swap some of them for custom ones.
 
-### Local registration
+## Local registration
 
 `lazuli-authentication/endpoint` also provides an `registration` which accepts the fields `firstName`, `email` and `locale`.
 
 //TODO
 
-### Local login
+## Local login
 
 In order to be able to login with a local account, you'll need to setup an endpoint to render the login, e.g.
 
@@ -71,7 +71,7 @@ This page has to contain a form which posts the fields `username` (email) and `p
 
 `authLocal` is already provided in the `lazuli-authentication/endpoint` module and just needs to be imported.
 
-### Email verification
+## Email verification
 
 Again, you'll need to render a form with for example
 
@@ -86,7 +86,7 @@ This form has to pass the fields `email`, `password` and `emailVerificationCode`
 
 endpoint. The `verifyEmail` can also be imported from `lazuli-authentication/endpoint`.
 
-### Password reset
+## Password reset
 
 The field `email` needs to be passed from a rendered from to
 
@@ -106,11 +106,11 @@ The actual password reset view should then pass the fields `email`, `password` (
 
 Again, `passwordReset` can be imported from `lazuli-authentication/endpoint`.
 
-### 3-party oauth callbacks
+## 3-party oauth callbacks
 
 //TODO
 
-### Oauth 2
+## Oauth 2
 
 In order to create an oauth2 dialog you need to setup an endpoint with something like
 
