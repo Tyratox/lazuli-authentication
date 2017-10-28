@@ -14,11 +14,16 @@ const {
 } = require("../utilities/crypto.js");
 
 /**
+ * The oauth provider sequelize module
+ * @module lazuli-authentication/models/oauth-provider
+ */
+
+/**
  * The oauth provider sequelize model
- * @module lazuli-authentication/models/user
+ * @class
+ * @memberof module:lazuli-authentication/models/oauth-provider
  * 
  * @type {OauthProvider}
- * @class
  * @version 1.0
  * @since 1.0
  * 
@@ -42,24 +47,23 @@ const OauthProvider = sequelize.define("oauth_provider", {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof User
  * @static
  * @public
  * 
  * @fires "authentication.model.oauth-provider.association"
  * 
  * @param {object} models The models to associate with
- * @param {object} models.User The user model
+ * @param {module:lazuli-authentication/models/user.User} models.User The user model
  * @return {promise<void>}
  */
 OauthProvider.associate = function({ User }) {
 	/**
 	 * The OauthProivder - User relation
 	 * @since 1.0
-	 * @type {object}
+	 * @type {BelongsTo}
 	 * @public
 	 * @static
-	 * @memberof OauthProvider
+	 * @memberof module:lazuli-authentication/models/oauth-provider.OauthProvider
 	 */
 	this.User = this.belongsTo(User, {
 		as: "User",
@@ -69,10 +73,10 @@ OauthProvider.associate = function({ User }) {
 	/**
 	 * The related graphql type
 	 * @since 1.0
-	 * @type {object}
+	 * @type {module:lazuli-authentication/types/oauth-provider.OauthProviderType}
 	 * @public
 	 * @static
-	 * @memberof OauthProvider
+	 * @memberof module:lazuli-authentication/models/oauth-provider.OauthProvider
 	 * 
 	 * @see module:lazuli-authentication/types/oauth-provider
 	 */
@@ -88,7 +92,7 @@ OauthProvider.associate = function({ User }) {
 	 * @version 1.0
 	 * @since 1.0
      * @type {object}
-     * @property {object} OauthProvider The user model
+     * @property {module:lazuli-authentication/models/oauth-provider.OauthProvider} OauthProvider The user model
      */
 	return eventEmitter.emit("authentication.model.oauth-provider.association", {
 		OauthProvider: this

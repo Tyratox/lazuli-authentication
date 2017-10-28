@@ -14,11 +14,16 @@ const {
 } = require("../utilities/crypto.js");
 
 /**
- * The access token sequelize model
+ * The access token model
  * @module lazuli-authentication/models/oauth-access-token
+ */
+
+/**
+ * The access token sequelize model
+ * @class
+ * @memberof module:lazuli-authentication/models/oauth-access-token
  * 
  * @type {OauthAccessToken}
- * @class
  * @version 1.0
  * @since 1.0
  * 
@@ -40,25 +45,24 @@ const OauthAccessToken = sequelize.define("oauth_access_token", {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthAccessToken
  * @static
  * @public
  * 
  * @fires "authentication.model.oauth-access-token.association"
  * 
  * @param {object} models The models to associate with
- * @param {object} models.User The user model
- * @param {object} models.OauthClient The oauth client model
+ * @param {module:lazuli-authentication/models/user.User} models.User The user model
+ * @param {module:lazuli-authentication/models/oauth-client.OauthClient} models.OauthClient The oauth client model
  * @return {promise<void>}
  */
 OauthAccessToken.associate = function({ User, OauthClient }) {
 	/**
 	 * The OauthAccessToken - User relation
 	 * @since 1.0
-	 * @type {object}
+	 * @type {BelongsTo}
 	 * @public
 	 * @static
-	 * @memberof OauthAccessToken
+	 * @memberof module:lazuli-authentication/models/oauth-access-token.OauthAccessToken
 	 */
 	this.User = this.belongsTo(User, {
 		as: "User",
@@ -68,10 +72,10 @@ OauthAccessToken.associate = function({ User, OauthClient }) {
 	/**
 	 * The OauthAccessToken - OauthClient relation
 	 * @since 1.0
-	 * @type {object}
+	 * @type {BelongsTo}
 	 * @public
 	 * @static
-	 * @memberof OauthAccessToken
+	 * @memberof module:lazuli-authentication/models/oauth-access-token.OauthAccessToken
 	 */
 	this.OauthClient = this.belongsTo(OauthClient, {
 		as: "OauthClient",
@@ -81,10 +85,10 @@ OauthAccessToken.associate = function({ User, OauthClient }) {
 	/**
 	 * The related graphql type
 	 * @since 1.0
-	 * @type {object}
+	 * @type {module:lazuli-authentication/types/oauth-access-token.OauthAccessTokenType}
 	 * @public
 	 * @static
-	 * @memberof OauthAccessToken
+	 * @memberof module:lazuli-authentication/models/oauth-access-token.OauthAccessToken
 	 * 
 	 * @see module:lazuli-authentication/types/oauth-access-token
 	 */
@@ -100,7 +104,7 @@ OauthAccessToken.associate = function({ User, OauthClient }) {
 	 * @version 1.0
 	 * @since 1.0
      * @type {object}
-     * @property {object} OauthAccessToken The access token model
+     * @property {module:lazuli-authentication/models/oauth-access-token} OauthAccessToken The access token model
      */
 	return eventEmitter.emit(
 		"authentication.model.oauth-access-token.association",
@@ -114,14 +118,13 @@ OauthAccessToken.associate = function({ User, OauthClient }) {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthAccessToken
  * @public
  * @static
  * 
  * @param {number} userId The user id to associate the new token with
  * @param {number} oauthClientId The oauth client id to associate the new token with
  * @param {number} expires The expiration date of the new token
- * @return {promise<object>} A promise that will return the generated token and the model
+ * @return {promise<module:lazuli-authentication/models/oauth-access-token>} A promise that will return the generated token and the model
  */
 OauthAccessToken.generateToken = function(userId, oauthClientId, expires) {
 	let token = generateRandomString(TOKEN_LENGTH * 2);
@@ -154,7 +157,6 @@ OauthAccessToken.generateToken = function(userId, oauthClientId, expires) {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OautAccessToken
  * @public
  * @static
  * 
@@ -170,12 +172,11 @@ OauthAccessToken.hashToken = function(token) {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthAccessToken
  * @public
  * @static
  * 
  * @param  {string} token The received access token
- * @return {promise<OauthAccessToken>} The sequelize find response
+ * @return {promise<module:lazuli-authentication/models/oauth-access-token>} The sequelize find response
  */
 OauthAccessToken.findByToken = function(token) {
 	return this.findOne({ where: { hash: this.hashToken(token) } });

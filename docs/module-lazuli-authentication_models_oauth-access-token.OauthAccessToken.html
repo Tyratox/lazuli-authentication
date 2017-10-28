@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: OauthAccessToken</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Class: OauthAccessToken</h1>
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2><span class="attribs"><span class="type-signature"></span></span>
+            <span class="ancestors"><a href="module-lazuli-authentication_models_oauth-access-token.html">lazuli-authentication/models/oauth-access-token</a>.</span>OauthAccessToken<span class="signature">()</span><span class="type-signature"></span></h2>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+
+    
+    <h4 class="name" id="OauthAccessToken"><span class="type-signature"></span>new OauthAccessToken<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    The access token sequelize model
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-version">Version:</dt>
+    <dd class="tag-version"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+    <dt class="tag-since">Since:</dt>
+    <dd class="tag-since"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_oauth-access-token.js.html">models/oauth-access-token.js</a>, <a href="models_oauth-access-token.js.html#line33">line 33</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="module-lazuli-authentication_models_user.html">module:lazuli-authentication/models/user</a></li>
+        
+            <li><a href="module-lazuli-authentication_models_oauth-client.html">module:lazuli-authentication/models/oauth-client</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".associate"><span class="type-signature">(static) </span>associate<span class="signature">(models)</span><span class="type-signature"> &rarr; {promise.&lt;void>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Associates this model with others
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>models</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The models to associate with
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>User</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="module-lazuli-authentication_models_user.User.html">module:lazuli-authentication/models/user.User</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The user model</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>OauthClient</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="module-lazuli-authentication_models_oauth-client.OauthClient.html">module:lazuli-authentication/models/oauth-client.OauthClient</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The oauth client model</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-version">Version:</dt>
+    <dd class="tag-version"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+    <dt class="tag-since">Since:</dt>
+    <dd class="tag-since"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_oauth-access-token.js.html">models/oauth-access-token.js</a>, <a href="models_oauth-access-token.js.html#line58">line 58</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<h5>Fires:</h5>
+<ul>
+    <li><a href="module-lazuli-authentication_models_oauth-access-token.html#~event:%2522authentication.model.oauth-access-token.association%2522">event:"authentication.model.oauth-access-token.association"</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">promise.&lt;void></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".findByToken"><span class="type-signature">(static) </span>findByToken<span class="signature">(token)</span><span class="type-signature"> &rarr; {promise.&lt;<a href="module-lazuli-authentication_models_oauth-access-token.html">module:lazuli-authentication/models/oauth-access-token</a>>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Tries to find the database model based on the passed token
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>token</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The received access token</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-version">Version:</dt>
+    <dd class="tag-version"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+    <dt class="tag-since">Since:</dt>
+    <dd class="tag-since"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_oauth-access-token.js.html">models/oauth-access-token.js</a>, <a href="models_oauth-access-token.js.html#line181">line 181</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The sequelize find response
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">promise.&lt;<a href="module-lazuli-authentication_models_oauth-access-token.html">module:lazuli-authentication/models/oauth-access-token</a>></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".generateToken"><span class="type-signature">(static) </span>generateToken<span class="signature">(userId, oauthClientId, expires)</span><span class="type-signature"> &rarr; {promise.&lt;<a href="module-lazuli-authentication_models_oauth-access-token.html">module:lazuli-authentication/models/oauth-access-token</a>>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Generates a random access token string
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>userId</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The user id to associate the new token with</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>oauthClientId</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The oauth client id to associate the new token with</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>expires</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The expiration date of the new token</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-version">Version:</dt>
+    <dd class="tag-version"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+    <dt class="tag-since">Since:</dt>
+    <dd class="tag-since"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_oauth-access-token.js.html">models/oauth-access-token.js</a>, <a href="models_oauth-access-token.js.html#line129">line 129</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    A promise that will return the generated token and the model
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">promise.&lt;<a href="module-lazuli-authentication_models_oauth-access-token.html">module:lazuli-authentication/models/oauth-access-token</a>></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".hashToken"><span class="type-signature">(static) </span>hashToken<span class="signature">(token)</span><span class="type-signature"> &rarr; {string}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Hashes a token (without) a salt because we couldn't determine the related user otherwise
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>token</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The token to hash</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-version">Version:</dt>
+    <dd class="tag-version"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+    <dt class="tag-since">Since:</dt>
+    <dd class="tag-since"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_oauth-access-token.js.html">models/oauth-access-token.js</a>, <a href="models_oauth-access-token.js.html#line166">line 166</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The generated hash
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-lazuli-authentication_models_oauth-access-token.html">lazuli-authentication/models/oauth-access-token</a></li><li><a href="module-lazuli-authentication_models_oauth-client.html">lazuli-authentication/models/oauth-client</a></li><li><a href="module-lazuli-authentication_models_oauth-code.html">lazuli-authentication/models/oauth-code</a></li><li><a href="module-lazuli-authentication_models_oauth-provider.html">lazuli-authentication/models/oauth-provider</a></li><li><a href="module-lazuli-authentication_models_oauth-redirect-uri.html">lazuli-authentication/models/oauth-redirect-uri</a></li><li><a href="module-lazuli-authentication_models_permission.html">lazuli-authentication/models/permission</a></li><li><a href="module-lazuli-authentication_models_user.html">lazuli-authentication/models/user</a></li></ul><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li><li><a href="module-lazuli-authentication_models_oauth-access-token.OauthAccessToken.html">OauthAccessToken</a></li><li><a href="module-lazuli-authentication_models_oauth-client.OauthClient.html">OauthClient</a></li><li><a href="module-lazuli-authentication_models_oauth-code.OauthCode.html">OauthCode</a></li><li><a href="module-lazuli-authentication_models_oauth-provider.OauthProvider.html">OauthProvider</a></li><li><a href="module-lazuli-authentication_models_oauth-redirect-uri.OauthRedirectUri.html">OauthRedirectUri</a></li><li><a href="module-lazuli-authentication_models_permission.Permission.html">Permission</a></li><li><a href="module-lazuli-authentication_models_user.User.html">User</a></li></ul><h3>Events</h3><ul><li><a href="module-lazuli-authentication_models_oauth-access-token.html#~event:%2522authentication.model.oauth-access-token.association%2522">"authentication.model.oauth-access-token.association"</a></li><li><a href="module-lazuli-authentication_models_oauth-client.html#~event:%2522authentication.model.oauth-client.association%2522">"authentication.model.oauth-client.association"</a></li><li><a href="module-lazuli-authentication_models_oauth-code.html#~event:%2522authentication.model.oauth-code.association%2522">"authentication.model.oauth-code.association"</a></li><li><a href="module-lazuli-authentication_models_oauth-provider.html#~event:%2522authentication.model.oauth-provider.association%2522">"authentication.model.oauth-provider.association"</a></li><li><a href="module-lazuli-authentication_models_oauth-redirect-uri.html#~event:%2522authentication.model.oauth-redirect-uri.association%2522">"authentication.model.oauth-redirect-uri.association"</a></li><li><a href="module-lazuli-authentication_models_permission.html#~event:%2522authentication.model.permission.association%2522">"authentication.model.permission.association"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.association%2522">"authentication.model.user.association"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.email-verification%2522">"authentication.model.user.email-verification"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.from-passport-profile.after%2522">"authentication.model.user.from-passport-profile.after"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.from-passport-profile.before%2522">"authentication.model.user.from-passport-profile.before"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.password-reset%2522">"authentication.model.user.password-reset"</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOauthClient">authenticateOauthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#escapeLikeString">escapeLikeString</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOauthBearerAuthentication">initOauthBearerAuthentication</a></li><li><a href="global.html#initOauthClientAuthentication">initOauthClientAuthentication</a></li><li><a href="global.html#initOauthServer">initOauthServer</a></li><li><a href="global.html#initOauthServerExchange">initOauthServerExchange</a></li><li><a href="global.html#initOauthServerGrant">initOauthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#mutation">mutation</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#pick">pick</a></li><li><a href="global.html#protectGraphqlSchemaFields">protectGraphqlSchemaFields</a></li><li><a href="global.html#query">query</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Oct 28 2017 10:41:37 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

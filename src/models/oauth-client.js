@@ -14,11 +14,16 @@ const {
 const OauthRedirectUri = require("./oauth-redirect-uri");
 
 /**
- * The oauth client sequelize model
+ * The access token module
  * @module lazuli-authentication/models/oauth-client
+ */
+
+/**
+ * The oauth client sequelize model
+ * @class
+ * @memberof module:lazuli-authentication/models/oauth-client
  * 
  * @type {OauthClient}
- * @class
  * @version 1.0
  * @since 1.0
  * 
@@ -55,17 +60,16 @@ const OauthClient = sequelize.define("oauth_client", {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthClient
  * @static
  * @public
  * 
  * @fires "authentication.model.oauth-client.association"
  * 
  * @param {object} models The models to associate with
- * @param {object} models.User The user model
- * @param {object} models.OauthCode The oauth code model
- * @param {object} models.OauthAccessToken The oauth access token model
- * @param {object} models.OauthRedirectUri The oauth redirect uri model
+ * @param {module:lazuli-authentication/models/user.User} models.User The user model
+ * @param {module:lazuli-authentication/models/oauth-code.OauthCode} models.OauthCode The oauth code model
+ * @param {module:lazuli-authentication/models/oauth-access-token.OauthAccessToken} models.OauthAccessToken The oauth access token model
+ * @param {module:lazuli-authentication/models/oauth-redirect-uri.OauthRedirectUri} models.OauthRedirectUri The oauth redirect uri model
  * @return {promise<void>}
  */
 OauthClient.associate = function({
@@ -77,10 +81,10 @@ OauthClient.associate = function({
 	/**
 	 * The OauthClient - User relation
 	 * @since 1.0
-	 * @type {object}
+	 * @type {BelongsTo}
 	 * @public
 	 * @static
-	 * @memberof OauthClient
+	 * @memberof module:lazuli-authentication/models/oauth-client.OauthClient
 	 */
 	this.User = this.belongsTo(User, {
 		as: "User",
@@ -90,10 +94,10 @@ OauthClient.associate = function({
 	/**
 	 * The OauthClient - OauthCode relation
 	 * @since 1.0
-	 * @type {object}
+	 * @type {HasMany}
 	 * @public
 	 * @static
-	 * @memberof OauthClient
+	 * @memberof module:lazuli-authentication/models/oauth-client.OauthClient
 	 */
 	this.OauthCodes = this.hasMany(OauthCode, {
 		as: "OauthCodes",
@@ -105,10 +109,10 @@ OauthClient.associate = function({
 	/**
 	 * The OauthClient - OauthAccessToken relation
 	 * @since 1.0
-	 * @type {object}
+	 * @type {HasMany}
 	 * @public
 	 * @static
-	 * @memberof OauthClient
+	 * @memberof module:lazuli-authentication/models/oauth-client.OauthClient
 	 */
 	this.OauthAccessTokens = this.hasMany(OauthAccessToken, {
 		as: "OauthAccessTokens",
@@ -120,10 +124,10 @@ OauthClient.associate = function({
 	/**
 	 * The OauthClient - OauthRedirectUri relation
 	 * @since 1.0
-	 * @type {object}
+	 * @type {HasMany}
 	 * @public
 	 * @static
-	 * @memberof OauthClient
+	 * @memberof module:lazuli-authentication/models/oauth-client.OauthClient
 	 */
 	this.OauthRedirectUris = this.hasMany(OauthRedirectUri, {
 		as: "OauthRedirectUris",
@@ -135,10 +139,10 @@ OauthClient.associate = function({
 	/**
 	 * The related graphql type
 	 * @since 1.0
-	 * @type {object}
+	 * @type {module:lazuli-authentication/types/oauth-client.OauthClientType}
 	 * @public
 	 * @static
-	 * @memberof OauthClient
+	 * @memberof module:lazuli-authentication/models/oauth-client.OauthClient
 	 * 
 	 * @see module:lazuli-authentication/types/oauth-client
 	 */
@@ -166,7 +170,6 @@ OauthClient.associate = function({
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthClient
  * @public
  * @static
  * 
@@ -181,12 +184,11 @@ OauthClient.generateSecret = function() {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthClient
  * @public
  * @static
  * 
  * @param  {string} secret The secret to hash and store
- * @return {promise<OauthClient>} The random secret
+ * @return {promise<module:lazuli-authentication/models/oauth-client.OauthClient>} The random secret
  */
 OauthClient.prototype.setSecret = function(secret) {
 	let { hash, salt, algorithm } = generateHash(secret);
@@ -205,7 +207,6 @@ OauthClient.prototype.setSecret = function(secret) {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthClient
  * @public
  * @static
  * 
@@ -247,7 +248,6 @@ OauthClient.prototype.verifySecret = function(secret) {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthClient
  * @public
  * @static
  * 

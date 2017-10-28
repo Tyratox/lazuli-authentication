@@ -12,11 +12,16 @@ const {
 } = require("../utilities/crypto.js");
 
 /**
- * The oauth code sequelize model
+ * The oauth code sequelize module
  * @module lazuli-authentication/models/oauth-code
+ */
+
+/**
+ * The oauth code sequelize model
+ * @class
+ * @memberof module:lazuli-authentication/models/oauth-code
  * 
  * @type {OauthCode}
- * @class
  * @version 1.0
  * @since 1.0
  * 
@@ -37,25 +42,24 @@ const OauthCode = sequelize.define("oauth_code", {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthCode
  * @static
  * @public
  * 
  * @fires "authentication.model.oauth-code.association"
  * 
  * @param {object} models The models to associate with
- * @param {object} models.User The user model
- * @param {object} models.OauthClient The oauth client model
+ * @param {module:lazuli-authentication/models/user.User} models.User The user model
+ * @param {module:lazuli-authentication/models/oauth-client.OauthClient} models.OauthClient The oauth client model
  * @return {promise<void>}
  */
 OauthCode.associate = function({ User, OauthClient }) {
 	/**
 	 * The OauthCode - User relation
 	 * @since 1.0
-	 * @type {object}
+	 * @type {BelongsTo}
 	 * @public
 	 * @static
-	 * @memberof OauthCode
+	 * @memberof module:lazuli-authentication/models/oauth-code.OauthCode
 	 */
 	this.User = this.belongsTo(User, {
 		as: "User",
@@ -65,10 +69,10 @@ OauthCode.associate = function({ User, OauthClient }) {
 	/**
 	 * The OauthCode - OauthClient relation
 	 * @since 1.0
-	 * @type {object}
+	 * @type {BelongsTo}
 	 * @public
 	 * @static
-	 * @memberof OauthCode
+	 * @memberof module:lazuli-authentication/models/oauth-code.OauthCode
 	 */
 	this.OauthClient = this.belongsTo(OauthClient, {
 		as: "OauthClient",
@@ -78,10 +82,10 @@ OauthCode.associate = function({ User, OauthClient }) {
 	/**
 	 * The related graphql type
 	 * @since 1.0
-	 * @type {object}
+	 * @type {module:lazuli-authentication/types/oauth-code.OauthCodeType}
 	 * @public
 	 * @static
-	 * @memberof OauthClient
+	 * @memberof module:lazuli-authentication/models/oauth-code.OauthCode
 	 * 
 	 * @see module:lazuli-authentication/types/oauth-code
 	 */
@@ -97,7 +101,7 @@ OauthCode.associate = function({ User, OauthClient }) {
 	 * @version 1.0
 	 * @since 1.0
      * @type {object}
-     * @property {object} OauthCode The oauth client model
+     * @property {module:lazuli-authentication/models/oauth-code.OauthCode} OauthCode The oauth client model
      */
 	return eventEmitter.emit("authentication.model.oauth-code.association", {
 		OauthCode: this
@@ -109,7 +113,6 @@ OauthCode.associate = function({ User, OauthClient }) {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthCode
  * @public
  * @static
  * 
@@ -124,7 +127,6 @@ OauthCode.generateCode = function() {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthCode
  * @public
  * @static
  * 
@@ -140,12 +142,11 @@ OauthCode.hashCode = function(code) {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthCode
  * @public
  * @static
  * 
  * @param  {string} code  The unhashed oauth code
- * @return {promise<OauthCode>} A sequelize find promise
+ * @return {promise<module:lazuli-authentication/models/oauth-code.OauthCode>} A sequelize find promise
  */
 OauthCode.findByCode = function(code) {
 	return this.findOne({

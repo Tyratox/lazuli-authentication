@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: schemas/oauth-client.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: schemas/oauth-client.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const {
+	GraphQLSchema,
+	GraphQLObjectType,
+	GraphQLString,
+	GraphQLBoolean,
+	GraphQLInt,
+	GraphQLNonNull,
+	GraphQLList
+} = require("graphql");
+
+const Joi = require("joi");
+
+const { attributeFields, resolver } = require("graphql-sequelize");
+
+const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");
+const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
+const sequelize = require("lazuli-require")("lazuli-core/sequelize");
+
+const { pick } = require("../utilities/object");
+const { escapeLikeString } = require("../utilities/sql");
+
+const OauthClient = require("../models/oauth-client");
+const OauthRedirectUri = require("../models/oauth-redirect-uri");
+
+const OauthClientInputType = require("../input-types/oauth-client");
+const OauthClientInputTypeValidation = require("../graphql-validation/oauth-client");
+
+/**
+ * The oauth client query schema
+ * @type {Object}
+ */
+module.exports.query = {
+	oauthClient: {
+		type: OauthClient.graphQlType,
+		args: {
+			id: {
+				description: "The id of the oauth client",
+				type: new GraphQLNonNull(GraphQLInt)
+			}
+		},
+		resolve: resolver(OauthClient)
+	},
+	oauthClients: {
+		type: new GraphQLList(OauthClient.graphQlType),
+		args: {
+			//generally allow to filter all fields
+			...attributeFields(OauthClient, { allowNull: true }),
+			limit: {
+				type: GraphQLInt
+			}
+		},
+		resolve: (root, args, context, info) => {
+			const { request } = context;
+
+			if (!request.user) {
+				return Promise.reject(
+					new Error(
+						"Access Denied! You have to be logged in, in order to list users!"
+					)
+				);
+			}
+
+			return request.user
+				.doesHavePermission("admin.oauth-client.list")
+				.then(hasPermission => {
+					if (!hasPermission) {
+						return Promise.reject(
+							new Error(
+								"Access Denied! You're not allowed to list oauth clients!"
+							)
+						);
+					}
+
+					return request.user.doesHavePermission("admin.oauth-client.get");
+				})
+				.then(havePermission => {
+					if (!havePermission) {
+						//only allow uncritical search keys
+						args = pick(
+							args,
+							valueFilter.filterable("graphql.query.oauth-client.list.args", [
+								"id",
+								"name"
+							])
+						);
+					}
+
+					return resolver(OauthClient, {
+						before: (findOptions, args) => {
+							if (findOptions.where) {
+								if (findOptions.where.name) {
+									findOptions.where.name = {
+										$like: `%${escapeLikeString(args.name)}%`
+									};
+								}
+							}
+
+							return valueFilter.filterable(
+								"graphql.query.oauth-client.list.find-options",
+								findOptions
+							);
+						}
+					})(root, args, context, info);
+				});
+		}
+	}
+};
+
+/**
+ * The oauth client mutation schema
+ * @type {Object}
+ */
+module.exports.mutation = {
+	upsertOauthClient: {
+		type: OauthClient.graphQlType,
+		args: {
+			oauthClient: { type: new GraphQLNonNull(OauthClientInputType) }
+		},
+		resolve: (root, { oauthClient }, context, info) => {
+			//first check if the passed oauthClient object meets all requirements.
+			//graphql only checks the input types.
+			const staticValidation = Joi.validate(
+				oauthClient,
+				OauthClientInputTypeValidation
+			);
+
+			const { request } = context;
+
+			if (staticValidation.error) {
+				return Promise.reject(staticValidation.error);
+			}
+
+			let secret = null;
+
+			//If there's no error check what we need to do: update or insert
+			return Promise.resolve()
+				.then(() => {
+					if (oauthClient.id) {
+						//if the oauthClient object contains an id it's not sure yet what
+						//action should be taken.
+						//should a oauth client with the given id exist, it will be
+						//updated
+						return OauthClient.findById(
+							oauthClient.id
+						).then(oauthClientModel => {
+							if (oauthClientModel) {
+								if (!request.user) {
+									return Promise.reject(
+										new Error(
+											"Access Denied! You have to be logged in in order to update this oauth client!"
+										)
+									);
+								}
+
+								return request.user
+									.doesHavePermission("admin.oauth-client.update")
+									.then(hasPermission => {
+										if (
+											hasPermission ||
+											oauthClientModel.get("userId") === request.user.get("id")
+										) {
+											return Promise.resolve(oauthClientModel);
+										} else {
+											return Promise.reject(
+												new Error(
+													"Access Denied! You are not allowed to update this oauth client!"
+												)
+											);
+										}
+									});
+							} else {
+								//if not, a new oauth client with the given id will be created
+								return request.user
+									.doesHavePermission("admin.oauth-client.create")
+									.then(hasPermission => {
+										if (!hasPermission) {
+											return Promise.reject(
+												new Error(
+													"Access Denied! You're not allowed to create a new oauth client!"
+												)
+											);
+										}
+
+										return OauthClient.create({
+											id: oauthClient.id
+										}).then(model => {
+											secret = oauthClient.generateSecret();
+
+											return oauthClient.setSecret(secret).then(() => {
+												return Promise.resolve(model);
+											});
+										});
+									});
+							}
+						});
+					} else {
+						//if the oauth client object doesn't contain an id,
+						//a new oauth client will be created
+						if (!request.user) {
+							return Promise.reject(
+								new Error(
+									"Access Denied! You have to be logged in in order to create a new oauth client!"
+								)
+							);
+						}
+
+						return request.user
+							.doesHavePermission("admin.oauth-client.create")
+							.then(hasPermission => {
+								if (!hasPermission) {
+									return Promise.reject(
+										new Error(
+											"Access Denied! You're not allowed to create a new oauth client!"
+										)
+									);
+								}
+								return OauthClient.create().then(model => {
+									secret = OauthClient.generateSecret();
+
+									return model.setSecret(secret).then(() => {
+										return Promise.resolve(model);
+									});
+								});
+							});
+					}
+				})
+				.then(oauthClientModel => {
+					//all of the previous possibilities will return a promise returning
+					//the oauth client model to update
+
+					//if the user posseses the required permission, all given
+					//keys will be updated
+					return request.user
+						.doesHavePermission("admin.oauth-client.upsert")
+						.then(hasPermission => {
+							if (hasPermission) {
+								oauthClientModel.set(oauthClient);
+							} else if (
+								request.user.get("id") == oauthClientModel.get("userId")
+							) {
+								//otherwise we pick a few
+								oauthClientModel.set(
+									pick(
+										user,
+										valueFilter.filterable(
+											"graphql.mutation.oauth-client.upsert.keys",
+											["name"]
+										)
+									)
+								);
+							}
+
+							//after setting the new values, save the oauth client model to
+							//the database
+							return oauthClientModel
+								.save()
+								.then(() => {
+									//after saving all columns in the oauth client table we also
+									//have to update the associations
+
+									if (!oauthClient.oauthRedirectUris) {
+										return Promise.resolve();
+									}
+
+									//if the user is allowed to, we update the redirect uris
+									return request.user
+										.doesHavePermission("admin.oauth-client.upsert")
+										.then(havePermission => {
+											if (
+												!havePermission &amp;&amp;
+												request.user.get("id") !== oauthClient.get("userId")
+											) {
+												return Promise.reject(
+													new Error(
+														"You're not allowed to update the oauth redirect uris"
+													)
+												);
+											}
+											return oauthClientModel.getOauthRedirectUris();
+										})
+										.then(redirectUriModels => {
+											//diff existing and sent
+											const toDelete = redirectUriModels.filter(
+												redirectUriModel => {
+													return (
+														oauthClient.oauthRedirectUris.indexOf(
+															redirectUriModel.get("uri")
+														) === -1
+													);
+												}
+											);
+
+											const existing = redirectUriModels.map(redirectUriModel =>
+												redirectUriModel.get("uri")
+											);
+											const toAdd = oauthClient.oauthRedirectUris.filter(
+												redirectUri => {
+													return existing.indexOf(redirectUri) === -1;
+												}
+											);
+
+											return Promise.all([
+												...toDelete.map(redirectUriModel => {
+													return redirectUriModel.destroy();
+												}),
+												...toAdd.map(redirectUri =>
+													OauthRedirectUri.create({
+														uri: redirectUri,
+														oauthClientId: oauthClientModel.get("id")
+													})
+												)
+											]);
+										});
+								})
+								.then(() => {
+									//in the end, we return the updated oauth client object by
+									//using graphql-sequelize's resolver
+
+									return resolver(OauthClient)(
+										root,
+										{ id: oauthClientModel.get("id") },
+										context,
+										info
+									).then(model => {
+										if (secret) {
+											model.dataValues.secret = secret;
+										}
+										return Promise.resolve(model);
+									});
+								});
+						});
+				});
+		}
+	},
+	deleteOauthClient: {
+		type: GraphQLBoolean,
+		args: {
+			id: { type: GraphQLInt }
+		},
+		resolve: (root, { id }, { request }, info) => {
+			if (!request.user) {
+				return Promise.reject(
+					new Error(
+						"Access Denied! You have to be logged in to delete this oauth client"
+					)
+				);
+			}
+			return OauthClient.findById(id).then(oauthClientModel => {
+				if (!oauthClientModel) {
+					return Promise.reject(
+						new Error("The given oauth client couldn't be found!")
+					);
+				}
+				return request.user
+					.doesHavePermission("admin.oauth-client.delete")
+					.then(havePermission => {
+						if (
+							!havePermission &amp;&amp;
+							oauthClientModel.get("userId") !== request.user.get("id")
+						) {
+							return Promise.reject(
+								new Error(
+									"Access Denied! You're not allowed to delete this oauth client"
+								)
+							);
+						}
+
+						return oauthClientModel.destroy();
+					});
+			});
+		}
+	}
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-lazuli-authentication_models_oauth-access-token.html">lazuli-authentication/models/oauth-access-token</a></li><li><a href="module-lazuli-authentication_models_oauth-client.html">lazuli-authentication/models/oauth-client</a></li><li><a href="module-lazuli-authentication_models_oauth-code.html">lazuli-authentication/models/oauth-code</a></li><li><a href="module-lazuli-authentication_models_oauth-provider.html">lazuli-authentication/models/oauth-provider</a></li><li><a href="module-lazuli-authentication_models_oauth-redirect-uri.html">lazuli-authentication/models/oauth-redirect-uri</a></li><li><a href="module-lazuli-authentication_models_permission.html">lazuli-authentication/models/permission</a></li><li><a href="module-lazuli-authentication_models_user.html">lazuli-authentication/models/user</a></li></ul><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li><li><a href="module-lazuli-authentication_models_oauth-access-token.OauthAccessToken.html">OauthAccessToken</a></li><li><a href="module-lazuli-authentication_models_oauth-client.OauthClient.html">OauthClient</a></li><li><a href="module-lazuli-authentication_models_oauth-code.OauthCode.html">OauthCode</a></li><li><a href="module-lazuli-authentication_models_oauth-provider.OauthProvider.html">OauthProvider</a></li><li><a href="module-lazuli-authentication_models_oauth-redirect-uri.OauthRedirectUri.html">OauthRedirectUri</a></li><li><a href="module-lazuli-authentication_models_permission.Permission.html">Permission</a></li><li><a href="module-lazuli-authentication_models_user.User.html">User</a></li></ul><h3>Events</h3><ul><li><a href="module-lazuli-authentication_models_oauth-access-token.html#~event:%2522authentication.model.oauth-access-token.association%2522">"authentication.model.oauth-access-token.association"</a></li><li><a href="module-lazuli-authentication_models_oauth-client.html#~event:%2522authentication.model.oauth-client.association%2522">"authentication.model.oauth-client.association"</a></li><li><a href="module-lazuli-authentication_models_oauth-code.html#~event:%2522authentication.model.oauth-code.association%2522">"authentication.model.oauth-code.association"</a></li><li><a href="module-lazuli-authentication_models_oauth-provider.html#~event:%2522authentication.model.oauth-provider.association%2522">"authentication.model.oauth-provider.association"</a></li><li><a href="module-lazuli-authentication_models_oauth-redirect-uri.html#~event:%2522authentication.model.oauth-redirect-uri.association%2522">"authentication.model.oauth-redirect-uri.association"</a></li><li><a href="module-lazuli-authentication_models_permission.html#~event:%2522authentication.model.permission.association%2522">"authentication.model.permission.association"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.association%2522">"authentication.model.user.association"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.email-verification%2522">"authentication.model.user.email-verification"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.from-passport-profile.after%2522">"authentication.model.user.from-passport-profile.after"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.from-passport-profile.before%2522">"authentication.model.user.from-passport-profile.before"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.password-reset%2522">"authentication.model.user.password-reset"</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOauthClient">authenticateOauthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#escapeLikeString">escapeLikeString</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOauthBearerAuthentication">initOauthBearerAuthentication</a></li><li><a href="global.html#initOauthClientAuthentication">initOauthClientAuthentication</a></li><li><a href="global.html#initOauthServer">initOauthServer</a></li><li><a href="global.html#initOauthServerExchange">initOauthServerExchange</a></li><li><a href="global.html#initOauthServerGrant">initOauthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#mutation">mutation</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#pick">pick</a></li><li><a href="global.html#protectGraphqlSchemaFields">protectGraphqlSchemaFields</a></li><li><a href="global.html#query">query</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Oct 28 2017 10:41:37 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

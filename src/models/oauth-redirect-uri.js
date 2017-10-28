@@ -10,11 +10,16 @@ const {
 } = require("../utilities/crypto.js");
 
 /**
- * The oauth redirect uri sequelize model
+ * The oauth redirect uri sequelize module
  * @module lazuli-authentication/models/oauth-redirect-uri
+ */
+
+/**
+ * The oauth redirect uri sequelize model
+ * @class
+ * @memberof module:lazuli-authentication/models/oauth-redirect-uri
  * 
  * @type {OauthRedirectUri}
- * @class
  * @version 1.0
  * @since 1.0
  * 
@@ -31,24 +36,23 @@ const OauthRedirectUri = sequelize.define("oauth_redirect_uri", {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof OauthRedirectUri
  * @static
  * @public
  * 
  * @fires "authentication.model.oauth-redirect-uri.association"
  * 
  * @param {object} models The models to associate with
- * @param {object} models.OauthClient The oauth client model
+ * @param {module:lazuli-authentication/models/oauth-client.OauthClient} models.OauthClient The oauth client model
  * @return {promise<void>}
  */
 OauthRedirectUri.associate = function({ OauthClient }) {
 	/**
 	 * The OauthRedirectUri - OauthClient relation
 	 * @since 1.0
-	 * @type {object}
+	 * @type {BelongsTo}
 	 * @public
 	 * @static
-	 * @memberof OauthRedirectUri
+	 * @memberof module:lazuli-authentication/models/oauth-redirect-uri.OauthRedirectUri
 	 */
 	this.OauthClient = this.belongsTo(OauthClient, {
 		as: "OauthClient",
@@ -58,10 +62,10 @@ OauthRedirectUri.associate = function({ OauthClient }) {
 	/**
 	 * The related graphql type
 	 * @since 1.0
-	 * @type {object}
+	 * @type {module:lazuli-authentication/types/oauth-redirect-uri.OauthRedirectUriType}
 	 * @public
 	 * @static
-	 * @memberof OauthRedirectUri
+	 * @memberof module:lazuli-authentication/models/oauth-redirect-uri.OauthRedirectUri
 	 * 
 	 * @see module:lazuli-authentication/types/oauth-redirect-uri
 	 */
@@ -77,7 +81,7 @@ OauthRedirectUri.associate = function({ OauthClient }) {
 	 * @version 1.0
 	 * @since 1.0
      * @type {object}
-     * @property {object} OauthRedirectUri The user model
+     * @property {module:lazuli-authentication/models/oauth-redirect-uri.OauthRedirectUri} OauthRedirectUri The user model
      */
 	return eventEmitter.emit(
 		"authentication.model.oauth-redirect-uri.association",

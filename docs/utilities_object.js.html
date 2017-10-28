@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: utilities/object.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: utilities/object.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Picks selected keys from an object
+ * @param  {Object} obj  The object to pick the keys from
+ * @param  {Array} keys  The array of keys to pick
+ * @return {Object}      The new object only containing the picked keys
+ */
+module.exports.pick = (obj, keys) => {
+	let o = {};
+	keys.forEach(key => {
+		o[key] = key in obj ? obj[key] : undefined;
+	});
+
+	return o;
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-lazuli-authentication_models_oauth-access-token.html">lazuli-authentication/models/oauth-access-token</a></li><li><a href="module-lazuli-authentication_models_oauth-client.html">lazuli-authentication/models/oauth-client</a></li><li><a href="module-lazuli-authentication_models_oauth-code.html">lazuli-authentication/models/oauth-code</a></li><li><a href="module-lazuli-authentication_models_oauth-provider.html">lazuli-authentication/models/oauth-provider</a></li><li><a href="module-lazuli-authentication_models_oauth-redirect-uri.html">lazuli-authentication/models/oauth-redirect-uri</a></li><li><a href="module-lazuli-authentication_models_permission.html">lazuli-authentication/models/permission</a></li><li><a href="module-lazuli-authentication_models_user.html">lazuli-authentication/models/user</a></li></ul><h3>Classes</h3><ul><li><a href="Authentication.html">Authentication</a></li><li><a href="module-lazuli-authentication_models_oauth-access-token.OauthAccessToken.html">OauthAccessToken</a></li><li><a href="module-lazuli-authentication_models_oauth-client.OauthClient.html">OauthClient</a></li><li><a href="module-lazuli-authentication_models_oauth-code.OauthCode.html">OauthCode</a></li><li><a href="module-lazuli-authentication_models_oauth-provider.OauthProvider.html">OauthProvider</a></li><li><a href="module-lazuli-authentication_models_oauth-redirect-uri.OauthRedirectUri.html">OauthRedirectUri</a></li><li><a href="module-lazuli-authentication_models_permission.Permission.html">Permission</a></li><li><a href="module-lazuli-authentication_models_user.User.html">User</a></li></ul><h3>Events</h3><ul><li><a href="module-lazuli-authentication_models_oauth-access-token.html#~event:%2522authentication.model.oauth-access-token.association%2522">"authentication.model.oauth-access-token.association"</a></li><li><a href="module-lazuli-authentication_models_oauth-client.html#~event:%2522authentication.model.oauth-client.association%2522">"authentication.model.oauth-client.association"</a></li><li><a href="module-lazuli-authentication_models_oauth-code.html#~event:%2522authentication.model.oauth-code.association%2522">"authentication.model.oauth-code.association"</a></li><li><a href="module-lazuli-authentication_models_oauth-provider.html#~event:%2522authentication.model.oauth-provider.association%2522">"authentication.model.oauth-provider.association"</a></li><li><a href="module-lazuli-authentication_models_oauth-redirect-uri.html#~event:%2522authentication.model.oauth-redirect-uri.association%2522">"authentication.model.oauth-redirect-uri.association"</a></li><li><a href="module-lazuli-authentication_models_permission.html#~event:%2522authentication.model.permission.association%2522">"authentication.model.permission.association"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.association%2522">"authentication.model.user.association"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.email-verification%2522">"authentication.model.user.email-verification"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.from-passport-profile.after%2522">"authentication.model.user.from-passport-profile.after"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.from-passport-profile.before%2522">"authentication.model.user.from-passport-profile.before"</a></li><li><a href="module-lazuli-authentication_models_user.html#~event:%2522authentication.model.user.password-reset%2522">"authentication.model.user.password-reset"</a></li></ul><h3>Global</h3><ul><li><a href="global.html#auth">auth</a></li><li><a href="global.html#authenticateOauthClient">authenticateOauthClient</a></li><li><a href="global.html#authFacebookCallback">authFacebookCallback</a></li><li><a href="global.html#authGoogleCallback">authGoogleCallback</a></li><li><a href="global.html#authLocal">authLocal</a></li><li><a href="global.html#checkForImmediateApproval">checkForImmediateApproval</a></li><li><a href="global.html#escapeLikeString">escapeLikeString</a></li><li><a href="global.html#generateHash">generateHash</a></li><li><a href="global.html#generateRandomString">generateRandomString</a></li><li><a href="global.html#initFacebookAuthentication">initFacebookAuthentication</a></li><li><a href="global.html#initGoogleAuthentication">initGoogleAuthentication</a></li><li><a href="global.html#initLocalAuthentication">initLocalAuthentication</a></li><li><a href="global.html#initOauthBearerAuthentication">initOauthBearerAuthentication</a></li><li><a href="global.html#initOauthClientAuthentication">initOauthClientAuthentication</a></li><li><a href="global.html#initOauthServer">initOauthServer</a></li><li><a href="global.html#initOauthServerExchange">initOauthServerExchange</a></li><li><a href="global.html#initOauthServerGrant">initOauthServerGrant</a></li><li><a href="global.html#initPassport">initPassport</a></li><li><a href="global.html#initPassportSerialization">initPassportSerialization</a></li><li><a href="global.html#initPasswordReset">initPasswordReset</a></li><li><a href="global.html#isAuthenticated">isAuthenticated</a></li><li><a href="global.html#isBearerAuthenticated">isBearerAuthenticated</a></li><li><a href="global.html#mutation">mutation</a></li><li><a href="global.html#passwordReset">passwordReset</a></li><li><a href="global.html#pick">pick</a></li><li><a href="global.html#protectGraphqlSchemaFields">protectGraphqlSchemaFields</a></li><li><a href="global.html#query">query</a></li><li><a href="global.html#registration">registration</a></li><li><a href="global.html#verifyEmail">verifyEmail</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Oct 28 2017 10:41:37 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

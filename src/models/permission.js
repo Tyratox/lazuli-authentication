@@ -5,11 +5,16 @@ const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
 const sequelize = require("lazuli-require")("lazuli-core/sequelize");
 
 /**
- * The permission sequelize model
+ * The permission sequelize module
  * @module lazuli-authentication/models/permission
+ */
+
+/**
+ * The permission sequelize model
+ * @class
+ * @memberof module:lazuli-authentication/models/permission
  * 
  * @type {Permission}
- * @class
  * @version 1.0
  * @since 1.0
  * 
@@ -27,24 +32,23 @@ const Permission = sequelize.define("permission", {
  * @version 1.0
  * @since 1.0
  * 
- * @memberof Permission
  * @static
  * @public
  * 
  * @fires "authentication.model.permission.association"
  * 
  * @param {object} models The models to associate with
- * @param {object} models.User The user model
+ * @param {module:lazuli-authentication/models/user.User} models.User The user model
  * @return {promise<void>}
  */
 Permission.associate = function({ User }) {
 	/**
 	 * The Permission - User relation
 	 * @since 1.0
-	 * @type {object}
+	 * @type {BelongsToMany}
 	 * @public
 	 * @static
-	 * @memberof Permission
+	 * @memberof module:lazuli-authentication/models/permission.Permission
 	 */
 	this.Users = this.belongsToMany(User, {
 		as: "Users",
@@ -56,10 +60,10 @@ Permission.associate = function({ User }) {
 	/**
 	 * The related graphql type
 	 * @since 1.0
-	 * @type {object}
+	 * @type {module:lazuli-authentication/types/permission.PermissionType}
 	 * @public
 	 * @static
-	 * @memberof Permission
+	 * @memberof module:lazuli-authentication/models/permission.Permission
 	 * 
 	 * @see module:lazuli-authentication/types/permission
 	 */
@@ -75,7 +79,7 @@ Permission.associate = function({ User }) {
 	 * @version 1.0
 	 * @since 1.0
      * @type {object}
-     * @property {object} Permission The user model
+     * @property {module:lazuli-authentication/models/permission.Permission} Permission The user model
      */
 	return eventEmitter.emit("authentication.model.permission.association", {
 		Permission: this
