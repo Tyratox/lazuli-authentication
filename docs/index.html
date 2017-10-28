@@ -46,7 +46,90 @@
 
 
     <section class="readme">
-        <article><h1>lazuli-authentication</h1><p>An authentication module for lazuli providing a <strong>lot</strong>.</p></article>
+        <article><h1>lazuli-authentication</h1><p>An authentication module for creating an oauth2 service powered by <a href="https://github.com/jaredhanson/oauth2orize">oauth2orize</a> combined with <a href="https://github.com/sequelize/sequelize">sequelize</a> models, <a href="https://github.com/jaredhanson/passport">passport</a> authentication strategies and <a href="https://github.com/graphql/graphql-js">graphql</a> endpoints.</p>
+<p>This module registers the following models on the global sequlize object (<code>lazuli-core/sequelize</code>):</p>
+<h2>OauthAccessToken</h2><p>Model: <code>lazuli-authentication/models/oauth-access-token</code>
+GraphqlType: <code>lazuli-authentication/types/oauth-access-token</code></p>
+<p>The oauth access token is a the token that is needed in order to use the api. An access token is generated at the end the oauth2 process and is related to an <code>oauth-client</code> and a <code>user</code>. The token is stored as a unsalted hash. Salting isn't possible as the token is the only lookup key on a request. (Yes, hashing also isn't important for the access token as it is random anyways.). <code>hash</code> and <code>expires</code> are the two only properties of this type.</p>
+<h2>OauthClient</h2><p>Model: <code>lazuli-authentication/models/oauth-client</code>
+GraphqlType: <code>lazuli-authentication/types/oauth-client</code></p>
+<p>The oauth client refers to what service is trying to use the api (e.g. the frontend, the backend or a third party application). Oauth clients has the follwing properties: <code>name</code>, <code>secretHash</code>, <code>secretSalt</code>, <code>secretAlgorithm</code> and <code>trusted</code>. The 3 properties starting with <code>secret</code> together store a hashed secret in order to login authenticate clients. Oauth clients are especially important when scopes are implemented (TODO) as they will be linked to the <code>oauth-client</code> and <code>user</code> models. (Scopes are the permission to access certain data) In addition the have many <code>OauthRedirectUri</code>s that ensure that the access token is not passed to bad locations.</p>
+<h2>OauthCode</h2><p>Model: <code>lazuli-authentication/models/oauth-code</code>
+GraphqlType: <code>lazuli-authentication/types/oauth-code</code></p>
+<p>The oauth code is the code generated when the user accepts a certain oauth client accessing the api on his behalf. This code is passed to an OauthRedirectUri where the OauthClient can retrieve the OauthAccessToken using his <code>secret</code>.</p>
+<h2>OauthRedirectUri</h2><p>Model: <code>lazuli-authentication/models/oauth-redirect-uri</code>
+GraphqlType: <code>lazuli-authentication/types/oauth-redirect-uri</code></p>
+<p>This model is belongs to an OauthClient and represents a valid redirect uri where OauthCodes can be passed to.</p>
+<h2>User</h2><p>Model: <code>lazuli-authentication/models/user</code>
+GraphqlType: <code>lazuli-authentication/types/user</code></p>
+<p>The user model has a few properties related to authentication, email verification and password reset. Other than that there are is a <code>locale</code> property which can be used to localize the content.</p>
+<h2>Permission</h2><p>Model: <code>lazuli-authentication/models/permission</code>
+GraphqlType: <code>lazuli-authentication/types/permission</code></p>
+<p>The permission belongs to a user and represents the capability to do certain things. Permissions are hierarchical which means a user with the permission <code>admin</code> has the permission for every sub permission e.g. <code>admin.user.list</code> or <code>admin.user.updatePermissions</code>.</p>
+<h2>OauthProvider</h2><p>Model: <code>lazuli-authentication/models/oauth-provider</code>
+GraphqlType: <code>lazuli-authentication/types/oauth-provider</code></p>
+<p>As this module should also work with other oauth apis, this model is capable of storing an access token together with an refresh token for a certain provider and user.</p>
+<h2>Setup</h2><p>This is a small summary of the capabilities of this module. Unnecessary code was stripped, but in production you should always add input validation to prevent surprises. Also it's not mandatory to use the provided functions, you can always swap some of them for custom ones.</p>
+<h3>Local registration</h3><p><code>lazuli-authentication/endpoint</code> also provides an <code>registration</code> which accepts the fields <code>firstName</code>, <code>email</code> and <code>locale</code>.</p>
+<p>//TODO</p>
+<h3>Local login</h3><p>In order to be able to login with a local account, you'll need to setup an endpoint to render the login, e.g.</p>
+<pre class="prettyprint source"><code>app.get(&quot;/views/login&quot;, loginView);</code></pre><p>This page has to contain a form which posts the fields <code>username</code> (email) and <code>password</code> to the following endpoint:</p>
+<pre class="prettyprint source"><code>expressServer.post(
+    &quot;/auth/local/login&quot;,
+    authLocal
+);</code></pre><p><code>authLocal</code> is already provided in the <code>lazuli-authentication/endpoint</code> module and just needs to be imported.</p>
+<h3>Email verification</h3><p>Again, you'll need to render a form with for example</p>
+<pre class="prettyprint source"><code>app.get(&quot;/views/verify-email&quot;, mailVerificationView);</code></pre><p>This form has to pass the fields <code>email</code>, <code>password</code> and <code>emailVerificationCode</code> to the</p>
+<pre class="prettyprint source"><code>app.post(
+    &quot;/auth/local/verify-email&quot;,
+    verifyEmail
+);</code></pre><p>endpoint. The <code>verifyEmail</code> can also be imported from <code>lazuli-authentication/endpoint</code>.</p>
+<h3>Password reset</h3><p>The field <code>email</code> needs to be passed from a rendered from to</p>
+<pre class="prettyprint source"><code>app.post(
+    &quot;/auth/init-password-reset&quot;,
+    initPasswordReset
+);</code></pre><p><code>initPasswordReset</code> can be imported from <code>lazuli-authentication/endpoint</code>.</p>
+<p>The actual password reset view should then pass the fields <code>email</code>, <code>password</code> (The new one), and <code>resetCode</code> to an endpoint like</p>
+<pre class="prettyprint source"><code>app.post(
+    &quot;/auth/init-password-reset&quot;,
+    passwordReset
+);</code></pre><p>Again, <code>passwordReset</code> can be imported from <code>lazuli-authentication/endpoint</code>.</p>
+<h3>3-party oauth callbacks</h3><p>//TODO</p>
+<h3>Oauth 2</h3><p>In order to create an oauth2 dialog you need to setup an endpoint with something like</p>
+<pre class="prettyprint source"><code>app.get(
+    &quot;/oauth2/authorize&quot;,
+    isAuthenticated,
+    authenticateOauthClient,
+    checkForImmediateApproval,
+    oAuthDialog
+);</code></pre><p><code>isAuthenticated</code> checks whether the user is logged in, otherwise the oauth2 process can't start. <code>authenticateOauthClient</code> should check whether the passed redirect uri matches one of the stored ones. This function is already provided in the <code>lazuli-authentication/oauth-server</code> module and just needs to be imported. <code>checkForImmediateApproval</code> is an optional convenience feature that could immediately pass <code>trusted</code> OauthClients (<code>trusted</code> is a field in the database). This function is also provided in <code>lazuli-authentication/oauth-server</code> and sets <code>request.trusted</code> to the according boolean. In <code>oAuthDialog</code> you need to render an html form <code>POST</code>ing to the <code>authorize</code> endpoint described below. A field called <code>transaction_id</code> containing the transaction id from <code>request.oauth2.transactionID</code> needs to be passed together with an <code>allow</code> field.</p>
+<p>In the next, already foreshadowed, endpoint, we have to call the <code>decision</code> function in <code>lazuli-authentication/oauth-server</code></p>
+<pre class="prettyprint source"><code>app.post(
+    &quot;/oauth2/authorize&quot;,
+    isAuthenticated,
+    oauth2Server.decision()
+);</code></pre><p>which will do the rest for us. This generates an OauthCode which will be passed as a url parameter with the name <code>code</code> to the redirect uri. The oauth client now has to retrieve the access token by sending a request to</p>
+<pre class="prettyprint source"><code>expressServer.post(
+    &quot;/oauth2/token&quot;,
+    passport.authenticate(&quot;client-local&quot;, {
+        session: false
+    }),
+    oauth2Server.token()
+);</code></pre><p>with the json encoded content</p>
+<pre class="prettyprint source"><code>{
+    clientId: CLIENT_ID,
+    clientSecret: CLIENT_SECRET,
+    code: ==> THE RETRIEVED OAUTH CODE &lt;==,
+    grant_type: &quot;authorization_code&quot;
+}</code></pre><p>Passport will first try to login the client based on the passed id and secret. <code>oauth2orize</code> will respond with an object looking like</p>
+<pre class="prettyprint source"><code>{
+    access_token: {
+        token: &quot;&quot;,
+        clientId: 0,
+        userId: 0,
+        expires: 0
+    }
+}</code></pre><p>The <code>token</code> property is the most important one. This token can now be used in an HTTP Header called <code>Authorization</code> with the content <code>Bearer xxx</code> where xxx is your access token. This header will bypass <code>isBearerAuthenticated</code> middlewares.</p></article>
     </section>
 
 
@@ -59,7 +142,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Oct 28 2017 23:03:42 GMT+0200 (CEST) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Oct 29 2017 00:42:51 GMT+0200 (CEST) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>
