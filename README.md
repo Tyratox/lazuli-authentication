@@ -2,61 +2,61 @@
 
 An authentication module for creating an oauth2 service powered by [oauth2orize](https://github.com/jaredhanson/oauth2orize) combined with [sequelize](https://github.com/sequelize/sequelize) models, [passport](https://github.com/jaredhanson/passport) authentication strategies and [graphql](https://github.com/graphql/graphql-js) endpoints.
 
-# Models
+## Models
 
-## OauthAccessToken
+### OauthAccessToken
 Model: `lazuli-authentication/models/oauth-access-token`
 GraphqlType: `lazuli-authentication/types/oauth-access-token`
 
 The oauth access token is a the token that is needed in order to use the api. An access token is generated at the end the oauth2 process and is related to an `oauth-client` and a `user`. The token is stored as a unsalted hash. Salting isn't possible as the token is the only lookup key on a request. (Yes, hashing also isn't important for the access token as it is random anyways.). `hash` and `expires` are the two only properties of this type.
 
-## OauthClient
+### OauthClient
 Model: `lazuli-authentication/models/oauth-client`
 GraphqlType: `lazuli-authentication/types/oauth-client`
 
 The oauth client refers to what service is trying to use the api (e.g. the frontend, the backend or a third party application). Oauth clients has the follwing properties: `name`, `secretHash`, `secretSalt`, `secretAlgorithm` and `trusted`. The 3 properties starting with `secret` together store a hashed secret in order to login authenticate clients. Oauth clients are especially important when scopes are implemented (TODO) as they will be linked to the `oauth-client` and `user` models. (Scopes are the permission to access certain data) In addition the have many `OauthRedirectUri`s that ensure that the access token is not passed to bad locations.
 
-## OauthCode
+### OauthCode
 Model: `lazuli-authentication/models/oauth-code`
 GraphqlType: `lazuli-authentication/types/oauth-code`
 
 The oauth code is the code generated when the user accepts a certain oauth client accessing the api on his behalf. This code is passed to an OauthRedirectUri where the OauthClient can retrieve the OauthAccessToken using his `secret`.
 
-## OauthRedirectUri
+### OauthRedirectUri
 Model: `lazuli-authentication/models/oauth-redirect-uri`
 GraphqlType: `lazuli-authentication/types/oauth-redirect-uri`
 
 This model is belongs to an OauthClient and represents a valid redirect uri where OauthCodes can be passed to.
 
-## User
+### User
 Model: `lazuli-authentication/models/user`
 GraphqlType: `lazuli-authentication/types/user`
 
 The user model has a few properties related to authentication, email verification and password reset. Other than that there are is a `locale` property which can be used to localize the content.
 
-## Permission
+### Permission
 Model: `lazuli-authentication/models/permission`
 GraphqlType: `lazuli-authentication/types/permission`
 
 The permission belongs to a user and represents the capability to do certain things. Permissions are hierarchical which means a user with the permission `admin` has the permission for every sub permission e.g. `admin.user.list` or `admin.user.updatePermissions`.
 
-## OauthProvider
+### OauthProvider
 Model: `lazuli-authentication/models/oauth-provider`
 GraphqlType: `lazuli-authentication/types/oauth-provider`
 
 As this module should also work with other oauth apis, this model is capable of storing an access token together with an refresh token for a certain provider and user.
 
-# Setup
+## Setup
 
 This is a small summary of the capabilities of this module. Unnecessary code was stripped, but in production you should always add input validation to prevent surprises. Also it's not mandatory to use the provided functions, you can always swap some of them for custom ones.
 
-## Local registration
+### Local registration
 
 `lazuli-authentication/endpoint` also provides an `registration` which accepts the fields `firstName`, `email` and `locale`.
 
 //TODO
 
-## Local login
+### Local login
 
 In order to be able to login with a local account, you'll need to setup an endpoint to render the login, e.g.
 
@@ -71,7 +71,7 @@ This page has to contain a form which posts the fields `username` (email) and `p
 
 `authLocal` is already provided in the `lazuli-authentication/endpoint` module and just needs to be imported.
 
-## Email verification
+### Email verification
 
 Again, you'll need to render a form with for example
 
@@ -86,7 +86,7 @@ This form has to pass the fields `email`, `password` and `emailVerificationCode`
 
 endpoint. The `verifyEmail` can also be imported from `lazuli-authentication/endpoint`.
 
-## Password reset
+### Password reset
 
 The field `email` needs to be passed from a rendered from to
 
@@ -106,11 +106,11 @@ The actual password reset view should then pass the fields `email`, `password` (
 
 Again, `passwordReset` can be imported from `lazuli-authentication/endpoint`.
 
-## 3-party oauth callbacks
+### 3-party oauth callbacks
 
 //TODO
 
-## Oauth 2
+### Oauth 2
 
 In order to create an oauth2 dialog you need to setup an endpoint with something like
 
@@ -163,7 +163,7 @@ Passport will first try to login the client based on the passed id and secret. `
 	}
 The `token` property is the most important one. This token can now be used in an HTTP Header called `Authorization` with the content `Bearer xxx` where xxx is your access token. This header will bypass `isBearerAuthenticated` middlewares.
 
-# TODO
+## TODO
 - modularize passport addons
 - move redirect uris to config
 - add events for registration/password reset/email verification
