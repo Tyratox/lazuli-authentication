@@ -37,15 +37,7 @@ const OauthProviderInputType = new GraphQLInputObjectType({
 		"authentication.graphql.input-types.oauth-provider.fields",
 		{
 			id: { type: GraphQLInt },
-			provider: {
-				type: new GraphQLEnumType({
-					name: "Provider",
-					values: {
-						FACEBOOK: { value: "facebook" },
-						GOOGLE: { value: "google" }
-					}
-				})
-			},
+			provider: { type: GraphQLString },
 			accessToken: { type: GraphQLString },
 			refreshToken: { type: GraphQLString }
 		}

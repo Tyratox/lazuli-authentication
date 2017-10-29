@@ -31,8 +31,7 @@ const {
  */
 const OauthProvider = sequelize.define("oauth_provider", {
 	provider: {
-		type: ENUM,
-		values: ["google", "facebook"]
+		type: STRING
 	},
 	accessToken: {
 		type: STRING

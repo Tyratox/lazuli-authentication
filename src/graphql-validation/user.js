@@ -51,7 +51,7 @@ module.exports = {
 
 	oauthProviders: Joi.array().items(
 		Joi.object().keys({
-			type: Joi.string().valid("facebook", "google"),
+			type: Joi.string(),
 			accessToken: Joi.string(),
 			refreshToken: Joi.string()
 		})

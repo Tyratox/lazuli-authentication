@@ -11,8 +11,6 @@ const {
 
 const LocalStrategy = require("passport-local").Strategy;
 const BearerStrategy = require("passport-http-bearer").Strategy;
-const FacebookStrategy = require("passport-facebook").Strategy;
-const GoogleStrategy = require("passport-google-oauth").OAuth2Strategy;
 
 const User = require("./models/user");
 const Permission = require("./models/permission");
@@ -38,7 +36,7 @@ const initOauthClientAuthentication = passport => {
 		"client-local",
 		new LocalStrategy(
 			{ usernameField: "clientId", passwordField: "clientSecret" },
-			(clientId, clientSecret, callback) => {
+			(clientId, clientSecret, done) => {
 				OauthClient.findOne({
 					where: { id: clientId },
 					include: [
@@ -50,19 +48,19 @@ const initOauthClientAuthentication = passport => {
 				})
 					.then(client => {
 						if (!client) {
-							return callback(null, false);
+							return Promise.reject(new Error("Invalid client"));
 						}
 
-						client
+						return client
 							.verifySecret(clientSecret)
-							.then(() => {
-								return callback(null, client);
-							})
-							.catch(err => {
-								return callback(new Error("The secret is invalid!"));
-							});
+							.then(
+								verified =>
+									verified
+										? done(null, client)
+										: Promise.reject(new Error("The secret is invalid!"))
+							);
 					})
-					.catch(callback);
+					.catch(done);
 			}
 		)
 	);
@@ -82,15 +80,17 @@ const initLocalAuthentication = passport => {
 			})
 				.then(user => {
 					if (!user || user.get("passwordHash").length === 0) {
-						return done(new Error("The user couldn't be found!"));
+						return Promise.reject(new Error("Authentication failed!"));
 					}
 
-					user
+					return user
 						.verifyPassword(password)
-						.then(success => {
-							return done(null, success ? user : null);
-						})
-						.catch(done);
+						.then(
+							success =>
+								success
+									? done(null, user)
+									: Promise.reject(new Error("Authentication failed!"))
+						);
 				})
 				.catch(done);
 		})
@@ -108,7 +108,7 @@ const initOauthBearerAuthentication = passport => {
 			{
 				passReqToCallback: true
 			},
-			(request, accessToken, callback) => {
+			(request, accessToken, done) => {
 				//keeping the database clean
 				OauthAccessToken.destroy({
 					where: { expires: { $lt: new Date() } }
@@ -117,14 +117,14 @@ const initOauthBearerAuthentication = passport => {
 						return OauthAccessToken.findByToken(accessToken).then(token => {
 							// No token found
 							if (!token) {
-								return callback(new Error("The sent token is invalid!"));
+								return Promise.reject(new Error("The sent token is invalid!"));
 							}
 
 							return User.findById(token.get("userId")).then(user => {
 								if (!user) {
 									// No user was found, so the token is invalid
 									return token.destroy().then(() => {
-										return callback(
+										return Promise.reject(
 											new Error("The sent token isn't associated with a user!"),
 											false
 										);
@@ -143,84 +143,25 @@ const initOauthBearerAuthentication = passport => {
 									) {
 										return user
 											.doesHavePermissions(request.requiredPermissions)
-											.then(hasPermission => {
-												if (hasPermission) {
-													return callback(null, user);
-												} else {
-													return callback(
-														new Error(
-															"You don't have the permission to do this!"
-														),
-														false
-													);
-												}
-											});
+											.then(
+												hasPermission =>
+													hasPermission
+														? done(null, user)
+														: Promise.reject(
+																new Error(
+																	"You don't have the permission to do this!"
+																)
+															)
+											);
 									}
 
-									return callback(
-										new Error("You don't have the permission to do this!"),
-										false
+									return Promise.reject(
+										new Error("You don't have the permission to do this!")
 									);
 								});
 							});
 						});
 					})
-					.catch(callback);
-			}
-		)
-	);
-};
-
-/**
- * Enables the facebook authentication in passport
- * @param  {object} passport       The passport object which this method should be performed on
- * @return {void}
- */
-const initFacebookAuthentication = passport => {
-	passport.use(
-		new FacebookStrategy(
-			{
-				clientID: FACEBOOK_APP_ID,
-				clientSecret: FACEBOOK_APP_SECRET,
-				callbackURL: HOST + FACEBOOK_CALLBACK_PATH,
-
-				passReqToCallback: true,
-				profileFields: ["id", "emails", "name", "displayName", "photos"]
-			},
-			(request, accessToken, refreshToken, profile, done) => {
-				User.findOrCreateUserByPassportProfile(profile)
-					.then(user => {
-						user.set("locale", request.getLocale());
-						return user
-							.save()
-							.then(user => {
-								return user
-									.getOauthProviders({ where: { type: "facebook" } })
-									.then(providers => {
-										if (providers.length > 0) {
-											let provider = providers[0];
-
-											provider.set({
-												accessToken,
-												refreshToken
-											});
-
-											return provider.save();
-										} else {
-											return OauthProvider.create({
-												type: "facebook",
-												accessToken,
-												refreshToken
-											}).then(provider => {
-												return provider.setUser(user);
-											});
-										}
-									});
-							})
-							.then(() => {
-								return done(null, user);
-							});
-					})
 					.catch(done);
 			}
 		)
@@ -228,60 +169,61 @@ const initFacebookAuthentication = passport => {
 };
 
 /**
- * Enables the google authentication in passport
- * @param  {object} passport            The passport object which this method should be performed on
+ * Initializes a generic passport oauth authentication strategy
+ * @param {object} passport The passport object to add this strategy to
+ * @param {string} providerUid A unique id for this specific oauth provider, e.g. `auth0`
+ * @param {StrategyClass} Strategy The strategy class for this specific provider, e.g. `Auth0Strategy`
+ * @param {object} strategyProps The props that should be passed to the strategy class
+ * @param {function} mapCallbackSignature A function that should map the callback signature to (request, accessToken, refreshToken, profile, done)
  * @return {void}
  */
-const initGoogleAuthentication = passport => {
+module.exports.initGenericOauthPassportStrategy = (
+	passport,
+	providerUid,
+	Strategy,
+	strategyProps,
+	mapCallbackSignature
+) => {
 	passport.use(
-		new GoogleStrategy(
-			{
-				clientID: GOOGLE_CLIENT_ID,
-				clientSecret: GOOGLE_CLIENT_SECRET,
-				callbackURL: HOST + GOOGLE_CALLBACK_PATH,
-
-				passReqToCallback: true
-			},
+		new Strategy({ ...strategyProps, passReqToCallback: true }),
+		mapCallbackSignature(
 			(request, accessToken, refreshToken, profile, done) => {
 				User.findOrCreateUserByPassportProfile(profile)
 					.then(user => {
-						user.set("locale", request.getLocale());
 						return user
-							.save()
+							.update({
+								locale: request.getLocale()
+							})
 							.then(user => {
 								return user
-									.getOauthProviders({ where: { type: "google" } })
+									.getOauthProviders({ where: { provider: providerUid } })
 									.then(providers => {
-										if (providers.length > 0) {
-											let provider = providers[0];
-
-											provider.set({
-												accessToken,
-												refreshToken
-											});
-
-											return provider.save();
-										} else {
+										if (providers.length === 0) {
 											return OauthProvider.create({
-												type: "google",
+												type: providerUid,
+												accessToken,
+												refreshToken,
+												user_id: user.get("id")
+											});
+										} else if (providers.length > 1) {
+											return Promise.reject(
+												"Unexpected Error! There is more than one provider of the same type registered for the same user Please report this!"
+											);
+										} else {
+											return providers[0].update({
 												accessToken,
 												refreshToken
-											}).then(provider => {
-												return provider.setUser(user);
 											});
 										}
 									});
 							})
-							.then(() => {
-								return done(null, user);
-							});
+							.then(() => done(null, user));
 					})
 					.catch(done);
 			}
 		)
 	);
 };
-
 /**
  * Initializes the user serialization in the passport object
  * @return {void}
@@ -326,5 +268,6 @@ initPassport(passport);
 
 /**
  * The shared passport module
+ * @type {Object}
  */
-module.exports = { passport };
+module.exports.passport = passport;
