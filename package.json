@@ -29,7 +29,6 @@
 	},
 	"homepage": "https://lazuli.tyratox.ch",
 	"dependencies": {
-		"async": "^2.5.0",
 		"ejs": "^2.5.2",
 		"express": "^4.15.4",
 		"express-graphql": "^0.6.11",
@@ -58,6 +57,8 @@
 		"lazuli-config": "tyratox/lazuli-config",
 		"lazuli-core": "tyratox/lazuli-core",
 		"lazuli-filters": "tyratox/lazuli-filters",
-		"lazuli-i18n": "tyratox/lazuli-i18n"
+		"lazuli-i18n": "tyratox/lazuli-i18n",
+		"pg": "6.4.2",
+		"pg-hstore": "^2.3.2"
 	}
 }

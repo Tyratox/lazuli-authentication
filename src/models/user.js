@@ -1,4 +1,3 @@
-const async = require("async");
 const path = require("path");
 const { STRING, DATE } = require("sequelize");
 
@@ -17,6 +16,8 @@ const {
 	generateRandomString,
 	generateHash
 } = require("../utilities/crypto.js");
+
+const Permission = require("./permission");
 
 /**
  * The user sequelize module
@@ -706,35 +707,15 @@ User.prototype.doesHavePermission = function(permission) {
  * @return {promise<boolean>} A promise whether the update was successfull
  */
 User.prototype.setPermissionArray = function(permissions = []) {
-	return new Promise((resolve, reject) => {
-		let permissionInstances = [];
+	const promises = permissions.map(permission => {
+		return Permission.findOrCreate({
+			where: { permission },
+			defaults: { permission }
+		}).then(result => Promise.resolve(result[0]));
+	});
 
-		async.each(
-			permissions,
-			(permission, callback) => {
-				Permission.findOrCreate({
-					where: { permission },
-					defaults: { permission }
-				})
-					.then(result => {
-						const permissionInstance = result[0],
-							created = result[1];
-
-						permissionInstances.push(permissionInstance);
-						callback();
-					})
-					.catch(callback);
-			},
-			err => {
-				if (err) {
-					reject(err);
-				}
-
-				this.setPermissions(permissionInstances)
-					.then(() => resolve(true))
-					.catch(reject);
-			}
-		);
+	return Promise.all(promises).then(permissionInstances => {
+		return this.setPermissions(permissionInstances);
 	});
 };
 

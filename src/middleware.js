@@ -1,5 +1,5 @@
 const User = require("./models/user");
-const passport = require("./passport");
+const { passport } = require("./passport");
 
 /**
  * A set of general authentication middlewares

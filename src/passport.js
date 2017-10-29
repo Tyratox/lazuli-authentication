@@ -260,8 +260,6 @@ const initPassport = passport => {
 	initOauthClientAuthentication(passport, OauthClient, OauthRedirectUri);
 	initLocalAuthentication(passport, User);
 	initOauthBearerAuthentication(passport, OauthAccessToken, User, Permission);
-	initFacebookAuthentication(passport, User, OauthProvider);
-	initGoogleAuthentication(passport, User, OauthProvider);
 };
 
 initPassport(passport);
