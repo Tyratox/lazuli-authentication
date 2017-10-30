@@ -49,7 +49,7 @@ const OauthRedirectUriType = new GraphQLObjectType({
 			name: "oauthRedirectUriOauthClient",
 			nodeType: OauthClientType,
 			target: OauthRedirectUri.OauthClient,
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {},

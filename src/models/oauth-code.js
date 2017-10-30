@@ -30,7 +30,8 @@ const {
  */
 const OauthCode = sequelize.define("oauth_code", {
 	hash: {
-		type: STRING
+		type: STRING,
+		unique: true
 	},
 	expires: {
 		type: DATE
@@ -50,9 +51,10 @@ const OauthCode = sequelize.define("oauth_code", {
  * @param {object} models The models to associate with
  * @param {module:lazuli-authentication/models/user.User} models.User The user model
  * @param {module:lazuli-authentication/models/oauth-client.OauthClient} models.OauthClient The oauth client model
+ * @param {module:lazuli-authentication/models/oauth-scope.OauthScope} models.OauthScope The oauth scope model
  * @return {promise<void>}
  */
-OauthCode.associate = function({ User, OauthClient }) {
+OauthCode.associate = function({ User, OauthClient, OauthScope }) {
 	/**
 	 * The OauthCode - User relation
 	 * @since 1.0
@@ -63,7 +65,8 @@ OauthCode.associate = function({ User, OauthClient }) {
 	 */
 	this.User = this.belongsTo(User, {
 		as: "User",
-		foreignKey: "userId"
+		foreignKey: "userId",
+		hooks: true
 	});
 
 	/**
@@ -76,7 +79,24 @@ OauthCode.associate = function({ User, OauthClient }) {
 	 */
 	this.OauthClient = this.belongsTo(OauthClient, {
 		as: "OauthClient",
-		foreignKey: "oauthClientId"
+		foreignKey: "oauthClientId",
+		hooks: true
+	});
+
+	/**
+	 * The OauthCode - OauthScope relation
+	 * @since 1.0
+	 * @type {BelongsToMany}
+	 * @public
+	 * @static
+	 * @memberof module:lazuli-authentication/models/oauth-code.OauthCode
+	 */
+	this.OauthScopes = this.belongsToMany(OauthScope, {
+		as: "OauthScopes",
+		foreignKey: "oauthCodeId",
+		otherKey: "oauthScopeId",
+		through: "oauth_code_scope_relations",
+		hooks: true
 	});
 
 	/**
@@ -92,16 +112,14 @@ OauthCode.associate = function({ User, OauthClient }) {
 	this.graphQlType = require("../types/oauth-code");
 
 	/**
-     * Event that is fired before the password reset code and
-	 * its expiration date are set during a password reset.
-	 * This event can (and should) be used to hand the reset code
-	 * the the user via e.g. email.
+     * Event that is fired after all internal associations have been created
+	 * and additional ones can be added.
      *
      * @event "authentication.model.oauth-code.association"
 	 * @version 1.0
 	 * @since 1.0
      * @type {object}
-     * @property {module:lazuli-authentication/models/oauth-code.OauthCode} OauthCode The oauth client model
+     * @property {module:lazuli-authentication/models/oauth-code.OauthCode} OauthCode The oauth code model
      */
 	return eventEmitter.emit("authentication.model.oauth-code.association", {
 		OauthCode: this
@@ -116,10 +134,22 @@ OauthCode.associate = function({ User, OauthClient }) {
  * @public
  * @static
  * 
- * @return {string} The generated oauth code
+ * @param {number} userId The user id this auth code should be linked to
+ * @param {number} clientId The client id this auth code should be linked to
+ * @param {number} expires The timestamp of the time this code should expire
+ * @return {promise<object>} The generated oauth code
  */
-OauthCode.generateCode = function() {
-	return generateRandomString(TOKEN_LENGTH);
+OauthCode.generateCode = function(userId, clientId, expires) {
+	const code = generateRandomString(TOKEN_LENGTH);
+
+	return this.create({
+		hash: this.hashCode(code),
+		userId,
+		oauthClientId: clientId,
+		expires
+	}).then(code => {
+		return Promise.resolve({ oauthCode, code });
+	});
 };
 
 /**
@@ -151,6 +181,32 @@ OauthCode.hashCode = function(code) {
 OauthCode.findByCode = function(code) {
 	return this.findOne({
 		where: { hash: this.hashCode(code) }
+	});
+};
+
+/**
+ * Sets the scopes of the auth code
+ * @version 1.0
+ * @since 1.0
+ *
+ * @public
+ * @instance
+ * @method setScopeArray
+ * @memberof module:lazuli-authentication/models/oauth-code.OauthCode
+ *
+ * @param  {array} [scopes=[]] An array of scopes to set to for this auth cpde
+ * @return {promise<void>}
+ */
+OauthCode.prototype.setScopeArray = function(scopes = []) {
+	const promises = scopes.map(scope => {
+		return OauthScope.findOrCreate({
+			where: { scope },
+			defaults: { scope }
+		}).then(result => Promise.resolve(result[0]));
+	});
+
+	return Promise.all(promises).then(scopeInstances => {
+		return this.setOauthScopes(scopeInstances);
 	});
 };
 

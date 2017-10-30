@@ -46,12 +46,13 @@ const OauthAccessTokenType = new GraphQLObjectType({
 		//lazy loaded
 		const UserType = require("./user");
 		const OauthClientType = require("./oauth-client");
+		const OauthScopeType = require("./oauth-scope");
 
 		const oauthAccessTokenUserConnection = sequelizeConnection({
 			name: "oauthAccessTokenUser",
 			nodeType: UserType,
 			target: OauthAccessToken.User,
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {},
@@ -62,10 +63,35 @@ const OauthAccessTokenType = new GraphQLObjectType({
 			name: "oauthAccessTokenOauthClient",
 			nodeType: OauthClientType,
 			target: OauthAccessToken.OauthClient,
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {},
+			edgeFields: {}
+		});
+
+		const oauthScopeConnection = sequelizeConnection({
+			name: "oauthScope",
+			nodeType: OauthScopeType,
+			target: OauthAccessToken.OauthScopes,
+			orderBy: new GraphQLEnumType({
+				name: "OauthScopeOrderBy",
+				values: {
+					ID: { value: ["id", "ASC"] },
+					SCOPE: { value: ["scope", "DESC"] }
+				}
+			}),
+			where: (key, value, currentWhere) => {
+				return { [key]: value };
+			},
+			connectionFields: {
+				total: {
+					type: GraphQLInt,
+					resolve: ({ source }) => {
+						return source.countOauthScopes();
+					}
+				}
+			},
 			edgeFields: {}
 		});
 

@@ -61,7 +61,7 @@ const UserType = new GraphQLObjectType({
 					NAME: { value: ["permission", "DESC"] }
 				}
 			}),
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {
@@ -86,7 +86,7 @@ const UserType = new GraphQLObjectType({
 					PROVIDER: { value: ["provider", "DESC"] }
 				}
 			}),
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {
@@ -108,7 +108,7 @@ const UserType = new GraphQLObjectType({
 					ID: { value: ["id", "ASC"] }
 				}
 			}),
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {
@@ -130,7 +130,7 @@ const UserType = new GraphQLObjectType({
 					ID: { value: ["id", "ASC"] }
 				}
 			}),
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {
@@ -152,7 +152,7 @@ const UserType = new GraphQLObjectType({
 					ID: { value: ["id", "ASC"] }
 				}
 			}),
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {

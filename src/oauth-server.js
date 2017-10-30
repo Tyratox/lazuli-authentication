@@ -17,42 +17,45 @@ const OauthAccessToken = require("./models/oauth-access-token");
 
 /**
  * Initializes the granting part of the oauth server
- * @param {Object} oauth2Server The oauth2 server
+ * @param {object} oauth2Server The oauth2 server
  * @return {void}
  */
 const initOauthServerGrant = oauth2Server => {
 	oauth2Server.grant(
-		oauth2orize.grant.code((client, redirectUri, user, ares, callback) => {
+		oauth2orize.grant.code((client, redirectUri, user, ares, done) => {
 			// Create a new authorization code
 
 			if (!client.verifyRedirectUri(redirectUri)) {
-				return callback(
+				return done(
 					new Error(
 						"The sent redirect uri isn't registered with this oauth client!"
 					)
 				);
 			}
 
-			const codeValue = OauthCode.generateCode();
+			const { scope } = ares;
 
-			// Save the auth code and check for errors
-			OauthCode.create({
-				hash: OauthCode.hashCode(codeValue),
-				expires: Date.now() + AUTH_CODE_LIFETIME * 1000,
-				userId: user.get("id"),
-				oauthClientId: client.get("id")
-			})
-				.then(() => {
-					return callback(null, codeValue);
+			return OauthCode.generateCode(
+				user.get("id"),
+				client.get("id"),
+				Date.now() + AUTH_CODE_LIFETIME * 1000
+			)
+				.then(({ oauthCode, code }) => {
+					return oauthCode
+						.setScopes(scope.split(" "))
+						.then(() => Promise.resolve(code));
 				})
-				.catch(callback);
+				.then(code => {
+					return done(null, code);
+				})
+				.catch(done);
 		})
 	);
 };
 
 /**
  * Initializes the exchange part of the oauth server
- * @param {Object} oauth2Server The oauth2 server
+ * @param {object} oauth2Server The oauth2 server
  * @return {void}
  */
 const initOauthServerExchange = oauth2Server => {
@@ -61,12 +64,15 @@ const initOauthServerExchange = oauth2Server => {
 			OauthCode.findByCode(code)
 				.then(authCode => {
 					if (authCode.get("expires") < Date.now()) {
-						return Promise.reject(
-							new Error("The sent auth code has already expired!")
-						);
+						return authCode
+							.destroy()
+							.then(() =>
+								Promise.reject(
+									new Error("The sent auth code has already expired!")
+								)
+							);
 					}
 
-					//Delete the auth code now that it has been used
 					const clientId = authCode.get("oauthClientId"),
 						userId = authCode.get("userId");
 
@@ -74,7 +80,7 @@ const initOauthServerExchange = oauth2Server => {
 						userId,
 						clientId,
 						Date.now() + ACCESS_TOKEN_LIFETIME * 1000
-					).then(({ model, token }) => {
+					).then(({ accessToken, token }) => {
 						// Create an access token
 
 						const tokenData = {
@@ -83,21 +89,29 @@ const initOauthServerExchange = oauth2Server => {
 							userId: userId,
 							expires: expirationDate
 						};
-
-						return OauthCode.destroy({
-							where: {
-								$or: [
-									{
-										expires: { $lt: new Date() }
-									},
-									{
-										id: authCode.get("id")
+						return authCode
+							.getOauthScopes()
+							.then(scopes => {
+								//use scopes for access token as well
+								return accessToken.setOauthScopes(scopes);
+							})
+							.then(() =>
+								OauthCode.destroy({
+									where: {
+										$or: [
+											{
+												expires: { $lt: new Date() }
+											},
+											//Delete the auth code now that it has been used
+											{
+												id: authCode.get("id")
+											}
+										]
 									}
-								]
-							}
-						}).then(() => {
-							callback(null, tokenData);
-						});
+								}).then(() => {
+									callback(null, tokenData);
+								})
+							);
 					});
 				})
 				.catch(callback);
@@ -136,59 +150,67 @@ const initOauthServer = oauth2Server => {
 };
 
 /**
- * Authenticates the oauth client during the oauth2 authorization
- * @param {Object} oauth2Server The oauth2 server
- * @return {Function} The express middleware to authenticate the oauth client
+ * Authenticates the oauth client during the oauth2 authorization and checks for immediate approval
+ * @param {object} oauth2Server The oauth2 server
+ * @return {function} The express middleware to authenticate the oauth client
  */
 const authenticateOauthClient = oauth2Server => {
-	return oauth2Server.authorization((clientId, redirectUri, callback) => {
-		OauthClient.findOne({
-			where: { id: clientId },
-			include: [
-				{
-					model: OauthRedirectUri,
-					as: "OauthRedirectUris"
-				}
-			]
-		})
-			.then(client => {
-				if (client && client.verifyRedirectUri(redirectUri)) {
-					return callback(null, client, redirectUri);
-				} else {
-					return callback(
-						new Error(
-							"The sent redirect uri isn't registered with this oauth client!"
-						)
-					);
-				}
+	return oauth2Server.authorization(
+		(clientId, redirectUri, scope, type) => {
+			OauthClient.findOne({
+				where: { id: clientId },
+				include: [
+					{
+						model: OauthRedirectUri,
+						as: "OauthRedirectUris"
+					}
+				]
 			})
-			.catch(callback);
-	});
-};
+				.then(client => {
+					if (client && client.verifyRedirectUri(redirectUri)) {
+						return callback(null, client, redirectUri);
+					} else {
+						return callback(
+							new Error(
+								"The sent redirect uri isn't registered with this oauth client!"
+							)
+						);
+					}
+				})
+				.catch(callback);
+		},
+		(client, user, scope, done) => {
+			client
+				.getOauthAccessTokens({
+					where: { userId: user.id },
+					include: [{ model: OauthScope, as: "OauthScopes" }]
+				})
+				.then(tokens => {
+					//If the client is trusted or there's already a token issued
+					if (client.get("trusted") === true) {
+						//pass it
+						done(null, true, ares);
+					}
 
-/**
- * Checks whether a oauth request can immediately be approved
- * @return {Function} The express middleware to either prompt the user or directly approve the oauth2 request
- */
-const checkForImmediateApproval = () => {
-	return (request, response, next) => {
-		let { client } = request.oauth2;
+					const tokenScope = tokens[0]
+						.get("OauthScopes")
+						.map(scope => scope.scope);
 
-		//Or the user already approved to this client
-		client
-			.getOauthAccessTokens()
-			.then(tokens => {
-				//If the client is trusted or there's already a token issued
-				if (client.get("trusted") === true || tokens.length > 0) {
-					//pass it
-					request.trusted = true;
-				} else {
-					request.trusted = false;
-				}
-				return next(null);
-			})
-			.catch(next);
-	};
+					const missing = scope.split(" ").filter(scope => {
+						for (let i = 0; i < tokenScope.length; i++) {
+							if (scope === tokenScope[i]) {
+								return false;
+							}
+						}
+
+						return true;
+					});
+
+					done(null, missing.length === 0, ares);
+				})
+				.catch(done);
+		}
+	);
 };
 
 initOauthServer(oauthServer);

@@ -56,7 +56,8 @@ OauthRedirectUri.associate = function({ OauthClient }) {
 	 */
 	this.OauthClient = this.belongsTo(OauthClient, {
 		as: "OauthClient",
-		foreignKey: "oauthClientId"
+		foreignKey: "oauthClientId",
+		hooks: true
 	});
 
 	/**
@@ -72,16 +73,14 @@ OauthRedirectUri.associate = function({ OauthClient }) {
 	this.graphQlType = require("../types/oauth-redirect-uri");
 
 	/**
-     * Event that is fired before the password reset code and
-	 * its expiration date are set during a password reset.
-	 * This event can (and should) be used to hand the reset code
-	 * the the user via e.g. email.
+     * Event that is fired after all internal associations have been created
+	 * and additional ones can be added.
      *
      * @event "authentication.model.oauth-redirect-uri.association"
 	 * @version 1.0
 	 * @since 1.0
      * @type {object}
-     * @property {module:lazuli-authentication/models/oauth-redirect-uri.OauthRedirectUri} OauthRedirectUri The user model
+     * @property {module:lazuli-authentication/models/oauth-redirect-uri.OauthRedirectUri} OauthRedirectUri The redirect uri model
      */
 	return eventEmitter.emit(
 		"authentication.model.oauth-redirect-uri.association",

@@ -50,7 +50,7 @@ const OauthCodeType = new GraphQLObjectType({
 			name: "oauthCodeUser",
 			nodeType: UserType,
 			target: OauthCode.User,
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {},
@@ -61,7 +61,7 @@ const OauthCodeType = new GraphQLObjectType({
 			name: "oauthCodeOauthClient",
 			nodeType: OauthClientType,
 			target: OauthCode.OauthClient,
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {},

@@ -72,7 +72,7 @@ const OauthClientType = new GraphQLObjectType({
 					ID: { value: ["id", "ASC"] }
 				}
 			}),
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {},
@@ -89,7 +89,7 @@ const OauthClientType = new GraphQLObjectType({
 					ID: { value: ["id", "ASC"] }
 				}
 			}),
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {},
@@ -106,7 +106,7 @@ const OauthClientType = new GraphQLObjectType({
 					ID: { value: ["id", "ASC"] }
 				}
 			}),
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {},

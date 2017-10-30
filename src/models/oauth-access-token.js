@@ -13,6 +13,8 @@ const {
 	generateHash
 } = require("../utilities/crypto.js");
 
+const OauthScope = require("./oauth-scope");
+
 /**
  * The access token model
  * @module lazuli-authentication/models/oauth-access-token
@@ -66,7 +68,8 @@ OauthAccessToken.associate = function({ User, OauthClient }) {
 	 */
 	this.User = this.belongsTo(User, {
 		as: "User",
-		foreignKey: "userId"
+		foreignKey: "userId",
+		hooks: true
 	});
 
 	/**
@@ -79,7 +82,24 @@ OauthAccessToken.associate = function({ User, OauthClient }) {
 	 */
 	this.OauthClient = this.belongsTo(OauthClient, {
 		as: "OauthClient",
-		foreignKey: "oauthClientId"
+		foreignKey: "oauthClientId",
+		hooks: true
+	});
+
+	/**
+	 * The OauthAccessToken - OauthScope relation
+	 * @since 1.0
+	 * @type {BelongsToMany}
+	 * @public
+	 * @static
+	 * @memberof module:lazuli-authentication/models/oauth-access-token.OauthAccessToken
+	 */
+	this.OauthScopes = this.belongsToMany(OauthScope, {
+		as: "OauthScopes",
+		foreignKey: "oauthAccessTokenId",
+		otherKey: "oauthScopeId",
+		through: "access_token_scope_relations",
+		hooks: true
 	});
 
 	/**
@@ -95,10 +115,8 @@ OauthAccessToken.associate = function({ User, OauthClient }) {
 	this.graphQlType = require("../types/oauth-access-token");
 
 	/**
-     * Event that is fired before the password reset code and
-	 * its expiration date are set during a password reset.
-	 * This event can (and should) be used to hand the reset code
-	 * the the user via e.g. email.
+     * Event that is fired after all internal associations have been created
+	 * and additional ones can be added.
      *
      * @event "authentication.model.oauth-access-token.association"
 	 * @version 1.0
@@ -180,6 +198,32 @@ OauthAccessToken.hashToken = function(token) {
  */
 OauthAccessToken.findByToken = function(token) {
 	return this.findOne({ where: { hash: this.hashToken(token) } });
+};
+
+/**
+ * Sets the scopes of the access token
+ * @version 1.0
+ * @since 1.0
+ *
+ * @public
+ * @instance
+ * @method setScopeArray
+ * @memberof module:lazuli-authentication/models/oauth-access-token.OauthAccessToken
+ *
+ * @param  {array} [scopes=[]] An array of scopes to set to for this access token
+ * @return {promise<void>}
+ */
+OauthAccessToken.prototype.setScopeArray = function(scopes = []) {
+	const promises = scopes.map(scope => {
+		return OauthScope.findOrCreate({
+			where: { scope },
+			defaults: { scope }
+		}).then(result => Promise.resolve(result[0]));
+	});
+
+	return Promise.all(promises).then(scopeInstances => {
+		return this.setOauthScopes(scopeInstances);
+	});
 };
 
 module.exports = OauthAccessToken;

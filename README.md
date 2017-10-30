@@ -179,11 +179,10 @@ In order to create an oauth2 dialog you need to setup an endpoint with something
         "/oauth2/authorize",
         isAuthenticated,
         authenticateOauthClient,
-        checkForImmediateApproval,
         oAuthDialog
     );
 
-`isAuthenticated` checks whether the user is logged in, otherwise the oauth2 process can't start. `authenticateOauthClient` should check whether the passed redirect uri matches one of the stored ones. This function is already provided in the `lazuli-authentication/oauth-server` module and just needs to be imported. `checkForImmediateApproval` is an optional convenience feature that could immediately pass `trusted` OauthClients (`trusted` is a field in the database). This function is also provided in `lazuli-authentication/oauth-server` and sets `request.trusted` to the according boolean. In `oAuthDialog` you need to render an html form `POST`ing to the `authorize` endpoint described below. A field called `transaction_id` containing the transaction id from `request.oauth2.transactionID` needs to be passed together with an `allow` field.
+`isAuthenticated` checks whether the user is logged in, otherwise the oauth2 process can't start. `authenticateOauthClient` should check whether the passed redirect uri matches one of the stored ones. This function is already provided in the `lazuli-authentication/oauth-server` module and just needs to be imported. In `oAuthDialog` you need to render an html form `POST`ing to the `authorize` endpoint described below. A field called `transaction_id` containing the transaction id from `request.oauth2.transactionID` needs to be passed together with an `allow` field.
 
 In the next, already foreshadowed, endpoint, we have to call the `decision` function in `lazuli-authentication/oauth-server`
 

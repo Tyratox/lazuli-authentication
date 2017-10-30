@@ -49,7 +49,7 @@ const OauthProviderType = new GraphQLObjectType({
 			name: "oauthProviderUser",
 			nodeType: UserType,
 			target: OauthProvider.User,
-			where: function(key, value, currentWhere) {
+			where: (key, value, currentWhere) => {
 				return { [key]: value };
 			},
 			connectionFields: {},

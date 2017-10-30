@@ -54,7 +54,8 @@ Permission.associate = function({ User }) {
 		as: "Users",
 		foreignKey: "permissionId",
 		otherKey: "userId",
-		through: "permission_relations"
+		through: "permission_relations",
+		hooks: true
 	});
 
 	/**
@@ -70,16 +71,14 @@ Permission.associate = function({ User }) {
 	this.graphQlType = require("../types/permission");
 
 	/**
-     * Event that is fired before the password reset code and
-	 * its expiration date are set during a password reset.
-	 * This event can (and should) be used to hand the reset code
-	 * the the user via e.g. email.
+     * Event that is fired after all internal associations have been created
+	 * and additional ones can be added.
      *
      * @event "authentication.model.permission.association"
 	 * @version 1.0
 	 * @since 1.0
      * @type {object}
-     * @property {module:lazuli-authentication/models/permission.Permission} Permission The user model
+     * @property {module:lazuli-authentication/models/permission.Permission} Permission The permission model
      */
 	return eventEmitter.emit("authentication.model.permission.association", {
 		Permission: this

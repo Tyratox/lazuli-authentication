@@ -66,7 +66,8 @@ OauthProvider.associate = function({ User }) {
 	 */
 	this.User = this.belongsTo(User, {
 		as: "User",
-		foreignKey: "userId"
+		foreignKey: "userId",
+		hooks: true
 	});
 
 	/**
@@ -82,16 +83,14 @@ OauthProvider.associate = function({ User }) {
 	this.graphQlType = require("../types/oauth-provider");
 
 	/**
-     * Event that is fired before the password reset code and
-	 * its expiration date are set during a password reset.
-	 * This event can (and should) be used to hand the reset code
-	 * the the user via e.g. email.
+     * Event that is fired after all internal associations have been created
+	 * and additional ones can be added.
      *
      * @event "authentication.model.oauth-provider.association"
 	 * @version 1.0
 	 * @since 1.0
      * @type {object}
-     * @property {module:lazuli-authentication/models/oauth-provider.OauthProvider} OauthProvider The user model
+     * @property {module:lazuli-authentication/models/oauth-provider.OauthProvider} OauthProvider The provider model
      */
 	return eventEmitter.emit("authentication.model.oauth-provider.association", {
 		OauthProvider: this

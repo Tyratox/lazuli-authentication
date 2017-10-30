@@ -203,7 +203,7 @@ module.exports.initGenericOauthPassportStrategy = (
 												type: providerUid,
 												accessToken,
 												refreshToken,
-												user_id: user.get("id")
+												userId: user.get("id")
 											});
 										} else if (providers.length > 1) {
 											return Promise.reject(

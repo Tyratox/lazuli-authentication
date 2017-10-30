@@ -127,7 +127,6 @@ User.associate = function({
 		foreignKey: "userId",
 		otherKey: "permissionId",
 		through: "permission_relations",
-		onDelete: "cascade",
 		hooks: true
 	});
 
@@ -530,10 +529,8 @@ User.prototype.initPasswordReset = function() {
 	const expirationDate = Date.now() + RESET_CODE_LIFETIME * 1000;
 
 	/**
-     * Event that is fired before the password reset code and
-	 * its expiration date are set during a password reset.
-	 * This event can (and should) be used to hand the reset code
-	 * the the user via e.g. email.
+     * Event that is fired after all internal associations have been created
+	 * and additional ones can be added.
      *
      * @event "authentication.model.user.password-reset"
      * @type {object}
@@ -704,7 +701,7 @@ User.prototype.doesHavePermission = function(permission) {
  * @memberof module:lazuli-authentication/models/user.User
  *
  * @param  {array} [permissions=[]] An array of permissions to set to the user
- * @return {promise<boolean>} A promise whether the update was successfull
+ * @return {promise<void>}
  */
 User.prototype.setPermissionArray = function(permissions = []) {
 	const promises = permissions.map(permission => {

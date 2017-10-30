@@ -32,9 +32,16 @@ const initPromise = lazuli
 	.then(models => {
 		const types = Object.assign(
 			{},
-			...Object.values(models).map(model => ({
-				[model.name]: model.graphQlType
-			}))
+			...Object.values(models)
+				.map(
+					model =>
+						model.graphQlType
+							? {
+									[model.name]: model.graphQlType
+								}
+							: null
+				)
+				.filter(e => e)
 		);
 
 		sequelize.nodeTypeMapper.mapTypes(types);

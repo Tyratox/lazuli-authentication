@@ -31,6 +31,7 @@ Authentication.models = {
 	OauthCode: require("./models/oauth-code"),
 	OauthProvider: require("./models/oauth-provider"),
 	OauthRedirectUri: require("./models/oauth-redirect-uri"),
+	OauthScope: require("./models/oauth-scope"),
 	Permission: require("./models/permission"),
 	User: require("./models/user")
 };
