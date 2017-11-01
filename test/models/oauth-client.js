@@ -5,8 +5,6 @@ const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");
 const OauthClient = require("../../src/models/oauth-client");
 const OauthRedirectUri = require("../../src/models/oauth-redirect-uri");
 
-let { generateRandomString } = require("../../src/utilities/crypto");
-
 let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 
 module.exports = (test, initPromise) => {
@@ -19,7 +17,7 @@ module.exports = (test, initPromise) => {
 	});
 
 	test("models.oauth-client.setSecret and verifySecret", async t => {
-		const secret = generateRandomString(15);
+		const secret = "secure secret";
 
 		return OauthClient.create({}).then(clientModel => {
 			return clientModel.setSecret(secret).then(() => {
@@ -37,7 +35,7 @@ module.exports = (test, initPromise) => {
 	});
 
 	test("models.oauth-client.verifyRedirectUri", async t => {
-		const uri = generateRandomString(15);
+		const uri = "https://re.direct.uri";
 
 		return OauthRedirectUri.create({ uri }).then(uriModel => {
 			return OauthClient.create().then(clientModel => {

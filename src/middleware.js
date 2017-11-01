@@ -1,5 +1,13 @@
+const { validate } = require("lazuli-require")("lazuli-core/express");
+
 const User = require("./models/user");
 const { passport } = require("./passport");
+
+const {
+	registration,
+	initPasswordReset,
+	passwordReset
+} = require("./validation");
 
 /**
  * A set of general authentication middlewares
@@ -38,24 +46,27 @@ module.exports.isBearerAuthenticated = (permissions = []) => {
  * @param {object} next The middleware callback function 
  * @return {void}
  */
-module.exports.passwordReset = (request, response, next) => {
-	User.findOne({
-		where: { emailVerified: request.body.email }
-	})
-		.then(user => {
-			if (user) {
-				user
-					.updatePassword(request.body.password, request.body.resetCode)
-					.then(next)
-					.catch(next);
-			} else {
-				//Return always the same error to not leak whether this email
-				//is registered
-				return next(new Error("The password reset code was invalid!"));
-			}
+module.exports.passwordReset = [
+	validate(passwordReset),
+	(request, response, next) => {
+		User.findOne({
+			where: { emailVerified: request.body.email }
 		})
-		.catch(next);
-};
+			.then(user => {
+				if (user) {
+					user
+						.updatePassword(request.body.password, request.body.resetCode)
+						.then(() => next())
+						.catch(next);
+				} else {
+					//Return always the same error to not leak whether this email
+					//is registered
+					return next(new Error("The password reset code was invalid!"));
+				}
+			})
+			.catch(next);
+	}
+];
 
 /**
  * An express middleware that initiates a passwort reset
@@ -66,22 +77,27 @@ module.exports.passwordReset = (request, response, next) => {
  * @param {object} next The middleware callback function
  * @return {void}
  */
-module.exports.initPasswordReset = (request, response, next) => {
-	User.findOne({
-		where: { emailVerified: request.body.email }
-	})
-		.then(user => {
-			if (user) {
-				user
-					.initPasswordReset()
-					.then(next)
-					.catch(next);
-			} else {
-				return next(new Error("Email not registered!"));
-			}
+module.exports.initPasswordReset = [
+	validate(initPasswordReset),
+	(request, response, next) => {
+		User.findOne({
+			where: { emailVerified: request.body.email }
 		})
-		.catch(next);
-};
+			.then(user => {
+				if (user) {
+					user
+						.initPasswordReset()
+						.then(() => next())
+						.catch(next);
+				} else {
+					return Promise.reject(
+						new Error("The given email is not registered!")
+					);
+				}
+			})
+			.catch(next);
+	}
+];
 
 /**
  * Express middleware that does the last authentication step
@@ -126,7 +142,7 @@ module.exports.verifyEmail = (request, response, next) => {
 					//verification code
 					return user
 						.updatePassword(password, emailVerificationCode)
-						.then(next);
+						.then(() => next());
 				} else {
 					next();
 				}
@@ -143,19 +159,20 @@ module.exports.verifyEmail = (request, response, next) => {
  * @param {object} next The middleware callback function 
  * @return {void}
  */
-module.exports.registration = (request, response, next) => {
-	let firstName = request.body.firstName,
-		email = request.body.email,
-		locale = request.body.locale;
+module.exports.registration = [
+	validate(registration),
+	(request, response, next) => {
+		let { nameFirst, email, locale } = request.body;
 
-	if (!locale) {
-		locale = request.getLocale();
+		if (!locale) {
+			locale = request.getLocale().toLowerCase();
+		}
+
+		User.register(nameFirst, email, locale)
+			.then(() => next())
+			.catch(next);
 	}
-
-	User.register(firstName, email, locale)
-		.then(next)
-		.catch(next);
-};
+];
 
 /**
  * Middleware to check whether the user is authenticated.

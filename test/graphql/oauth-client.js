@@ -7,16 +7,10 @@ const OauthRedirectUri = require("../../src/models/oauth-redirect-uri");
 
 const { validateAccessDenied } = require("../helpers/graphql");
 
-let {
-	generateRandomString,
+const {
+	generateRandomAlphanumString,
 	generateHash
 } = require("../../src/utilities/crypto");
-
-let orig = generateRandomString;
-generateRandomString = length => {
-	//alphanum
-	return orig(length).replace(/[^A-z0-9]/g, Math.floor(Math.random() * 10));
-};
 
 let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 
@@ -32,10 +26,10 @@ module.exports = (test, initPromise) => {
 	});
 
 	test("graphql.query.authenticated.oauth-client", t => {
-		const name = generateRandomString(15),
-			secret = generateRandomString(15),
-			trusted = Math.random() < 0.5,
-			uri = generateRandomString(15);
+		const name = "frontend",
+			secret = "very-secure-secret",
+			trusted = true,
+			uri = "https://redirect.uri";
 
 		return OauthClient.create({ name, trusted, uri }).then(clientModel => {
 			const id = clientModel.get("id");
@@ -92,10 +86,10 @@ module.exports = (test, initPromise) => {
 	});
 
 	test("graphql.query.non-priv.oauth-client", t => {
-		const name = generateRandomString(15),
-			secret = generateRandomString(15),
-			trusted = Math.random() < 0.5,
-			uri = generateRandomString(15);
+		const name = "backend",
+			secret = "super secure",
+			trusted = true,
+			uri = "https://back.end";
 
 		return OauthClient.create({ name, trusted, uri }).then(clientModel => {
 			const id = clientModel.get("id");
@@ -136,10 +130,10 @@ module.exports = (test, initPromise) => {
 	});
 
 	test("graphql.query.anonymous.oauth-client", t => {
-		const name = generateRandomString(15),
-			secret = generateRandomString(15),
-			trusted = Math.random() < 0.5,
-			uri = generateRandomString(15);
+		const name = "ios",
+			secret = "out of ideas",
+			trusted = false,
+			uri = "https://url.tld";
 
 		return OauthClient.create({ name, trusted, uri }).then(clientModel => {
 			const id = clientModel.get("id");
@@ -187,7 +181,7 @@ module.exports = (test, initPromise) => {
 		for (let i = 0; i < Math.floor(Math.random() * 10); i++) {
 			promises.push(
 				OauthClient.create({
-					name: name + generateRandomString(15)
+					name: name + generateRandomAlphanumString(15)
 				})
 			);
 		}
@@ -228,7 +222,7 @@ module.exports = (test, initPromise) => {
 		for (let i = 0; i < Math.floor(Math.random() * 10); i++) {
 			promises.push(
 				OauthClient.create({
-					name: name + generateRandomString(15)
+					name: name + generateRandomAlphanumString(15)
 				})
 			);
 		}
@@ -258,7 +252,7 @@ module.exports = (test, initPromise) => {
 		for (let i = 0; i < Math.floor(Math.random() * 10); i++) {
 			promises.push(
 				OauthClient.create({
-					name: name + generateRandomString(15)
+					name: name + generateRandomAlphanumString(15)
 				})
 			);
 		}
@@ -282,10 +276,10 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.authenticated.oauth-client.upsert", t => {
 		//create a new one
-		const name = generateRandomString(15),
-			name2 = generateRandomString(15),
-			redirectUri = "https://" + generateRandomString(15),
-			redirectUri2 = "https://" + generateRandomString(15);
+		const name = "oauth",
+			name2 = "client",
+			redirectUri = "https://re.di.rect",
+			redirectUri2 = "https://ur.l";
 
 		return adminClient
 			.query(
@@ -425,7 +419,7 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.non-priv.oauth-client.upsert", t => {
 		//create a new one
-		const name = generateRandomString(15);
+		const name = "android";
 
 		return nonPrivClient
 			.query(
@@ -444,7 +438,7 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.anonymous.oauth-client.upsert", t => {
 		//create a new one
-		const name = generateRandomString(15);
+		const name = "windows-phone";
 
 		return anonClient
 			.query(
@@ -463,7 +457,7 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.authenticated.oauth-client.delete", t => {
 		//create a new one
-		const name = generateRandomString(15);
+		const name = "nokia?";
 
 		return OauthClient.create({
 			name
@@ -497,7 +491,7 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.non-priv.oauth-client.delete", t => {
 		//create a new one
-		const name = generateRandomString(15);
+		const name = "blackberry?";
 
 		return OauthClient.create({
 			name
@@ -517,7 +511,7 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.anon.oauth-client.delete", t => {
 		//create a new one
-		const name = generateRandomString(15);
+		const name = "ipad";
 
 		return OauthClient.create({
 			name

@@ -25,6 +25,21 @@ const generateRandomString = length => {
 module.exports.generateRandomString = generateRandomString;
 
 /**
+ * Generates random alphanumeric string of characters
+ * @function generateRandomAlphanumString
+ * @param {number} length Length of the random string.
+ * @return {string} A random string of a given length
+ */
+const generateRandomAlphanumString = length => {
+	return crypto
+		.randomBytes(length)
+		.toString("hex")
+		.slice(0, length);
+};
+
+module.exports.generateRandomAlphanumString = generateRandomAlphanumString;
+
+/**
  * Hash data
  * @function generateHash
  * @param {string} data The data to hash

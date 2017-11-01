@@ -2,40 +2,59 @@ const { LOCALES } = require("lazuli-require")("lazuli-config");
 
 const Joi = require("joi");
 
-module.exports.localLoginValidation = {
+module.exports.login = {
 	body: {
-		username: Joi.string().email().required(),
+		username: Joi.string()
+			.email()
+			.required(),
 		password: Joi.string().required()
 	}
 };
 
-module.exports.initPasswordResetValidation = {
+module.exports.initPasswordReset = {
 	body: {
-		email: Joi.string().email().required()
+		email: Joi.string()
+			.email()
+			.required()
 	}
 };
 
-module.exports.passwordResetValidation = {
+module.exports.passwordReset = {
 	body: {
-		email: Joi.string().email().required(),
+		email: Joi.string()
+			.email()
+			.required(),
 		resetCode: Joi.string().required(),
-		password: Joi.string().min(8).max(255)
+		password: Joi.string()
+			.min(8)
+			.max(255)
 	}
 };
 
-module.exports.localRegistrationValidation = {
+module.exports.registration = {
 	body: {
-		firstName: Joi.string().regex(/[A-z]+/).min(2).max(256).required(),
-		email: Joi.string().email().required(),
+		nameFirst: Joi.string()
+			.regex(/[A-z]+/)
+			.min(2)
+			.max(256)
+			.required(),
+		email: Joi.string()
+			.email()
+			.required(),
 		locale: Joi.string().regex(new RegExp(LOCALES.join("|")))
 	}
 };
 
-module.exports.verifyMailValidation = {
+module.exports.emailVerification = {
 	body: {
-		email: Joi.string().email().required(),
+		email: Joi.string()
+			.email()
+			.required(),
 		emailVerificationCode: Joi.string().required(),
-		password: Joi.string().min(8).max(255).allow("", null),
+		password: Joi.string()
+			.min(8)
+			.max(255)
+			.allow("", null),
 		register: Joi.boolean().required()
 	}
 };

@@ -496,7 +496,8 @@ User.prototype.updatePassword = function(password, passwordResetCode) {
 				passwordHash: hash,
 				passwordSalt: salt,
 				passwordAlgorithm: algorithm,
-				passwordResetCode: ""
+				passwordResetCode: "",
+				passwordResetCodeExpirationDate: 0
 			});
 
 			return this.save();
@@ -529,8 +530,10 @@ User.prototype.initPasswordReset = function() {
 	const expirationDate = Date.now() + RESET_CODE_LIFETIME * 1000;
 
 	/**
-     * Event that is fired after all internal associations have been created
-	 * and additional ones can be added.
+     * Event that is fired before the password reset code is
+	 * set during the password reset initialization.
+	 * This event can (and should) be used to hand the reset code
+	 * the the user.
      *
      * @event "authentication.model.user.password-reset"
      * @type {object}

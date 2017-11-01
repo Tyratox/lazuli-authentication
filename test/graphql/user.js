@@ -9,12 +9,7 @@ const OauthProvider = require("../../src/models/oauth-provider");
 
 const { validateAccessDenied } = require("../helpers/graphql");
 
-let { generateRandomString } = require("../../src/utilities/crypto");
-let orig = generateRandomString;
-generateRandomString = length => {
-	//alphanum
-	return orig(length).replace(/[^A-z0-9]/g, Math.floor(Math.random() * 10));
-};
+let { generateRandomAlphanumString } = require("../../src/utilities/crypto");
 
 let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 
@@ -28,13 +23,13 @@ module.exports = (test, initPromise) => {
 	});
 
 	test("graphql.query.authenticated.user", t => {
-		const nameDisplay = generateRandomString(15),
-			nameFirst = generateRandomString(15),
-			nameLast = generateRandomString(15),
-			permission = generateRandomString(15),
-			provider = Math.random() < 0.5 ? "facebook" : "google",
-			accessToken = generateRandomString(15),
-			refreshToken = generateRandomString(15);
+		const nameDisplay = "Master Haxor",
+			nameFirst = "Mr",
+			nameLast = "Haxor",
+			permission = "noob",
+			provider = "google",
+			accessToken = "bla-bla-bla-aaa",
+			refreshToken = "aaa-bbb-ccc-ddd";
 
 		return User.create({ nameDisplay, nameFirst, nameLast }).then(userModel => {
 			const id = userModel.get("id");
@@ -102,9 +97,9 @@ module.exports = (test, initPromise) => {
 	});
 
 	test("graphql.query.non-priv.user", t => {
-		const nameDisplay = generateRandomString(15),
-			nameFirst = generateRandomString(15),
-			nameLast = generateRandomString(15);
+		const nameDisplay = "johnny",
+			nameFirst = "jon",
+			nameLast = "jackson";
 
 		return User.create({ nameDisplay, nameFirst, nameLast }).then(userModel => {
 			const id = userModel.get("id");
@@ -144,9 +139,9 @@ module.exports = (test, initPromise) => {
 	});
 
 	test("graphql.query.anonymous.user", t => {
-		const nameDisplay = generateRandomString(15),
-			nameFirst = generateRandomString(15),
-			nameLast = generateRandomString(15);
+		const nameDisplay = "derp",
+			nameFirst = "derp",
+			nameLast = "lee";
 
 		return User.create({ nameDisplay, nameFirst, nameLast }).then(userModel => {
 			const id = userModel.get("id");
@@ -195,7 +190,7 @@ module.exports = (test, initPromise) => {
 		for (let i = 0; i < Math.floor(Math.random() * 10); i++) {
 			promises.push(
 				User.create({
-					nameDisplay: name + generateRandomString(15)
+					nameDisplay: name + generateRandomAlphanumString(15)
 				})
 			);
 		}
@@ -236,7 +231,7 @@ module.exports = (test, initPromise) => {
 		for (let i = 0; i < Math.floor(Math.random() * 10); i++) {
 			promises.push(
 				User.create({
-					nameDisplay: name + generateRandomString(15)
+					nameDisplay: name + generateRandomAlphanumString(15)
 				})
 			);
 		}
@@ -266,7 +261,7 @@ module.exports = (test, initPromise) => {
 		for (let i = 0; i < Math.floor(Math.random() * 10); i++) {
 			promises.push(
 				User.create({
-					nameDisplay: name + generateRandomString(15)
+					nameDisplay: name + generateRandomAlphanumString(15)
 				})
 			);
 		}
@@ -290,12 +285,12 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.authenticated.user.upsert", t => {
 		//create a new one
-		const nameDisplay = generateRandomString(15),
-			nameDisplay2 = generateRandomString(15),
-			nameFirst = generateRandomString(15),
-			nameLast = generateRandomString(15),
-			permission1 = generateRandomString(15),
-			permission2 = generateRandomString(15);
+		const nameDisplay = "john",
+			nameDisplay2 = "winston",
+			nameFirst = "john",
+			nameLast = "wick",
+			permission1 = "newb",
+			permission2 = "skiddy";
 
 		return adminClient
 			.query(
@@ -444,9 +439,9 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.non-priv.user.upsert", t => {
 		//create a new one
-		const nameDisplay = generateRandomString(15),
-			nameFirst = generateRandomString(15),
-			nameLast = generateRandomString(15);
+		const nameDisplay = "alex",
+			nameFirst = "alexander",
+			nameLast = "peterson";
 
 		return nonPrivClient
 			.query(
@@ -467,9 +462,9 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.anonymous.user.upsert", t => {
 		//create a new one
-		const nameDisplay = generateRandomString(15),
-			nameFirst = generateRandomString(15),
-			nameLast = generateRandomString(15);
+		const nameDisplay = "alan",
+			nameFirst = "alan",
+			nameLast = "turing";
 
 		return anonClient
 			.query(
@@ -490,9 +485,9 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.authenticated.user.delete", t => {
 		//create a new one
-		const nameDisplay = generateRandomString(15),
-			nameFirst = generateRandomString(15),
-			nameLast = generateRandomString(15);
+		const nameDisplay = "steve",
+			nameFirst = "steve",
+			nameLast = "jobs";
 
 		return User.create({
 			nameDisplay,
@@ -523,9 +518,9 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.non-priv.user.delete", t => {
 		//create a new one
-		const nameDisplay = generateRandomString(15),
-			nameFirst = generateRandomString(15),
-			nameLast = generateRandomString(15);
+		const nameDisplay = "bill",
+			nameFirst = "bill",
+			nameLast = "gates";
 
 		return User.create({
 			nameDisplay,
@@ -547,9 +542,9 @@ module.exports = (test, initPromise) => {
 
 	test("graphql.mutation.anon.user.delete", t => {
 		//create a new one
-		const nameDisplay = generateRandomString(15),
-			nameFirst = generateRandomString(15),
-			nameLast = generateRandomString(15);
+		const nameDisplay = "tim",
+			nameFirst = "tim",
+			nameLast = "don";
 
 		return User.create({
 			nameDisplay,

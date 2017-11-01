@@ -57,8 +57,8 @@
 		"lazuli-config": "tyratox/lazuli-config",
 		"lazuli-core": "tyratox/lazuli-core",
 		"lazuli-filters": "tyratox/lazuli-filters",
-		"lazuli-i18n": "tyratox/lazuli-i18n",
 		"pg": "6.4.2",
-		"pg-hstore": "^2.3.2"
+		"pg-hstore": "^2.3.2",
+		"sinon": "^4.0.2"
 	}
 }
