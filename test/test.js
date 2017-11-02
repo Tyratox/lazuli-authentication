@@ -20,3 +20,7 @@ require("./models/oauth-client")(test, initPromise);
 
 require("./auth/register")(test, initPromise);
 require("./auth/password-reset")(test, initPromise);
+require("./auth/email-verification")(test, initPromise);
+require("./auth/user-authentication")(test, initPromise);
+require("./auth/client-authentication")(test, initPromise);
+require("./auth/bearer-authentication")(test, initPromise);

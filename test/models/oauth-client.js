@@ -16,11 +16,11 @@ module.exports = (test, initPromise) => {
 		anonClient = data.anonClient;
 	});
 
-	test("models.oauth-client.setSecret and verifySecret", async t => {
+	test("models.oauth-client.updateSecret and verifySecret", async t => {
 		const secret = "secure secret";
 
 		return OauthClient.create({}).then(clientModel => {
-			return clientModel.setSecret(secret).then(() => {
+			return clientModel.updateSecret(secret).then(() => {
 				return clientModel
 					.verifySecret(secret)
 					.then(verified => {

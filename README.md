@@ -65,7 +65,7 @@ In order to be able to login with a local account, you'll need to setup an endpo
 
     app.get("/views/login", loginView);
 
-This page has to contain a form which posts the fields `username` (email) and `password` to an endpoint like the following:
+This page has to contain a form which posts the fields `email` and `password` to an endpoint like the following:
 
     app.post(
         "/auth/local/login",
@@ -178,11 +178,11 @@ In order to create an oauth2 dialog you need to setup an endpoint with something
     app.get(
         "/oauth2/authorize",
         isAuthenticated,
-        authenticateOauthClient,
+        verifyOauthClient,
         oAuthDialog
     );
 
-`isAuthenticated` checks whether the user is logged in, otherwise the oauth2 process can't start. `authenticateOauthClient` should check whether the passed redirect uri matches one of the stored ones. This function is already provided in the `lazuli-authentication/oauth-server` module and just needs to be imported. In `oAuthDialog` you need to render an html form `POST`ing to the `authorize` endpoint described below. A field called `transaction_id` containing the transaction id from `request.oauth2.transactionID` needs to be passed together with an `allow` field.
+`isAuthenticated` checks whether the user is logged in, otherwise the oauth2 process can't start. `verifyOauthClient` should check whether the passed redirect uri matches one of the stored ones. This function is already provided in the `lazuli-authentication/oauth-server` module and just needs to be imported. In `oAuthDialog` you need to render an html form `POST`ing to the `authorize` endpoint described below. A field called `transaction_id` containing the transaction id from `request.oauth2.transactionID` needs to be passed together with an `allow` field.
 
 In the next, already foreshadowed, endpoint, we have to call the `decision` function in `lazuli-authentication/oauth-server`
 

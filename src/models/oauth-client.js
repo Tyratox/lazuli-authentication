@@ -185,13 +185,13 @@ OauthClient.generateSecret = function() {
  * 
  * @public
  * @instance
- * @method setSecret
+ * @method updateSecret
  * @memberof module:lazuli-authentication/models/oauth-client.OauthClient
  * 
  * @param  {string} secret The secret to hash and store
  * @return {promise<module:lazuli-authentication/models/oauth-client.OauthClient>} The random secret
  */
-OauthClient.prototype.setSecret = function(secret) {
+OauthClient.prototype.updateSecret = function(secret) {
 	let { hash, salt, algorithm } = generateHash(secret);
 
 	this.set({

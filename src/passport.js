@@ -33,7 +33,7 @@ const passport = require("passport");
  */
 const initOauthClientAuthentication = passport => {
 	passport.use(
-		"client-local",
+		"local-client",
 		new LocalStrategy(
 			{ usernameField: "clientId", passwordField: "clientSecret" },
 			(clientId, clientSecret, done) => {
@@ -48,7 +48,7 @@ const initOauthClientAuthentication = passport => {
 				})
 					.then(client => {
 						if (!client) {
-							return Promise.reject(new Error("Invalid client"));
+							return Promise.reject(new Error("Authentication failed!"));
 						}
 
 						return client
@@ -57,7 +57,7 @@ const initOauthClientAuthentication = passport => {
 								verified =>
 									verified
 										? done(null, client)
-										: Promise.reject(new Error("The secret is invalid!"))
+										: Promise.reject(new Error("Authentication failed!"))
 							);
 					})
 					.catch(done);
@@ -73,27 +73,30 @@ const initOauthClientAuthentication = passport => {
  */
 const initLocalAuthentication = passport => {
 	passport.use(
-		"local",
-		new LocalStrategy((email, password, done) => {
-			User.findOne({
-				where: { emailVerified: email }
-			})
-				.then(user => {
-					if (!user || user.get("passwordHash").length === 0) {
-						return Promise.reject(new Error("Authentication failed!"));
-					}
-
-					return user
-						.verifyPassword(password)
-						.then(
-							success =>
-								success
-									? done(null, user)
-									: Promise.reject(new Error("Authentication failed!"))
-						);
+		"local-user",
+		new LocalStrategy(
+			{ usernameField: "email", passwordField: "password" },
+			(email, password, done) => {
+				User.findOne({
+					where: { emailVerified: email }
 				})
-				.catch(done);
-		})
+					.then(user => {
+						if (!user || user.get("passwordHash").length === 0) {
+							return Promise.reject(new Error("Authentication failed!"));
+						}
+
+						return user
+							.verifyPassword(password)
+							.then(
+								success =>
+									success
+										? done(null, user)
+										: Promise.reject(new Error("Authentication failed!"))
+							);
+					})
+					.catch(done);
+			}
+		)
 	);
 };
 
@@ -117,7 +120,7 @@ const initOauthBearerAuthentication = passport => {
 						return OauthAccessToken.findByToken(accessToken).then(token => {
 							// No token found
 							if (!token) {
-								return Promise.reject(new Error("The sent token is invalid!"));
+								return Promise.reject(new Error("Authentication failed!"));
 							}
 
 							return User.findById(token.get("userId")).then(user => {
@@ -125,7 +128,7 @@ const initOauthBearerAuthentication = passport => {
 									// No user was found, so the token is invalid
 									return token.destroy().then(() => {
 										return Promise.reject(
-											new Error("The sent token isn't associated with a user!"),
+											new Error("Authentication failed!"),
 											false
 										);
 									});
@@ -143,21 +146,16 @@ const initOauthBearerAuthentication = passport => {
 									) {
 										return user
 											.doesHavePermissions(request.requiredPermissions)
-											.then(
-												hasPermission =>
-													hasPermission
-														? done(null, user)
-														: Promise.reject(
-																new Error(
-																	"You don't have the permission to do this!"
-																)
-															)
-											);
+											.then(hasPermission => {
+												delete request.requiredPermissions;
+
+												return hasPermission
+													? done(null, user)
+													: Promise.reject(new Error("Authentication failed!"));
+											});
 									}
 
-									return Promise.reject(
-										new Error("You don't have the permission to do this!")
-									);
+									return Promise.reject(new Error("Authentication failed!"));
 								});
 							});
 						});

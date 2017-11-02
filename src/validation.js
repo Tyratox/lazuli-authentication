@@ -4,10 +4,17 @@ const Joi = require("joi");
 
 module.exports.login = {
 	body: {
-		username: Joi.string()
+		email: Joi.string()
 			.email()
 			.required(),
 		password: Joi.string().required()
+	}
+};
+
+module.exports.clientLogin = {
+	body: {
+		clientId: Joi.number().required(),
+		clientSecret: Joi.string().required()
 	}
 };
 
@@ -54,7 +61,6 @@ module.exports.emailVerification = {
 		password: Joi.string()
 			.min(8)
 			.max(255)
-			.allow("", null),
-		register: Joi.boolean().required()
+			.allow("", null)
 	}
 };

@@ -10,10 +10,12 @@ const logger = require("lazuli-core/logger");
 
 const Authentication = require("../../src/lazuli-authentication");
 
-const { isBearerAuthenticated } = require("../../src/middleware");
+const { authenticateBearerSoft } = require("../../src/middleware");
 const User = require("../../src/models/user");
 const OauthAccessToken = require("../../src/models/oauth-access-token");
 const Permission = require("../../src/models/permission");
+
+const { passport } = require("../../src/passport");
 
 let adminToken, nonPrivToken;
 
@@ -73,10 +75,12 @@ const initPromise = lazuli
 			})
 		});
 
+		app.use(passport.initialize());
+		app.use(passport.session());
+
 		app.use(
 			"/graphql",
-			isBearerAuthenticated(),
-			(error, request, response, next) => next(), //pass anyways
+			authenticateBearerSoft,
 			graphqlHTTP(request => {
 				return {
 					schema,

@@ -35,7 +35,7 @@ module.exports = (test, initPromise) => {
 			const id = clientModel.get("id");
 
 			return clientModel
-				.setSecret(secret)
+				.updateSecret(secret)
 				.then(() => {
 					return OauthRedirectUri.create({ uri, oauthClientId: id });
 				})
@@ -95,7 +95,7 @@ module.exports = (test, initPromise) => {
 			const id = clientModel.get("id");
 
 			return clientModel
-				.setSecret(secret)
+				.updateSecret(secret)
 				.then(() => {
 					return OauthRedirectUri.create({ uri, oauthClientId: id });
 				})
@@ -139,7 +139,7 @@ module.exports = (test, initPromise) => {
 			const id = clientModel.get("id");
 
 			return clientModel
-				.setSecret(secret)
+				.updateSecret(secret)
 				.then(() => {
 					return OauthRedirectUri.create({ uri, oauthClientId: id });
 				})

@@ -6,8 +6,6 @@ const logger = require("lazuli-core/logger");
 const eventEmitter = require("lazuli-core/event-emitter");
 
 const User = require("../../src/models/user");
-const OauthClient = require("../../src/models/oauth-client");
-const OauthRedirectUri = require("../../src/models/oauth-redirect-uri");
 
 const { initPasswordReset, passwordReset } = require("../../src/middleware");
 
@@ -68,9 +66,8 @@ module.exports = (test, initPromise) => {
 					setTimeout(() => {
 						t.truthy(
 							spy.called,
-							"Event did not fire in 500ms. This could also mean your computer is just slow."
+							"authentication.model.user.password-reset did not fire in 500ms. This could also mean your computer is just slow."
 						);
-						t.truthy(spy.calledOnce, "Event fired more than once");
 						resolve();
 					}, 500);
 
@@ -196,7 +193,7 @@ module.exports = (test, initPromise) => {
 			email = "michael",
 			password = "123",
 			passwordResetCode = "",
-			passwordResetCodeExpirationDate = Date.now() * 2; //that'll take some time;
+			passwordResetCodeExpirationDate = Date.now() * 2;
 
 		return User.create({
 			nameFirst,

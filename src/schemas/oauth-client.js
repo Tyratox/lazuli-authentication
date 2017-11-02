@@ -195,7 +195,7 @@ module.exports.mutation = {
 										}).then(model => {
 											secret = oauthClient.generateSecret();
 
-											return oauthClient.setSecret(secret).then(() => {
+											return oauthClient.updateSecret(secret).then(() => {
 												return Promise.resolve(model);
 											});
 										});
@@ -226,7 +226,7 @@ module.exports.mutation = {
 								return OauthClient.create().then(model => {
 									secret = OauthClient.generateSecret();
 
-									return model.setSecret(secret).then(() => {
+									return model.updateSecret(secret).then(() => {
 										return Promise.resolve(model);
 									});
 								});
