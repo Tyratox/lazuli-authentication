@@ -1,6 +1,8 @@
-const { AUTH_CODE_LIFETIME, ACCESS_TOKEN_LIFETIME } = require("lazuli-require")(
-	"lazuli-config"
-);
+const {
+	AUTH_CODE_LIFETIME,
+	ACCESS_TOKEN_LIFETIME,
+	DEFAULT_SCOPE
+} = require("lazuli-require")("lazuli-config");
 
 const oauth2orize = require("oauth2orize");
 const oauthServer = oauth2orize.createServer();
@@ -9,6 +11,7 @@ const OauthClient = require("./models/oauth-client");
 const OauthRedirectUri = require("./models/oauth-redirect-uri");
 const OauthCode = require("./models/oauth-code");
 const OauthAccessToken = require("./models/oauth-access-token");
+const OauthScope = require("./models/oauth-scope");
 
 /**
  * The oauth server module
@@ -33,16 +36,18 @@ const initOauthServerGrant = oauth2Server => {
 				);
 			}
 
-			const { scope } = ares;
+			const scope = ares.scope ? ares.scope : [DEFAULT_SCOPE];
 
 			return OauthCode.generateCode(
 				user.get("id"),
 				client.get("id"),
 				Date.now() + AUTH_CODE_LIFETIME * 1000
 			)
-				.then(({ oauthCode, code }) => {
+				.then(({ model: oauthCode, code }) => {
 					return oauthCode
-						.setScopes(scope.split(" "))
+						.setScopeArray(
+							Array.isArray(scope) ? scope : scope ? scope.split(" ") : []
+						)
 						.then(() => Promise.resolve(code));
 				})
 				.then(code => {
@@ -60,9 +65,14 @@ const initOauthServerGrant = oauth2Server => {
  */
 const initOauthServerExchange = oauth2Server => {
 	return oauth2Server.exchange(
-		oauth2orize.exchange.code((client, code, redirectUri, callback) => {
+		oauth2orize.exchange.code((client, code, redirectUri, done) => {
 			OauthCode.findByCode(code)
 				.then(authCode => {
+					if (!authCode) {
+						return Promise.reject(
+							new Error("The sent auth code has already expired!")
+						);
+					}
 					if (authCode.get("expires") < Date.now()) {
 						return authCode
 							.destroy()
@@ -80,14 +90,14 @@ const initOauthServerExchange = oauth2Server => {
 						userId,
 						clientId,
 						Date.now() + ACCESS_TOKEN_LIFETIME * 1000
-					).then(({ accessToken, token }) => {
+					).then(({ model: accessToken, token }) => {
 						// Create an access token
 
 						const tokenData = {
 							token,
-							clientId: clientId,
+							oauthClientId: clientId,
 							userId: userId,
-							expires: expirationDate
+							expires: accessToken.get("expires")
 						};
 						return authCode
 							.getOauthScopes()
@@ -109,12 +119,12 @@ const initOauthServerExchange = oauth2Server => {
 										]
 									}
 								}).then(() => {
-									callback(null, tokenData);
+									done(null, tokenData);
 								})
 							);
 					});
 				})
-				.catch(callback);
+				.catch(done);
 		})
 	);
 };
@@ -125,11 +135,11 @@ const initOauthServerExchange = oauth2Server => {
  */
 const initOauthServer = oauth2Server => {
 	//init the oauth 2 server
-	oauth2Server.serializeClient((client, callback) => {
-		return callback(null, client.get("id"));
+	oauth2Server.serializeClient((client, done) => {
+		return done(null, client.get("id"));
 	});
 
-	oauth2Server.deserializeClient((id, callback) => {
+	oauth2Server.deserializeClient((id, done) => {
 		OauthClient.findOne({
 			where: { id: id },
 			include: [
@@ -140,9 +150,9 @@ const initOauthServer = oauth2Server => {
 			]
 		})
 			.then(client => {
-				return callback(null, client);
+				return done(null, client);
 			})
-			.catch(callback);
+			.catch(done);
 	});
 
 	initOauthServerGrant(oauth2Server);
@@ -150,13 +160,26 @@ const initOauthServer = oauth2Server => {
 };
 
 /**
- * Authenticates the oauth client during the oauth2 authorization and checks for immediate approval
+ * Verifies the oauth client during the oauth2 authorization and checks for immediate approval
  * @param {object} oauth2Server The oauth2 server
  * @return {function} The express middleware to authenticate the oauth client
  */
-const authenticateOauthClient = oauth2Server => {
+const verifyOauthClient = oauth2Server => {
 	return oauth2Server.authorization(
-		(clientId, redirectUri, scope, type) => {
+		(clientId, redirectUri, scope, type, done) => {
+			const scopes = Array.isArray(scope)
+				? scope
+				: scope ? scope.split(" ") : [];
+			for (let i = 0; i < scopes.length; i++) {
+				if (
+					["profile", "profile.read.email", "profile.read.name"].indexOf(
+						scopes[i]
+					) === -1
+				) {
+					return done(new Error("Invalid scope!"));
+				}
+			}
+
 			OauthClient.findOne({
 				where: { id: clientId },
 				include: [
@@ -168,35 +191,38 @@ const authenticateOauthClient = oauth2Server => {
 			})
 				.then(client => {
 					if (client && client.verifyRedirectUri(redirectUri)) {
-						return callback(null, client, redirectUri);
+						return done(null, client, redirectUri);
 					} else {
-						return callback(
+						return done(
 							new Error(
 								"The sent redirect uri isn't registered with this oauth client!"
 							)
 						);
 					}
 				})
-				.catch(callback);
+				.catch(done);
 		},
 		(client, user, scope, done) => {
+			//If the client is trusted
+			if (client.get("trusted") === true) {
+				//pass it
+				return done(null, true);
+			}
+
 			client
 				.getOauthAccessTokens({
-					where: { userId: user.id },
+					where: { userId: user.get("id") },
 					include: [{ model: OauthScope, as: "OauthScopes" }]
 				})
 				.then(tokens => {
-					//If the client is trusted or there's already a token issued
-					if (client.get("trusted") === true) {
-						//pass it
-						done(null, true, ares);
-					}
-
 					const tokenScope = tokens[0]
-						.get("OauthScopes")
-						.map(scope => scope.scope);
+						? tokens[0].get("OauthScopes").map(scope => scope.scope)
+						: [];
 
-					const missing = scope.split(" ").filter(scope => {
+					const missing = (Array.isArray(scope)
+						? scope
+						: scope ? scope.split(" ") : [DEFAULT_SCOPE]
+					).filter(scope => {
 						for (let i = 0; i < tokenScope.length; i++) {
 							if (scope === tokenScope[i]) {
 								return false;
@@ -206,7 +232,7 @@ const authenticateOauthClient = oauth2Server => {
 						return true;
 					});
 
-					done(null, missing.length === 0, ares);
+					done(null, missing.length === 0);
 				})
 				.catch(done);
 		}
@@ -215,8 +241,7 @@ const authenticateOauthClient = oauth2Server => {
 
 initOauthServer(oauthServer);
 
-module.exports.authenticateOauthClient = authenticateOauthClient(oauthServer);
-module.exports.checkForImmediateApproval = checkForImmediateApproval;
+module.exports.verifyOauthClient = verifyOauthClient(oauthServer);
 
 /**
  * The actual oauth server object. Based on oauth2orize

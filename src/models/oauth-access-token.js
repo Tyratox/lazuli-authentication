@@ -164,7 +164,7 @@ OauthAccessToken.generateToken = function(userId, oauthClientId, expires) {
 				userId,
 				oauthClientId
 			}).then(model => {
-				return Promise.resolve({ token, model });
+				return Promise.resolve({ model, token });
 			});
 		}
 	});

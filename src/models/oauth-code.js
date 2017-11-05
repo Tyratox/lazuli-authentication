@@ -11,6 +11,8 @@ const {
 	generateHash
 } = require("../utilities/crypto.js");
 
+const OauthScope = require("./oauth-scope");
+
 /**
  * The oauth code sequelize module
  * @module lazuli-authentication/models/oauth-code
@@ -147,8 +149,8 @@ OauthCode.generateCode = function(userId, clientId, expires) {
 		userId,
 		oauthClientId: clientId,
 		expires
-	}).then(code => {
-		return Promise.resolve({ oauthCode, code });
+	}).then(oauthCode => {
+		return Promise.resolve({ model: oauthCode, code });
 	});
 };
 

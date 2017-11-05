@@ -24,3 +24,5 @@ require("./auth/email-verification")(test, initPromise);
 require("./auth/user-authentication")(test, initPromise);
 require("./auth/client-authentication")(test, initPromise);
 require("./auth/bearer-authentication")(test, initPromise);
+
+require("./oauth/authentication")(test, initPromise);

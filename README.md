@@ -189,7 +189,7 @@ In the next, already foreshadowed, endpoint, we have to call the `decision` func
     app.post(
         "/oauth2/authorize",
         isAuthenticated,
-        oauth2Server.decision()
+        oauthServer.decision()
     );
 
 which will do the rest for us. This generates an OauthCode which will be passed as a url parameter with the name `code` to the redirect uri. The oauth client now has to retrieve the access token by sending a request to
@@ -199,7 +199,7 @@ which will do the rest for us. This generates an OauthCode which will be passed 
         passport.authenticate("client-local", {
             session: false
         }),
-        oauth2Server.token()
+        oauthServer.token()
     );
 
 with the json encoded content
