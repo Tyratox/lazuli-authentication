@@ -10,6 +10,7 @@ const {
 
 const Joi = require("joi");
 
+const { Op } = require("sequelize");
 const { attributeFields, resolver } = require("graphql-sequelize");
 
 const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");
@@ -102,7 +103,7 @@ module.exports.query = {
 							if (findOptions.where) {
 								if (findOptions.where.name) {
 									findOptions.where.name = {
-										$like: `%${escapeLikeString(args.name)}%`
+										[Op.like]: `%${escapeLikeString(args.name)}%`
 									};
 								}
 							}

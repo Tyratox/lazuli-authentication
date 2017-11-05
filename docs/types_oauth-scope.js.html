@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>lazuli-authentication/models/oauth-redirect-uri - Documentation</title>
+    <title>types/oauth-scope.js - Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -27,293 +27,110 @@
 
 <div id="main">
     
-    <h1 class="page-title">lazuli-authentication/models/oauth-redirect-uri</h1>
+    <h1 class="page-title">types/oauth-scope.js</h1>
     
 
     
 
 
 
-
-<section>
-
-<header>
     
-        
-            
-        
-    
-</header>
-
-<article>
-    <div class="container-overview">
-    
-        
-            <div class="description">The oauth redirect uri sequelize module</div>
-        
-
-        
-            
-
-
-
-
-<dl class="details">
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_oauth-redirect-uri.js.html">models/oauth-redirect-uri.js</a>, <a href="models_oauth-redirect-uri.js.html#line12">line 12</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-    
-    </div>
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Classes</h3>
-
-        <dl>
-            <dt><a href="module-lazuli-authentication_models_oauth-redirect-uri.OauthRedirectUri.html">OauthRedirectUri</a></dt>
-            <dd></dd>
-        </dl>
-    
-
-     
-
-    
-
-    
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Events</h3>
-
-        
-            
-
-    
-
-    <h4 class="name" id="~event:%22authentication.model.oauth-redirect-uri.association%22">"authentication.model.oauth-redirect-uri.association"</h4>
-
-    
-
-
-
-
-<dl class="details">
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_oauth-redirect-uri.js.html">models/oauth-redirect-uri.js</a>, <a href="models_oauth-redirect-uri.js.html#line75">line 75</a>
-    </li></ul></dd>
-    
-
-    
-    <dt class="tag-version">Version:</dt>
-    <dd class="tag-version"><ul class="dummy"><li>1.0</li></ul></dd>
-    
-
-    
-    <dt class="tag-since">Since:</dt>
-    <dd class="tag-since"><ul class="dummy"><li>1.0</li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-    <h5 class="subsection-title">Properties:</h5>
-
-    
-
-<table class="props">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>OauthRedirectUri</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="module-lazuli-authentication_models_oauth-redirect-uri.OauthRedirectUri.html">module:lazuli-authentication/models/oauth-redirect-uri.OauthRedirectUri</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The redirect uri model</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<div class="description">
-    Event that is fired after all internal associations have been created
-and additional ones can be added.
-</div>
-
-
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">object</span>
-
-
-        </li>
-    </ul>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-    
-</article>
-
-</section>
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const {
+	GraphQLObjectType,
+	GraphQLString,
+	GraphQLInt,
+	GraphQLEnumType,
+	GraphQLNonNull,
+	GraphQLList
+} = require("graphql");
+
+const {
+	resolver,
+	attributeFields,
+	relay: { sequelizeConnection }
+} = require("graphql-sequelize");
+
+const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");
+const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
+const { nodeInterface, attributeFieldsCache } = require("lazuli-require")(
+	"lazuli-core/sequelize"
+);
+
+const OauthScope = require("../models/oauth-scope");
+
+/**
+ * The oauth scope type module
+ * @module lazuli-authentication/types/oauth-scope
+ */
+
+/**
+ * The graphql type for oauth scopes
+ * @class
+ * @memberof module:lazuli-authentication/types/oauth-scope
+ *
+ * @type {GraphQLObjectType}
+ * @version 1.0
+ * @since 1.0
+ * 
+ * @filterable {object} authentication.graphql.type.oauth-scope.association The association fields inside the graphql schema
+ *
+ * @see module:lazuli-authentication/models/oauth-scope
+ */
+const OauthScopeType = new GraphQLObjectType({
+	name: OauthScope.name,
+	description: "An oauth scope",
+	fields: () => {
+		const AccessTokenType = require("./oauth-access-token");
+
+		const scopeAccessTokenConnection = sequelizeConnection({
+			name: "scopeAccessTokens",
+			nodeType: AccessTokenType,
+			target: OauthScope.OauthAccessTokens,
+			orderBy: new GraphQLEnumType({
+				name: "ScopeAccessTokensOrderBy",
+				values: {
+					ID: { value: ["id", "ASC"] }
+				}
+			}),
+			where: (key, value, currentWhere) => {
+				return { [key]: value };
+			},
+			connectionFields: {
+				total: {
+					type: GraphQLInt,
+					resolve: ({ source }) => source.countOauthAccessTokens()
+				}
+			},
+			edgeFields: {}
+		});
+
+		return {
+			...attributeFields(OauthScope, {
+				globalId: true,
+				allowNull: false,
+				cache: attributeFieldsCache
+			}),
+			...valueFilter.filterable(
+				"authentication.graphql.type.oauth-scope.association",
+				{
+					users: {
+						type: scopeAccessTokenConnection.connectionType,
+						arsg: scopeAccessTokenConnection.connectionArgs,
+						resolve: scopeAccessTokenConnection.resolve
+					}
+				}
+			)
+		};
+	},
+	interfaces: [nodeInterface]
+});
+
+module.exports = OauthScopeType;
+</code></pre>
+        </article>
+    </section>
 
 
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>lazuli-authentication/models/oauth-redirect-uri - Documentation</title>
+    <title>OauthScope - Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -27,7 +27,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">lazuli-authentication/models/oauth-redirect-uri</h1>
+    <h1 class="page-title">OauthScope</h1>
     
 
     
@@ -39,8 +39,11 @@
 
 <header>
     
+        <h2>
+            <span class="ancestors"><a href="module-lazuli-authentication_models_oauth-scope.html">lazuli-authentication/models/oauth-scope</a>.</span>
         
-            
+        OauthScope
+        </h2>
         
     
 </header>
@@ -49,119 +52,10 @@
     <div class="container-overview">
     
         
-            <div class="description">The oauth redirect uri sequelize module</div>
-        
-
-        
-            
-
-
-
-
-<dl class="details">
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_oauth-redirect-uri.js.html">models/oauth-redirect-uri.js</a>, <a href="models_oauth-redirect-uri.js.html#line12">line 12</a>
-    </li></ul></dd>
-    
 
     
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-    
-    </div>
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Classes</h3>
-
-        <dl>
-            <dt><a href="module-lazuli-authentication_models_oauth-redirect-uri.OauthRedirectUri.html">OauthRedirectUri</a></dt>
-            <dd></dd>
-        </dl>
-    
-
-     
-
-    
-
-    
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Events</h3>
-
-        
-            
-
-    
-
-    <h4 class="name" id="~event:%22authentication.model.oauth-redirect-uri.association%22">"authentication.model.oauth-redirect-uri.association"</h4>
+    <h4 class="name" id="OauthScope"><span class="type-signature"></span>new OauthScope<span class="signature">()</span><span class="type-signature"></span></h4>
 
     
 
@@ -173,7 +67,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_oauth-redirect-uri.js.html">models/oauth-redirect-uri.js</a>, <a href="models_oauth-redirect-uri.js.html#line75">line 75</a>
+        <a href="models_oauth-scope.js.html">models/oauth-scope.js</a>, <a href="models_oauth-scope.js.html#line21">line 21</a>
     </li></ul></dd>
     
 
@@ -216,11 +110,134 @@
 
 
 
-    <h5 class="subsection-title">Properties:</h5>
+
+
+<div class="description">
+    The oauth-scope sequelize model
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
 
     
 
-<table class="props">
+    
+
+    
+
+     
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id=".associate"><span class="type-signature">(static) </span>associate<span class="signature">(models)</span><span class="type-signature"> &rarr; {promise.&lt;void>}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_oauth-scope.js.html">models/oauth-scope.js</a>, <a href="models_oauth-scope.js.html#line43">line 43</a>
+    </li></ul></dd>
+    
+
+    
+    <dt class="tag-version">Version:</dt>
+    <dd class="tag-version"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+    <dt class="tag-since">Since:</dt>
+    <dd class="tag-since"><ul class="dummy"><li>1.0</li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description">
+    Associates this model with others
+</div>
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
     <thead>
     <tr>
         
@@ -242,13 +259,13 @@
 
         <tr>
             
-                <td class="name"><code>OauthRedirectUri</code></td>
+                <td class="name"><code>models</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="module-lazuli-authentication_models_oauth-redirect-uri.OauthRedirectUri.html">module:lazuli-authentication/models/oauth-redirect-uri.OauthRedirectUri</a></span>
+<span class="param-type">object</span>
 
 
             
@@ -258,7 +275,79 @@
 
             
 
-            <td class="description last">The redirect uri model</td>
+            <td class="description last">The models to associate with
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>OauthAccessToken</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="module-lazuli-authentication_models_oauth-access-token.OauthAccessToken.html">module:lazuli-authentication/models/oauth-access-token.OauthAccessToken</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The access token model</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>OauthCode</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="module-lazuli-authentication_models_oauth-code.OauthCode.html">module:lazuli-authentication/models/oauth-code.OauthCode</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The auth code model</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -270,24 +359,10 @@
 
 
 
-<div class="description">
-    Event that is fired after all internal associations have been created
-and additional ones can be added.
-</div>
-
-
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">object</span>
-
-
-        </li>
-    </ul>
+<h5>Fires:</h5>
+<ul>
+    <li><a href="module-lazuli-authentication_models_oauth-scope.html#~event:%2522authentication.model.oauth-scope.association%2522">event:"authentication.model.oauth-scope.association"</a></li>
+</ul>
 
 
 
@@ -297,19 +372,31 @@ and additional ones can be added.
 
 
 
+<h5>Returns:</h5>
+
+        
 
 
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">promise.&lt;void></span>
 
 
+    </dd>
+</dl>
 
-
-
-
-
-
+    
 
 
         
+    
+
+    
+
     
 </article>
 

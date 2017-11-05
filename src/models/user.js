@@ -1,5 +1,5 @@
 const path = require("path");
-const { STRING, DATE } = require("sequelize");
+const { STRING, DATE, Op } = require("sequelize");
 
 const {
 	LOCALES,
@@ -239,7 +239,7 @@ User.associate = function({
 User.getUserByPassportProfile = function(profile) {
 	return this.findOne({
 		where: {
-			emailVerified: { $in: profile.emails.map(obj => obj.value) }
+			emailVerified: { [Op.in]: profile.emails.map(obj => obj.value) }
 		}
 	});
 };
@@ -280,7 +280,7 @@ User.register = function(firstName, email, locale) {
 
 	return this.findAll({
 		where: {
-			$or: [{ emailVerified: email }, { emailUnverified: email }]
+			[Op.or]: [{ emailVerified: email }, { emailUnverified: email }]
 		}
 	}).then(users => {
 		if (users && users.length > 0) {

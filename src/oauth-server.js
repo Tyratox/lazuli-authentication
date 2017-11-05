@@ -4,6 +4,8 @@ const {
 	DEFAULT_SCOPE
 } = require("lazuli-require")("lazuli-config");
 
+const { Op } = require("sequelize");
+
 const oauth2orize = require("oauth2orize");
 const oauthServer = oauth2orize.createServer();
 
@@ -108,9 +110,9 @@ const initOauthServerExchange = oauth2Server => {
 							.then(() =>
 								OauthCode.destroy({
 									where: {
-										$or: [
+										[Op.or]: [
 											{
-												expires: { $lt: new Date() }
+												expires: { [Op.lt]: new Date() }
 											},
 											//Delete the auth code now that it has been used
 											{

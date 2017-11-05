@@ -9,6 +9,8 @@ const {
 	GOOGLE_CALLBACK_PATH
 } = require("lazuli-require")("lazuli-config");
 
+const { Op } = require("sequelize");
+
 const LocalStrategy = require("passport-local").Strategy;
 const BearerStrategy = require("passport-http-bearer").Strategy;
 
@@ -114,7 +116,7 @@ const initOauthBearerAuthentication = passport => {
 			(request, accessToken, done) => {
 				//keeping the database clean
 				OauthAccessToken.destroy({
-					where: { expires: { $lt: new Date() } }
+					where: { expires: { [Op.lt]: new Date() } }
 				})
 					.then(() => {
 						return OauthAccessToken.findByToken(accessToken).then(token => {

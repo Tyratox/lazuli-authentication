@@ -5,7 +5,6 @@
 
 /**
  * Protects graphql fields by adding a resolver and checking for permissions
- * @deprecated No alternative yet
  * @todo Replace by resolvers
  * @param  {String} [name=""]         The models name, used in the permission string
  * @param  {Array}  [publicFields=[]] Fields that shouldn't be protected

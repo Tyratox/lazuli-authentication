@@ -8,6 +8,8 @@ const {
 	GraphQLList
 } = require("graphql");
 
+const { Op } = require("sequelize");
+
 const Joi = require("joi");
 
 const { resolver, attributeFields } = require("graphql-sequelize");
@@ -113,27 +115,27 @@ module.exports.query = {
 							if (findOptions.where) {
 								if (findOptions.where.nameDisplay) {
 									findOptions.where.nameDisplay = {
-										$like: `%${escapeLikeString(args.nameDisplay)}%`
+										[Op.like]: `%${escapeLikeString(args.nameDisplay)}%`
 									};
 								}
 								if (findOptions.where.nameFirst) {
 									findOptions.where.nameFirst = {
-										$like: `%${escapeLikeString(args.nameFirst)}%`
+										[Op.like]: `%${escapeLikeString(args.nameFirst)}%`
 									};
 								}
 								if (findOptions.where.nameLast) {
 									findOptions.where.nameLast = {
-										$like: `%${escapeLikeString(args.nameLast)}%`
+										[Op.like]: `%${escapeLikeString(args.nameLast)}%`
 									};
 								}
 								if (findOptions.where.emailVerified) {
 									findOptions.where.emailVerified = {
-										$like: `%${args.emailVerified}%`
+										[Op.like]: `%${args.emailVerified}%`
 									};
 								}
 								if (findOptions.where.locale) {
 									findOptions.where.locale = {
-										$like: `%${escapeLikeString(args.locale)}%`
+										[Op.like]: `%${escapeLikeString(args.locale)}%`
 									};
 								}
 							}
