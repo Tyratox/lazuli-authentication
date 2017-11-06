@@ -147,7 +147,7 @@ const initOauthBearerAuthentication = passport => {
 										request.requiredPermissions
 									) {
 										return user
-											.doesHavePermissions(request.requiredPermissions)
+											.can(request.requiredPermissions)
 											.then(hasPermission => {
 												delete request.requiredPermissions;
 

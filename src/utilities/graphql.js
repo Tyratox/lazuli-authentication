@@ -5,12 +5,16 @@
 
 /**
  * Protects graphql fields by adding a resolver and checking for permissions
- * @param  {String} [name=""]         The models name, used in the permission string
- * @param  {Array}  [publicFields=[]] Fields that shouldn't be protected
- * @param  {Object} [fields={}]       The fields object to protect
- * @return {Object}                   The protected field object
+ * @param  {string} [name=""]         The models name, used in the permission string
+ * @param  {array}  [publicFields=[]] Fields that shouldn't be protected
+ * @param  {object} [fields={}]       The fields object to protect
+ * @return {object}                   The protected field object
  */
-const protectGraphqlSchemaFields = (name = "", exclude = [], fields = {}) => {
+module.exports.protectGraphqlSchemaFields = (
+	name = "",
+	exclude = [],
+	fields = {}
+) => {
 	const protectedFields = { ...fields };
 
 	Object.keys(fields).forEach(key => {
@@ -33,7 +37,7 @@ const protectGraphqlSchemaFields = (name = "", exclude = [], fields = {}) => {
 						);
 					}
 					return request.user
-						.doesHavePermission("admin." + name + ".read." + key)
+						.can("admin." + name + ".read." + key)
 						.then(havePermission => {
 							if (!havePermission) {
 								return Promise.reject(
@@ -56,5 +60,3 @@ const protectGraphqlSchemaFields = (name = "", exclude = [], fields = {}) => {
 
 	return protectedFields;
 };
-
-module.exports.protectGraphqlSchemaFields = protectGraphqlSchemaFields;

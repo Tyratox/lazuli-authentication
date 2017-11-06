@@ -74,7 +74,7 @@ module.exports.query = {
 			}
 
 			return request.user
-				.doesHavePermission("admin.oauth-client.list")
+				.can("admin.oauth-client.list")
 				.then(hasPermission => {
 					if (!hasPermission) {
 						return Promise.reject(
@@ -84,7 +84,7 @@ module.exports.query = {
 						);
 					}
 
-					return request.user.doesHavePermission("admin.oauth-client.get");
+					return request.user.can("admin.oauth-client.get");
 				})
 				.then(havePermission => {
 					if (!havePermission) {
@@ -163,7 +163,7 @@ module.exports.mutation = {
 								}
 
 								return request.user
-									.doesHavePermission("admin.oauth-client.update")
+									.can("admin.oauth-client.update")
 									.then(hasPermission => {
 										if (
 											hasPermission ||
@@ -181,7 +181,7 @@ module.exports.mutation = {
 							} else {
 								//if not, a new oauth client with the given id will be created
 								return request.user
-									.doesHavePermission("admin.oauth-client.create")
+									.can("admin.oauth-client.create")
 									.then(hasPermission => {
 										if (!hasPermission) {
 											return Promise.reject(
@@ -215,7 +215,7 @@ module.exports.mutation = {
 						}
 
 						return request.user
-							.doesHavePermission("admin.oauth-client.create")
+							.can("admin.oauth-client.create")
 							.then(hasPermission => {
 								if (!hasPermission) {
 									return Promise.reject(
@@ -241,7 +241,7 @@ module.exports.mutation = {
 					//if the user posseses the required permission, all given
 					//keys will be updated
 					return request.user
-						.doesHavePermission("admin.oauth-client.upsert")
+						.can("admin.oauth-client.upsert")
 						.then(hasPermission => {
 							if (hasPermission) {
 								oauthClientModel.set(oauthClient);
@@ -274,7 +274,7 @@ module.exports.mutation = {
 
 									//if the user is allowed to, we update the redirect uris
 									return request.user
-										.doesHavePermission("admin.oauth-client.upsert")
+										.can("admin.oauth-client.upsert")
 										.then(havePermission => {
 											if (
 												!havePermission &&
@@ -362,7 +362,7 @@ module.exports.mutation = {
 					);
 				}
 				return request.user
-					.doesHavePermission("admin.oauth-client.delete")
+					.can("admin.oauth-client.delete")
 					.then(havePermission => {
 						if (
 							!havePermission &&

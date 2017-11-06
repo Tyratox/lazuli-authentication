@@ -52,9 +52,9 @@ module.exports.query = {
 			}
 		},
 		resolve: (root, args, context, info) => {
-			const { request } = context;
+			const { request: { user } } = context;
 
-			if (!request.user) {
+			if (!user) {
 				return Promise.reject(
 					new Error(
 						"Access Denied! You have to be logged in in order to view users!"
@@ -68,7 +68,7 @@ module.exports.query = {
 	users: {
 		type: new GraphQLList(User.graphQlType),
 		args: {
-			//generally allow to filter all fields
+			//pass all user fields
 			...attributeFields(User, { allowNull: true }),
 			limit: {
 				type: GraphQLInt
@@ -86,7 +86,7 @@ module.exports.query = {
 			}
 
 			return request.user
-				.doesHavePermission("admin.user.list")
+				.can("admin.user.list")
 				.then(hasPermission => {
 					return hasPermission
 						? Promise.resolve()
@@ -95,7 +95,7 @@ module.exports.query = {
 							);
 				})
 				.then(() => {
-					return request.user.doesHavePermission("admin.user");
+					return request.user.can("admin.user");
 				})
 				.then(hasPermission => {
 					if (!hasPermission) {
@@ -187,7 +187,7 @@ module.exports.mutation = {
 									);
 								}
 								return request.user
-									.doesHavePermission("admin.user.update")
+									.can("admin.user.update")
 									.then(hasPermission => {
 										if (
 											!hasPermission &&
@@ -205,7 +205,7 @@ module.exports.mutation = {
 							} else {
 								//if not, a new user with the given id will be created
 								return request.user
-									.doesHavePermission("admin.user.create")
+									.can("admin.user.create")
 									.then(hasPermission => {
 										if (!hasPermission) {
 											return Promise.reject(
@@ -227,18 +227,16 @@ module.exports.mutation = {
 								)
 							);
 						}
-						return request.user
-							.doesHavePermission("admin.user.create")
-							.then(hasPermission => {
-								if (!hasPermission) {
-									return Promise.reject(
-										new Error(
-											"Access Denied! You're not allowed to create a new user!"
-										)
-									);
-								}
-								return User.create();
-							});
+						return request.user.can("admin.user.create").then(hasPermission => {
+							if (!hasPermission) {
+								return Promise.reject(
+									new Error(
+										"Access Denied! You're not allowed to create a new user!"
+									)
+								);
+							}
+							return User.create();
+						});
 					}
 				})
 				.then(userModel => {
@@ -247,57 +245,53 @@ module.exports.mutation = {
 
 					//if the user posseses required permission, all given keys will be
 					//updated
-					return request.user
-						.doesHavePermission("admin.user.upsert")
-						.then(hasPermission => {
-							if (hasPermission) {
-								userModel.set(user);
-							} else {
-								//otherwise we pick a few. these keys can be changed by using a
-								//filter
-								userModel.set(
-									pick(
-										user,
-										valueFilter.filterable(
-											"authentication.graphql.mutation.user.upsert.keys",
-											["nameDisplay", "nameFirst", "nameLast", "locale"]
-										)
+					return request.user.can("admin.user.upsert").then(hasPermission => {
+						if (hasPermission) {
+							userModel.set(user);
+						} else {
+							//otherwise we pick a few. these keys can be changed by using a
+							//filter
+							userModel.set(
+								pick(
+									user,
+									valueFilter.filterable(
+										"authentication.graphql.mutation.user.upsert.keys",
+										["nameDisplay", "nameFirst", "nameLast", "locale"]
 									)
-								);
-							}
+								)
+							);
+						}
 
-							//after setting the new values, save the user model to the database
-							return userModel
-								.save()
-								.then(() => {
-									//after saving all columns in the user table we also have to
-									//update the associations
+						//after setting the new values, save the user model to the database
+						return userModel
+							.save()
+							.then(() => {
+								//after saving all columns in the user table we also have to
+								//update the associations
 
-									if (!user.permissions) {
-										return Promise.resolve();
+								if (!user.permissions) {
+									return Promise.resolve();
+								}
+								//if the user is allowed to, we update the models permissions
+								return request.user.can("admin").then(hasPermission => {
+									if (hasPermission) {
+										return userModel.setPermissionArray(user.permissions);
+									} else {
+										return Promise.reject();
 									}
-									//if the user is allowed to, we update the models permissions
-									return request.user
-										.doesHavePermission("admin")
-										.then(hasPermission => {
-											if (hasPermission) {
-												return userModel.setPermissionArray(user.permissions);
-											} else {
-												return Promise.reject();
-											}
-										});
-								})
-								.then(() => {
-									//in the end, we return the updated user object by using
-									//graphql-sequelize's resolver
-									return resolver(User)(
-										root,
-										{ id: userModel.get("id") },
-										context,
-										info
-									);
 								});
-						});
+							})
+							.then(() => {
+								//in the end, we return the updated user object by using
+								//graphql-sequelize's resolver
+								return resolver(User)(
+									root,
+									{ id: userModel.get("id") },
+									context,
+									info
+								);
+							});
+					});
 				});
 		}
 	},
@@ -309,7 +303,7 @@ module.exports.mutation = {
 		resolve: (root, { id }, { request }, info) => {
 			if (request.user) {
 				return request.user
-					.doesHavePermission("admin.user.delete")
+					.can("admin.user.delete")
 					.then(hasPermission => {
 						if (hasPermission || request.user.get("id") == id) {
 							return Promise.resolve();

@@ -645,13 +645,17 @@ User.prototype.verifyEmail = function(
  *
  * @public
  * @instance
- * @method doesHavePermissions
+ * @method can
  * @memberof module:lazuli-authentication/models/user.User
  *
- * @param  {array} [permissionsNeeded=[]] The permissions to check for
+ * @param  {string|string[]} [permissionsNeeded=[]] The permissions to check for
  * @return {promise<boolean>} Whether the user has the given permissions
  */
-User.prototype.doesHavePermissions = function(permissionsNeeded = []) {
+User.prototype.can = function(permissionsNeeded = []) {
+	permissionsNeeded = Array.isArray(permissionsNeeded)
+		? permissionsNeeded
+		: [permissionsNeeded];
+
 	return this.getPermissions().then(permissionModels => {
 		const permissions = permissionModels.map(permission =>
 			permission.get("permission")
@@ -677,24 +681,7 @@ User.prototype.doesHavePermissions = function(permissionsNeeded = []) {
 };
 
 /**
- * Checks whether the user has the passed permission
- * @version 1.0
- * @since 1.0
- *
- * @public
- * @instance
- * @method doesHavePermission
- * @memberof module:lazuli-authentication/models/user.User
- *
- * @param  {array}  [permissionsNeeded=[]] The permission to check for
- * @return {promise<boolean>} Whether the user has the given permissions
- */
-User.prototype.doesHavePermission = function(permission) {
-	return this.doesHavePermissions([permission]);
-};
-
-/**
- * Sets the permissions of the user
+ * Sets the permissions for the user
  * @version 1.0
  * @since 1.0
  *
@@ -703,18 +690,18 @@ User.prototype.doesHavePermission = function(permission) {
  * @method setPermissionArray
  * @memberof module:lazuli-authentication/models/user.User
  *
- * @param  {array} [permissions=[]] An array of permissions to set to the user
+ * @param  {string[]} [permissions=[]] An array of permissions to set to the user
  * @return {promise<void>}
  */
 User.prototype.setPermissionArray = function(permissions = []) {
-	const promises = permissions.map(permission => {
-		return Permission.findOrCreate({
-			where: { permission },
-			defaults: { permission }
-		}).then(result => Promise.resolve(result[0]));
-	});
-
-	return Promise.all(promises).then(permissionInstances => {
+	return Promise.all(
+		permissions.map(permission => {
+			return Permission.findOrCreate({
+				where: { permission },
+				defaults: { permission }
+			}).then(result => Promise.resolve(result[0]));
+		})
+	).then(permissionInstances => {
 		return this.setPermissions(permissionInstances);
 	});
 };
