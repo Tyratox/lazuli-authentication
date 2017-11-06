@@ -92,16 +92,16 @@ module.exports = (test, initPromise) => {
 									user.get("emailUnverified"),
 									"The emailUnverified field wasn't reset"
 								);
-								t.true(
-									await user.verifyPassword(password),
-									"The password wasn't set"
-								);
 								t.falsy(
 									user.get(
 										"emailVerificationCode",
 										"The email verification code wasn't reset"
 									)
 								);
+
+								return user.verifyPassword(password).catch(() => {
+									t.fail("The password wasn't set");
+								});
 							});
 						});
 				});

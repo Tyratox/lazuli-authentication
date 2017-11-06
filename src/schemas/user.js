@@ -20,6 +20,7 @@ const sequelize = require("lazuli-require")("lazuli-core/sequelize");
 
 const { escapeLikeString } = require("../utilities/sql");
 const { pick } = require("../utilities/object");
+const { checkAuthorization } = require("../utilities/graphql");
 
 const User = require("../models/user");
 
@@ -52,17 +53,9 @@ module.exports.query = {
 			}
 		},
 		resolve: (root, args, context, info) => {
-			const { request: { user } } = context;
-
-			if (!user) {
-				return Promise.reject(
-					new Error(
-						"Access Denied! You have to be logged in in order to view users!"
-					)
-				);
-			}
-
-			return resolver(User)(root, args, context, info);
+			return checkAuthorization(context.request.user).then(() => {
+				return resolver(User)(root, args, context, info);
+			});
 		}
 	},
 	users: {
@@ -75,30 +68,14 @@ module.exports.query = {
 			}
 		},
 		resolve: (root, args, context, info) => {
-			const { request } = context;
+			const { request: { user } } = context;
 
-			if (!request.user) {
-				return Promise.reject(
-					new Error(
-						"Access Denied! You have to be logged in, in order to list users!"
-					)
-				);
-			}
-
-			return request.user
-				.can("admin.user.list")
-				.then(hasPermission => {
-					return hasPermission
-						? Promise.resolve()
-						: Promise.reject(
-								new Error("Access Denied! You're not allowed to list users!")
-							);
+			return checkAuthorization(user)
+				.then(() => {
+					return user.can("admin.user.list");
 				})
 				.then(() => {
-					return request.user.can("admin.user");
-				})
-				.then(hasPermission => {
-					if (!hasPermission) {
+					return user.can("admin.user").catch(() => {
 						//if the user doesn't have the permission,
 						//only allow uncritical search keys
 						args = pick(
@@ -108,9 +85,10 @@ module.exports.query = {
 								["id", "nameDisplay", "nameFirst", "nameLast"]
 							)
 						);
-					}
-
-					return resolver(User, {
+					});
+				})
+				.then(() =>
+					resolver(User, {
 						before: (findOptions, args) => {
 							if (findOptions.where) {
 								if (findOptions.where.nameDisplay) {
@@ -142,8 +120,8 @@ module.exports.query = {
 
 							return findOptions;
 						}
-					})(root, args, context, info);
-				});
+					})(root, args, context, info)
+				);
 		}
 	}
 };
@@ -159,11 +137,11 @@ module.exports.mutation = {
 		args: {
 			user: { type: new GraphQLNonNull(UserInputType) }
 		},
-		resolve: (root, { user }, context, info) => {
+		resolve: (root, { user: input }, context, info) => {
 			//first check if the passed user object meets all requirements. graphql
 			//only checks the input types.
-			const staticValidation = Joi.validate(user, UserInputTypeValidation);
-			const { request } = context;
+			const staticValidation = Joi.validate(input, UserInputTypeValidation);
+			const { request: { user } } = context;
 
 			if (staticValidation.error) {
 				return Promise.reject(staticValidation.error);
@@ -173,70 +151,36 @@ module.exports.mutation = {
 				.then(() => {
 					//If there's no error check what we need to do: update or insert
 
-					if (user.id) {
+					if (input.id) {
 						//if the user object contains an id it's not sure yet what action
 						//should be taken.
 						//should a user with the given id exist, it will be updated
-						return User.findById(user.id).then(userModel => {
-							if (userModel) {
-								if (!request.user) {
-									return Promise.reject(
-										new Error(
-											"Access Denied! You are not allowed to update this user!"
-										)
-									);
+						return checkAuthorization(user)
+							.then(() => {
+								return User.findById(input.id);
+							})
+							.then(userModel => {
+								if (userModel) {
+									return user
+										.can("admin.user.update")
+										.catch(err => {
+											if (userModel.get("id") !== user.get("id")) {
+												return Promise.reject(err);
+											}
+										})
+										.then(() => Promise.resolve(userModel));
+								} else {
+									//if not, a new user with the given id will be created
+									return user.can("admin.user.create").then(() => {
+										return User.create({ id: input.id });
+									});
 								}
-								return request.user
-									.can("admin.user.update")
-									.then(hasPermission => {
-										if (
-											!hasPermission &&
-											userModel.get("id") !== request.user.get("id")
-										) {
-											return Promise.reject(
-												new Error(
-													"Access Denied! You are not allowed to update this user!"
-												)
-											);
-										}
-
-										return Promise.resolve(userModel);
-									});
-							} else {
-								//if not, a new user with the given id will be created
-								return request.user
-									.can("admin.user.create")
-									.then(hasPermission => {
-										if (!hasPermission) {
-											return Promise.reject(
-												new Error(
-													"Access Denied! You're not allowed to create a new user!"
-												)
-											);
-										}
-										return User.create({ id: user.id });
-									});
-							}
-						});
+							});
 					} else {
 						//if the user object doesn't contain an id, a new user will be created
-						if (!request.user) {
-							return Promise.reject(
-								new Error(
-									"Access Denied! You're not allowed to create a new user!"
-								)
-							);
-						}
-						return request.user.can("admin.user.create").then(hasPermission => {
-							if (!hasPermission) {
-								return Promise.reject(
-									new Error(
-										"Access Denied! You're not allowed to create a new user!"
-									)
-								);
-							}
-							return User.create();
-						});
+						return checkAuthorization(user, "admin.user.create").then(() =>
+							User.create()
+						);
 					}
 				})
 				.then(userModel => {
@@ -245,53 +189,46 @@ module.exports.mutation = {
 
 					//if the user posseses required permission, all given keys will be
 					//updated
-					return request.user.can("admin.user.upsert").then(hasPermission => {
-						if (hasPermission) {
-							userModel.set(user);
-						} else {
+					return user
+						.can("admin.user.upsert")
+						.catch(() => {
 							//otherwise we pick a few. these keys can be changed by using a
 							//filter
 							userModel.set(
 								pick(
-									user,
+									input,
 									valueFilter.filterable(
 										"authentication.graphql.mutation.user.upsert.keys",
 										["nameDisplay", "nameFirst", "nameLast", "locale"]
 									)
 								)
 							);
-						}
+							//after setting the new values, save the user model to the database
+						})
+						.then(() => userModel.set(input))
+						.then(() => userModel.save())
+						.then(() => {
+							//after saving all columns in the user table we also have to
+							//update the associations
 
-						//after setting the new values, save the user model to the database
-						return userModel
-							.save()
-							.then(() => {
-								//after saving all columns in the user table we also have to
-								//update the associations
-
-								if (!user.permissions) {
-									return Promise.resolve();
-								}
-								//if the user is allowed to, we update the models permissions
-								return request.user.can("admin").then(hasPermission => {
-									if (hasPermission) {
-										return userModel.setPermissionArray(user.permissions);
-									} else {
-										return Promise.reject();
-									}
-								});
-							})
-							.then(() => {
-								//in the end, we return the updated user object by using
-								//graphql-sequelize's resolver
-								return resolver(User)(
-									root,
-									{ id: userModel.get("id") },
-									context,
-									info
-								);
-							});
-					});
+							if (!input.permissions) {
+								return Promise.resolve();
+							}
+							//if the user is allowed to, we update the models permissions
+							return user
+								.can("admin")
+								.then(() => userModel.setPermissionArray(input.permissions));
+						})
+						.then(() => {
+							//in the end, we return the updated user object by using
+							//graphql-sequelize's resolver
+							return resolver(User)(
+								root,
+								{ id: userModel.get("id") },
+								context,
+								info
+							);
+						});
 				});
 		}
 	},
@@ -300,38 +237,20 @@ module.exports.mutation = {
 		args: {
 			id: { type: GraphQLInt }
 		},
-		resolve: (root, { id }, { request }, info) => {
-			if (request.user) {
-				return request.user
-					.can("admin.user.delete")
-					.then(hasPermission => {
-						if (hasPermission || request.user.get("id") == id) {
-							return Promise.resolve();
-						} else {
-							return Promise.reject(
-								"Access Denied! You're not allowed to delete this user!"
-							);
-						}
-					})
-					.then(() => {
-						return User.findById(id).then(userModel => {
-							if (userModel) {
-								//triggers hooks and deletes associations
-								return userModel.destroy().then(() => {
-									return Promise.resolve(true);
-								});
-							} else {
-								return Promise.reject(
-									new Error("The given user couldn't be found!")
-								);
-							}
-						});
+		resolve: (root, { id }, { request: { user } }, info) => {
+			return checkAuthorization(user, "admin.user.delete").then(() =>
+				User.findById(id).then(userModel => {
+					if (!userModel) {
+						return Promise.reject(
+							new Error("The given user couldn't be found!")
+						);
+					}
+					//triggers hooks and deletes associations
+					return userModel.destroy().then(() => {
+						return Promise.resolve(true);
 					});
-			} else {
-				return Promise.reject(
-					"Access Denied! You have to be logged in in order delete this user!"
-				);
-			}
+				})
+			);
 		}
 	}
 };

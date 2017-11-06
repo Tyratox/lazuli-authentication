@@ -198,7 +198,7 @@ module.exports.authenticateOauthClient = [
 ];
 
 /**
- * Express middleware that checks wheter the user is currently logged in
+ * Express middleware that checks whether the user is currently logged in
  * If an error is passed to the callback, the authentication failed.
  * @param  {object} request The express request object
  * @param  {object} response The express response object
@@ -209,6 +209,6 @@ module.exports.isUserLoggedIn = (request, response, next) => {
 	if (request.user && request.user.get("id")) {
 		return next();
 	} else {
-		next(new Error("Authentication failed!"));
+		next(new Error("Unauthorized"));
 	}
 };

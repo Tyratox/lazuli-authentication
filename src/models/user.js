@@ -439,7 +439,7 @@ User.prototype._updateFromPassportProfile = function(profile) {
  * @memberof module:lazuli-authentication/models/user.User
  *
  * @param  {string} password The password to verify
- * @return {promise<boolean>} A promise to check whether the password could be verified
+ * @return {promise} A promise to check whether the password could be verified
  */
 User.prototype.verifyPassword = function(password) {
 	const { hash } = generateHash(
@@ -463,10 +463,10 @@ User.prototype.verifyPassword = function(password) {
 		}
 
 		return this.save().then(() => {
-			return Promise.resolve(true);
+			return Promise.resolve();
 		});
 	} else {
-		return Promise.resolve(false);
+		return Promise.reject(new Error("Unauthorized"));
 	}
 };
 
@@ -649,7 +649,7 @@ User.prototype.verifyEmail = function(
  * @memberof module:lazuli-authentication/models/user.User
  *
  * @param  {string|string[]} [permissionsNeeded=[]] The permissions to check for
- * @return {promise<boolean>} Whether the user has the given permissions
+ * @return {promise} Whether the user has the given permission(s)
  */
 User.prototype.can = function(permissionsNeeded = []) {
 	permissionsNeeded = Array.isArray(permissionsNeeded)
@@ -676,7 +676,9 @@ User.prototype.can = function(permissionsNeeded = []) {
 			return true; //missing, leave in array
 		});
 
-		return Promise.resolve(missing.length === 0);
+		return missing.length === 0
+			? Promise.resolve()
+			: Promise.reject(new Error("Unauthorized"));
 	});
 };
 

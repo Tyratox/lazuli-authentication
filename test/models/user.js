@@ -47,15 +47,18 @@ module.exports = (test, initPromise) => {
 		});
 	});
 
-	test("models.user.doesHavePermissions", async t => {
+	test("models.user.can", async t => {
 		return User.create({}).then(userModel => {
 			return userModel
 				.setPermissionArray(["admin"])
 				.then(() => {
-					return userModel.doesHavePermissions(["admin", "admin.blablabla"]);
+					return userModel.can(["admin", "admin.blablabla"]);
 				})
-				.then(hasPermissions => {
-					t.true(hasPermissions);
+				.then(() => {
+					t.pass();
+				})
+				.catch(() => {
+					t.fail();
 				});
 		});
 	});

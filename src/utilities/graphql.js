@@ -38,17 +38,7 @@ module.exports.protectGraphqlSchemaFields = (
 					}
 					return request.user
 						.can("admin." + name + ".read." + key)
-						.then(havePermission => {
-							if (!havePermission) {
-								return Promise.reject(
-									new Error(
-										"Access Denied! You're not allowed to access this field!"
-									)
-								);
-							}
-
-							return Promise.resolve(model.get(key));
-						});
+						.then(() => Promise.resolve(model.get(key)));
 				})
 				.then(value => {
 					return origResolve
@@ -59,4 +49,16 @@ module.exports.protectGraphqlSchemaFields = (
 	});
 
 	return protectedFields;
+};
+
+/**
+ * Checks whether the user is logged in and posseses the passed permissions
+ * @param  {module:lazuli-authentication/models/user.User} user The user to check
+ * @param  {string|string[]} [permissions=[]] The permissions to check
+ * @return {promise<object>}
+ */
+module.exports.checkAuthorization = (user, permissions = []) => {
+	permissions = Array.isArray(permissions) ? permissions : [permissions];
+
+	return user ? user.can(permissions) : Promise.reject("Unauthorized");
 };

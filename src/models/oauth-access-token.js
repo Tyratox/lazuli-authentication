@@ -214,16 +214,14 @@ OauthAccessToken.findByToken = function(token) {
  * @return {promise<void>}
  */
 OauthAccessToken.prototype.setScopeArray = function(scopes = []) {
-	const promises = scopes.map(scope => {
-		return OauthScope.findOrCreate({
-			where: { scope },
-			defaults: { scope }
-		}).then(result => Promise.resolve(result[0]));
-	});
-
-	return Promise.all(promises).then(scopeInstances => {
-		return this.setOauthScopes(scopeInstances);
-	});
+	return Promise.all(
+		(promises = scopes.map(scope => {
+			return OauthScope.findOrCreate({
+				where: { scope },
+				defaults: { scope }
+			}).then(result => Promise.resolve(result[0]));
+		}))
+	).then(scopeInstances => this.setOauthScopes(scopeInstances));
 };
 
 module.exports = OauthAccessToken;

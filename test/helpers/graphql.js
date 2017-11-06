@@ -1,6 +1,6 @@
 const logger = require("lazuli-require")("lazuli-core/logger");
 
-const ACCESS_DENIED = "Access Denied!";
+const ACCESS_DENIED = "Unauthorized";
 
 const checkObject = (t, obj, allowed) => {
 	Object.keys(obj).forEach(prop => {
@@ -16,7 +16,7 @@ const checkObject = (t, obj, allowed) => {
 };
 
 const validateAccessDenied = (t, body, allowed = []) => {
-	t.truthy(body.errors.length, "no error was returned!");
+	t.truthy(body.errors, "no error was returned!");
 
 	if (body.errors) {
 		body.errors.forEach(error => {

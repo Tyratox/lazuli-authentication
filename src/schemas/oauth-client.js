@@ -19,6 +19,7 @@ const sequelize = require("lazuli-require")("lazuli-core/sequelize");
 
 const { pick } = require("../utilities/object");
 const { escapeLikeString } = require("../utilities/sql");
+const { checkAuthorization } = require("../utilities/graphql");
 
 const OauthClient = require("../models/oauth-client");
 const OauthRedirectUri = require("../models/oauth-redirect-uri");
@@ -51,7 +52,11 @@ module.exports.query = {
 				type: new GraphQLNonNull(GraphQLInt)
 			}
 		},
-		resolve: resolver(OauthClient)
+		resolve: (root, args, context, info) => {
+			return checkAuthorization(context.request.user).then(() => {
+				return resolver(OauthClient)(root, args, context, info);
+			});
+		}
 	},
 	oauthClients: {
 		type: new GraphQLList(OauthClient.graphQlType),
@@ -63,31 +68,11 @@ module.exports.query = {
 			}
 		},
 		resolve: (root, args, context, info) => {
-			const { request } = context;
+			const { request: { user } } = context;
 
-			if (!request.user) {
-				return Promise.reject(
-					new Error(
-						"Access Denied! You have to be logged in, in order to list users!"
-					)
-				);
-			}
-
-			return request.user
-				.can("admin.oauth-client.list")
-				.then(hasPermission => {
-					if (!hasPermission) {
-						return Promise.reject(
-							new Error(
-								"Access Denied! You're not allowed to list oauth clients!"
-							)
-						);
-					}
-
-					return request.user.can("admin.oauth-client.get");
-				})
-				.then(havePermission => {
-					if (!havePermission) {
+			return checkAuthorization(user, "admin.oauth-client.list")
+				.then(() => {
+					return user.can("admin.oauth-client.get").catch(() => {
 						//only allow uncritical search keys
 						args = pick(
 							args,
@@ -96,9 +81,10 @@ module.exports.query = {
 								["id", "name"]
 							)
 						);
-					}
-
-					return resolver(OauthClient, {
+					});
+				})
+				.then(() =>
+					resolver(OauthClient, {
 						before: (findOptions, args) => {
 							if (findOptions.where) {
 								if (findOptions.where.name) {
@@ -110,8 +96,8 @@ module.exports.query = {
 
 							return findOptions;
 						}
-					})(root, args, context, info);
-				});
+					})(root, args, context, info)
+				);
 		}
 	}
 };
@@ -126,15 +112,15 @@ module.exports.mutation = {
 		args: {
 			oauthClient: { type: new GraphQLNonNull(OauthClientInputType) }
 		},
-		resolve: (root, { oauthClient }, context, info) => {
+		resolve: (root, { oauthClient: input }, context, info) => {
 			//first check if the passed oauthClient object meets all requirements.
 			//graphql only checks the input types.
 			const staticValidation = Joi.validate(
-				oauthClient,
+				input,
 				OauthClientInputTypeValidation
 			);
 
-			const { request } = context;
+			const { request: { user } } = context;
 
 			if (staticValidation.error) {
 				return Promise.reject(staticValidation.error);
@@ -143,94 +129,56 @@ module.exports.mutation = {
 			let secret = null;
 
 			//If there's no error check what we need to do: update or insert
-			return Promise.resolve()
+			return checkAuthorization(user)
 				.then(() => {
-					if (oauthClient.id) {
+					if (input.id) {
 						//if the oauthClient object contains an id it's not sure yet what
 						//action should be taken.
 						//should a oauth client with the given id exist, it will be
 						//updated
-						return OauthClient.findById(
-							oauthClient.id
-						).then(oauthClientModel => {
+						return OauthClient.findById(input.id).then(oauthClientModel => {
 							if (oauthClientModel) {
-								if (!request.user) {
-									return Promise.reject(
-										new Error(
-											"Access Denied! You have to be logged in in order to update this oauth client!"
-										)
-									);
-								}
-
-								return request.user
+								return user
 									.can("admin.oauth-client.update")
-									.then(hasPermission => {
+									.catch(err => {
 										if (
-											hasPermission ||
-											oauthClientModel.get("userId") === request.user.get("id")
+											oauthClientModel.get("userId") !== request.user.get("id")
 										) {
-											return Promise.resolve(oauthClientModel);
-										} else {
-											return Promise.reject(
-												new Error(
-													"Access Denied! You are not allowed to update this oauth client!"
-												)
-											);
+											return Promise.reject(err);
 										}
-									});
+									})
+									.then(() => Promise.resolve(oauthClientModel));
 							} else {
 								//if not, a new oauth client with the given id will be created
-								return request.user
+								return user
 									.can("admin.oauth-client.create")
-									.then(hasPermission => {
-										if (!hasPermission) {
-											return Promise.reject(
-												new Error(
-													"Access Denied! You're not allowed to create a new oauth client!"
-												)
-											);
-										}
+									.then(() =>
+										OauthClient.create({
+											id: input.id
+										})
+									)
+									.then(model => {
+										secret = input.generateSecret();
 
-										return OauthClient.create({
-											id: oauthClient.id
-										}).then(model => {
-											secret = oauthClient.generateSecret();
-
-											return oauthClient.updateSecret(secret).then(() => {
-												return Promise.resolve(model);
-											});
-										});
+										return input
+											.updateSecret(secret)
+											.then(() => Promise.resolve(model));
 									});
 							}
 						});
 					} else {
 						//if the oauth client object doesn't contain an id,
 						//a new oauth client will be created
-						if (!request.user) {
-							return Promise.reject(
-								new Error(
-									"Access Denied! You have to be logged in in order to create a new oauth client!"
-								)
-							);
-						}
 
-						return request.user
+						return user
 							.can("admin.oauth-client.create")
-							.then(hasPermission => {
-								if (!hasPermission) {
-									return Promise.reject(
-										new Error(
-											"Access Denied! You're not allowed to create a new oauth client!"
-										)
-									);
-								}
-								return OauthClient.create().then(model => {
-									secret = OauthClient.generateSecret();
+							.then(() => OauthClient.create())
+							.then(model => {
+								secret = OauthClient.generateSecret();
 
-									return model.updateSecret(secret).then(() => {
-										return Promise.resolve(model);
-									});
-								});
+								return model
+									.updateSecret(secret)
+									.then(() => Promise.resolve(model));
 							});
 					}
 				})
@@ -240,14 +188,14 @@ module.exports.mutation = {
 
 					//if the user posseses the required permission, all given
 					//keys will be updated
-					return request.user
-						.can("admin.oauth-client.upsert")
-						.then(hasPermission => {
-							if (hasPermission) {
-								oauthClientModel.set(oauthClient);
-							} else if (
-								request.user.get("id") == oauthClientModel.get("userId")
-							) {
+					return (
+						user
+							.can("admin.oauth-client.upsert")
+							.catch(err => {
+								if (user.get("id") !== oauthClientModel.get("userId")) {
+									return Promise.reject(err);
+								}
+
 								//otherwise we pick a few
 								oauthClientModel.set(
 									pick(
@@ -258,87 +206,72 @@ module.exports.mutation = {
 										)
 									)
 								);
-							}
+							})
+							.then(() => oauthClientModel.set(input))
+							//after setting the new values, save the oauth client model
+							.then(() => oauthClientModel.save())
+							.then(() => {
+								//after saving all columns in the oauth client table we also
+								//have to update the associations
 
-							//after setting the new values, save the oauth client model to
-							//the database
-							return oauthClientModel
-								.save()
-								.then(() => {
-									//after saving all columns in the oauth client table we also
-									//have to update the associations
+								if (!input.oauthRedirectUris) {
+									return Promise.resolve();
+								}
 
-									if (!oauthClient.oauthRedirectUris) {
-										return Promise.resolve();
-									}
-
-									//if the user is allowed to, we update the redirect uris
-									return request.user
-										.can("admin.oauth-client.upsert")
-										.then(havePermission => {
-											if (
-												!havePermission &&
-												request.user.get("id") !== oauthClient.get("userId")
-											) {
-												return Promise.reject(
-													new Error(
-														"You're not allowed to update the oauth redirect uris"
-													)
+								//if the user is allowed to, we update the redirect uris
+								return oauthClientModel
+									.getOauthRedirectUris()
+									.then(redirectUriModels => {
+										//diff existing and sent
+										const toDelete = redirectUriModels.filter(
+											redirectUriModel => {
+												return (
+													input.oauthRedirectUris.indexOf(
+														redirectUriModel.get("uri")
+													) === -1
 												);
 											}
-											return oauthClientModel.getOauthRedirectUris();
-										})
-										.then(redirectUriModels => {
-											//diff existing and sent
-											const toDelete = redirectUriModels.filter(
-												redirectUriModel => {
-													return (
-														oauthClient.oauthRedirectUris.indexOf(
-															redirectUriModel.get("uri")
-														) === -1
-													);
-												}
-											);
+										);
 
-											const existing = redirectUriModels.map(redirectUriModel =>
-												redirectUriModel.get("uri")
-											);
-											const toAdd = oauthClient.oauthRedirectUris.filter(
-												redirectUri => {
-													return existing.indexOf(redirectUri) === -1;
-												}
-											);
+										const existing = redirectUriModels.map(redirectUriModel =>
+											redirectUriModel.get("uri")
+										);
+										const toAdd = input.oauthRedirectUris.filter(
+											redirectUri => {
+												return existing.indexOf(redirectUri) === -1;
+											}
+										);
 
-											return Promise.all([
-												...toDelete.map(redirectUriModel => {
-													return redirectUriModel.destroy();
-												}),
-												...toAdd.map(redirectUri =>
-													OauthRedirectUri.create({
-														uri: redirectUri,
-														oauthClientId: oauthClientModel.get("id")
-													})
-												)
-											]);
-										});
-								})
-								.then(() => {
-									//in the end, we return the updated oauth client object by
-									//using graphql-sequelize's resolver
-
-									return resolver(OauthClient)(
-										root,
-										{ id: oauthClientModel.get("id") },
-										context,
-										info
-									).then(model => {
-										if (secret) {
-											model.dataValues.secret = secret;
-										}
-										return Promise.resolve(model);
+										return Promise.all([
+											...toDelete.map(redirectUriModel => {
+												return redirectUriModel.destroy();
+											}),
+											...toAdd.map(redirectUri =>
+												OauthRedirectUri.create({
+													uri: redirectUri,
+													oauthClientId: oauthClientModel.get("id")
+												})
+											)
+										]);
 									});
+							})
+							.then(() => {
+								//in the end, we return the updated oauth client object by
+								//using graphql-sequelize's resolver
+
+								return resolver(OauthClient)(
+									root,
+									{ id: oauthClientModel.get("id") },
+									context,
+									info
+								).then(model => {
+									if (secret) {
+										model.dataValues.secret = secret;
+									}
+									return Promise.resolve(model);
 								});
-						});
+							})
+					);
 				});
 		}
 	},
@@ -347,36 +280,24 @@ module.exports.mutation = {
 		args: {
 			id: { type: GraphQLInt }
 		},
-		resolve: (root, { id }, { request }, info) => {
-			if (!request.user) {
-				return Promise.reject(
-					new Error(
-						"Access Denied! You have to be logged in to delete this oauth client"
-					)
-				);
-			}
-			return OauthClient.findById(id).then(oauthClientModel => {
-				if (!oauthClientModel) {
-					return Promise.reject(
-						new Error("The given oauth client couldn't be found!")
-					);
-				}
-				return request.user
-					.can("admin.oauth-client.delete")
-					.then(havePermission => {
-						if (
-							!havePermission &&
-							oauthClientModel.get("userId") !== request.user.get("id")
-						) {
-							return Promise.reject(
-								new Error(
-									"Access Denied! You're not allowed to delete this oauth client"
-								)
-							);
-						}
-
-						return oauthClientModel.destroy();
-					});
+		resolve: (root, { id }, { request: { user } }, info) => {
+			return checkAuthorization(user).then(() => {
+				return OauthClient.findById(id).then(oauthClientModel => {
+					if (!oauthClientModel) {
+						return Promise.reject(
+							new Error("The given oauth client couldn't be found!")
+						);
+					}
+					return user
+						.can("admin.oauth-client.delete")
+						.catch(err => {
+							if (oauthClientModel.get("userId") !== user.get("id")) {
+								return Promise.reject(err);
+							}
+						})
+						.then(() => oauthClientModel.destroy())
+						.then(() => Promise.resolve(true));
+				});
 			});
 		}
 	}

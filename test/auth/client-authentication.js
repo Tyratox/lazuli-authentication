@@ -79,7 +79,7 @@ module.exports = (test, initPromise) => {
 					.then(response => {
 						t.deepEqual(
 							response,
-							{ message: "Authentication failed!" },
+							{ message: "Unauthorized" },
 							"The server didn't respond with 'success'"
 						);
 					});

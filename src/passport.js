@@ -50,7 +50,7 @@ const initOauthClientAuthentication = passport => {
 				})
 					.then(client => {
 						if (!client) {
-							return Promise.reject(new Error("Authentication failed!"));
+							return Promise.reject(new Error("Unauthorized"));
 						}
 
 						return client
@@ -59,7 +59,7 @@ const initOauthClientAuthentication = passport => {
 								verified =>
 									verified
 										? done(null, client)
-										: Promise.reject(new Error("Authentication failed!"))
+										: Promise.reject(new Error("Unauthorized"))
 							);
 					})
 					.catch(done);
@@ -84,17 +84,10 @@ const initLocalAuthentication = passport => {
 				})
 					.then(user => {
 						if (!user || user.get("passwordHash").length === 0) {
-							return Promise.reject(new Error("Authentication failed!"));
+							return Promise.reject(new Error("Unauthorized"));
 						}
 
-						return user
-							.verifyPassword(password)
-							.then(
-								success =>
-									success
-										? done(null, user)
-										: Promise.reject(new Error("Authentication failed!"))
-							);
+						return user.verifyPassword(password).then(() => done(null, user));
 					})
 					.catch(done);
 			}
@@ -122,17 +115,14 @@ const initOauthBearerAuthentication = passport => {
 						return OauthAccessToken.findByToken(accessToken).then(token => {
 							// No token found
 							if (!token) {
-								return Promise.reject(new Error("Authentication failed!"));
+								return Promise.reject(new Error("Unauthorized"));
 							}
 
 							return User.findById(token.get("userId")).then(user => {
 								if (!user) {
 									// No user was found, so the token is invalid
 									return token.destroy().then(() => {
-										return Promise.reject(
-											new Error("Authentication failed!"),
-											false
-										);
+										return Promise.reject(new Error("Unauthorized"), false);
 									});
 								}
 
@@ -141,23 +131,10 @@ const initOauthBearerAuthentication = passport => {
 
 								return token.save().then(() => {
 									//check whether the user has the required permissions
-									if (
-										!request.requiredPermissions ||
-										request.requiredPermissions.length === 0 ||
-										request.requiredPermissions
-									) {
-										return user
-											.can(request.requiredPermissions)
-											.then(hasPermission => {
-												delete request.requiredPermissions;
-
-												return hasPermission
-													? done(null, user)
-													: Promise.reject(new Error("Authentication failed!"));
-											});
-									}
-
-									return Promise.reject(new Error("Authentication failed!"));
+									return user
+										.can(request.requiredPermissions)
+										.then(() => done(null, user))
+										.catch(() => Promise.reject(new Error("Unauthorized")));
 								});
 							});
 						});
