@@ -50,118 +50,34 @@ const UserType = new GraphQLObjectType({
 		const OauthCodeType = require("./oauth-code");
 		const OauthClientType = require("./oauth-client");
 
-		const userPermissionConnection = sequelizeConnection({
-			name: "userPermission",
+		const permissionConnection = sequelizeConnection({
+			name: "UserPermission",
 			nodeType: PermissionType,
-			target: User.Permissions,
-			orderBy: new GraphQLEnumType({
-				name: "UserPermissionOrderBy",
-				values: {
-					ID: { value: ["id", "ASC"] },
-					NAME: { value: ["permission", "DESC"] }
-				}
-			}),
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {
-				total: {
-					type: GraphQLInt,
-					resolve: ({ source }) => {
-						return source.countPermissions();
-					}
-				}
-			},
-			edgeFields: {}
+			target: User.Permissions
 		});
 
-		const userOauthProviderConnection = sequelizeConnection({
-			name: "userOauthProvider",
+		const oauthProviderConnection = sequelizeConnection({
+			name: "UserOauthProvider",
 			nodeType: OauthProviderType,
-			target: User.OauthProviders,
-			orderBy: new GraphQLEnumType({
-				name: "userOauthProviderOrderBy",
-				values: {
-					ID: { value: ["id", "ASC"] },
-					PROVIDER: { value: ["provider", "DESC"] }
-				}
-			}),
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {
-				total: {
-					type: GraphQLInt,
-					resolve: ({ source }) => source.countOauthProviders()
-				}
-			},
-			edgeFields: {}
+			target: User.OauthProviders
 		});
 
-		const userOauthAccessTokenConnection = sequelizeConnection({
+		const oauthAccessTokenConnection = sequelizeConnection({
 			name: "userOauthAccessToken",
 			nodeType: OauthAccessTokenType,
-			target: User.OauthAccessTokens,
-			orderBy: new GraphQLEnumType({
-				name: "UserOauthAccessTokenOrderBy",
-				values: {
-					ID: { value: ["id", "ASC"] }
-				}
-			}),
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {
-				total: {
-					type: GraphQLInt,
-					resolve: ({ source }) => source.countOauthAccessTokens()
-				}
-			},
-			edgeFields: {}
+			target: User.OauthAccessTokens
 		});
 
-		const userOauthCodeConnection = sequelizeConnection({
+		const oauthCodeConnection = sequelizeConnection({
 			name: "userOauthCode",
 			nodeType: OauthCodeType,
-			target: User.OauthCodes,
-			orderBy: new GraphQLEnumType({
-				name: "UserOauthCodeOrderBy",
-				values: {
-					ID: { value: ["id", "ASC"] }
-				}
-			}),
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {
-				total: {
-					type: GraphQLInt,
-					resolve: ({ source }) => source.countOauthCodes()
-				}
-			},
-			edgeFields: {}
+			target: User.OauthCodes
 		});
 
-		const userOauthClientConnection = sequelizeConnection({
+		const oauthClientConnection = sequelizeConnection({
 			name: "userOauthClient",
 			nodeType: OauthClientType,
-			target: User.OauthClients,
-			orderBy: new GraphQLEnumType({
-				name: "UserOauthClientOrderBy",
-				values: {
-					ID: { value: ["id", "ASC"] }
-				}
-			}),
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {
-				total: {
-					type: GraphQLInt,
-					resolve: ({ source }) => source.countOauthClients()
-				}
-			},
-			edgeFields: {}
+			target: User.OauthClients
 		});
 
 		return protectGraphqlSchemaFields(User.name, [], {
@@ -174,29 +90,29 @@ const UserType = new GraphQLObjectType({
 				"authentication.graphql.type.user.association",
 				{
 					permissions: {
-						type: userPermissionConnection.connectionType,
-						args: userPermissionConnection.connectionArgs,
-						resolve: userPermissionConnection.resolve
+						type: permissionConnection.connectionType,
+						args: permissionConnection.connectionArgs,
+						resolve: permissionConnection.resolve
 					},
 					oauthProviders: {
-						type: userOauthProviderConnection.connectionType,
-						args: userOauthProviderConnection.connectionArgs,
-						resolve: userOauthProviderConnection.resolve
+						type: oauthProviderConnection.connectionType,
+						args: oauthProviderConnection.connectionArgs,
+						resolve: oauthProviderConnection.resolve
 					},
 					oauthAccessTokens: {
-						type: userOauthAccessTokenConnection.connectionType,
-						args: userOauthAccessTokenConnection.connectionArgs,
-						resolve: userOauthAccessTokenConnection.resolve
+						type: oauthAccessTokenConnection.connectionType,
+						args: oauthAccessTokenConnection.connectionArgs,
+						resolve: oauthAccessTokenConnection.resolve
 					},
 					oauthCodes: {
-						type: userOauthCodeConnection.connectionType,
-						args: userOauthCodeConnection.connectionArgs,
-						resolve: userOauthCodeConnection.resolve
+						type: oauthCodeConnection.connectionType,
+						args: oauthCodeConnection.connectionArgs,
+						resolve: oauthCodeConnection.resolve
 					},
 					oauthClients: {
-						type: userOauthClientConnection.connectionType,
-						args: userOauthClientConnection.connectionArgs,
-						resolve: userOauthClientConnection.resolve
+						type: oauthClientConnection.connectionType,
+						args: oauthClientConnection.connectionArgs,
+						resolve: oauthClientConnection.resolve
 					}
 				}
 			)

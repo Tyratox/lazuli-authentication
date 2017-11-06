@@ -45,15 +45,10 @@ const OauthProviderType = new GraphQLObjectType({
 	fields: () => {
 		const UserType = require("./user");
 
-		const oauthProviderUserConnection = sequelizeConnection({
-			name: "oauthProviderUser",
+		const userConnection = sequelizeConnection({
+			name: "OauthProviderUser",
 			nodeType: UserType,
-			target: OauthProvider.User,
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {},
-			edgeFields: {}
+			target: OauthProvider.User
 		});
 
 		return {
@@ -66,9 +61,9 @@ const OauthProviderType = new GraphQLObjectType({
 				"authentication.graphql.type.oauth-provider.association",
 				{
 					oauthClients: {
-						type: oauthProviderUserConnection.connectionType,
-						arsg: oauthProviderUserConnection.connectionArgs,
-						resolve: oauthProviderUserConnection.resolve
+						type: userConnection.connectionType,
+						arsg: userConnection.connectionArgs,
+						resolve: userConnection.resolve
 					}
 				}
 			)

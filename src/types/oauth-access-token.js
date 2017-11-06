@@ -48,51 +48,22 @@ const OauthAccessTokenType = new GraphQLObjectType({
 		const OauthClientType = require("./oauth-client");
 		const OauthScopeType = require("./oauth-scope");
 
-		const oauthAccessTokenUserConnection = sequelizeConnection({
-			name: "oauthAccessTokenUser",
+		const userConnection = sequelizeConnection({
+			name: "OauthAccessTokenUser",
 			nodeType: UserType,
-			target: OauthAccessToken.User,
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {},
-			edgeFields: {}
+			target: OauthAccessToken.User
 		});
 
-		const oauthAccessTokenOauthClientConnection = sequelizeConnection({
-			name: "oauthAccessTokenOauthClient",
+		const oauthClientConnection = sequelizeConnection({
+			name: "OauthAccessTokenOauthClient",
 			nodeType: OauthClientType,
-			target: OauthAccessToken.OauthClient,
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {},
-			edgeFields: {}
+			target: OauthAccessToken.OauthClient
 		});
 
 		const oauthScopeConnection = sequelizeConnection({
-			name: "oauthScope",
+			name: "OauthAccessTokenOauthScope",
 			nodeType: OauthScopeType,
-			target: OauthAccessToken.OauthScopes,
-			orderBy: new GraphQLEnumType({
-				name: "OauthScopeOrderBy",
-				values: {
-					ID: { value: ["id", "ASC"] },
-					SCOPE: { value: ["scope", "DESC"] }
-				}
-			}),
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {
-				total: {
-					type: GraphQLInt,
-					resolve: ({ source }) => {
-						return source.countOauthScopes();
-					}
-				}
-			},
-			edgeFields: {}
+			target: OauthAccessToken.OauthScopes
 		});
 
 		return {
@@ -105,14 +76,19 @@ const OauthAccessTokenType = new GraphQLObjectType({
 				"authentication.graphql.type.oauth-access-token.association",
 				{
 					user: {
-						type: oauthAccessTokenUserConnection.connectionType,
-						args: oauthAccessTokenUserConnection.connectionArgs,
-						resolve: oauthAccessTokenUserConnection.resolve
+						type: userConnection.connectionType,
+						args: userConnection.connectionArgs,
+						resolve: userConnection.resolve
 					},
 					oauthClient: {
-						type: oauthAccessTokenOauthClientConnection.connectionType,
-						args: oauthAccessTokenOauthClientConnection.connectionArgs,
-						resolve: oauthAccessTokenOauthClientConnection.resolve
+						type: oauthClientConnection.connectionType,
+						args: oauthClientConnection.connectionArgs,
+						resolve: oauthClientConnection.resolve
+					},
+					oauthScope: {
+						type: oauthScopeConnection.connectionType,
+						args: oauthScopeConnection.connectionArgs,
+						resolve: oauthScopeConnection.resolve
 					}
 				}
 			)

@@ -45,26 +45,10 @@ const PermissionType = new GraphQLObjectType({
 	fields: () => {
 		const UserType = require("./user");
 
-		const permissionUsersConnection = sequelizeConnection({
-			name: "permissionUser",
+		const usersConnection = sequelizeConnection({
+			name: "PermissionUser",
 			nodeType: UserType,
-			target: Permission.Users,
-			orderBy: new GraphQLEnumType({
-				name: "PermissionUserOrderBy",
-				values: {
-					ID: { value: ["id", "ASC"] }
-				}
-			}),
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {
-				total: {
-					type: GraphQLInt,
-					resolve: ({ source }) => source.countUsers()
-				}
-			},
-			edgeFields: {}
+			target: Permission.Users
 		});
 
 		return {
@@ -77,9 +61,9 @@ const PermissionType = new GraphQLObjectType({
 				"authentication.graphql.type.permission.association",
 				{
 					users: {
-						type: permissionUsersConnection.connectionType,
-						arsg: permissionUsersConnection.connectionArgs,
-						resolve: permissionUsersConnection.resolve
+						type: usersConnection.connectionType,
+						arsg: usersConnection.connectionArgs,
+						resolve: usersConnection.resolve
 					}
 				}
 			)

@@ -51,66 +51,28 @@ const OauthClientType = new GraphQLObjectType({
 		const OauthAccessTokenType = require("./oauth-access-token");
 		const OauthRedirectUriType = require("./oauth-redirect-uri");
 
-		const oauthClientUserConnection = sequelizeConnection({
-			name: "oauthClientUser",
+		const userConnection = sequelizeConnection({
+			name: "OauthClientUser",
 			nodeType: UserType,
-			target: OauthClient.User,
-			where: function(key, value, currentWhere) {
-				return { [key]: value };
-			},
-			connectionFields: {},
-			edgeFields: {}
+			target: OauthClient.User
 		});
 
-		const oauthClientOauthCodeConnection = sequelizeConnection({
-			name: "oauthClientOauthCode",
+		const oauthCodeConnection = sequelizeConnection({
+			name: "OauthClientOauthCode",
 			nodeType: OauthCodeType,
-			target: OauthClient.OauthCodes,
-			orderBy: new GraphQLEnumType({
-				name: "OauthClientOauthCodeOrderBy",
-				values: {
-					ID: { value: ["id", "ASC"] }
-				}
-			}),
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {},
-			edgeFields: {}
+			target: OauthClient.OauthCodes
 		});
 
-		const oauthClientOauthAccessTokenConnection = sequelizeConnection({
-			name: "oauthClientOauthAccessToken",
+		const oauthAccessTokenConnection = sequelizeConnection({
+			name: "OauthClientOauthAccessToken",
 			nodeType: OauthAccessTokenType,
-			target: OauthClient.OauthAccessTokens,
-			orderBy: new GraphQLEnumType({
-				name: "OauthClientOauthAccessTokenOrderBy",
-				values: {
-					ID: { value: ["id", "ASC"] }
-				}
-			}),
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {},
-			edgeFields: {}
+			target: OauthClient.OauthAccessTokens
 		});
 
-		const oauthClientOauthRedirectUriConnection = sequelizeConnection({
-			name: "oauthClientOauthRedirectUri",
+		const oauthRedirectUriConnection = sequelizeConnection({
+			name: "OauthClientOauthRedirectUri",
 			nodeType: OauthRedirectUriType,
-			target: OauthClient.OauthRedirectUris,
-			orderBy: new GraphQLEnumType({
-				name: "OauthClientRedirectUriOrderBy",
-				values: {
-					ID: { value: ["id", "ASC"] }
-				}
-			}),
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {},
-			edgeFields: {}
+			target: OauthClient.OauthRedirectUris
 		});
 
 		return protectGraphqlSchemaFields(OauthClient.name, ["id"], {
@@ -124,24 +86,24 @@ const OauthClientType = new GraphQLObjectType({
 			},
 			...valueFilter.filterable("graphql.type.oauth-client.association", {
 				user: {
-					type: oauthClientUserConnection.connectionType,
-					args: oauthClientUserConnection.connectionArgs,
-					resolve: oauthClientUserConnection.resolve
+					type: userConnection.connectionType,
+					args: userConnection.connectionArgs,
+					resolve: userConnection.resolve
 				},
 				oauthCodes: {
-					type: oauthClientOauthCodeConnection.connectionType,
-					args: oauthClientOauthCodeConnection.connectionArgs,
-					resolve: oauthClientOauthCodeConnection.resolve
+					type: oauthCodeConnection.connectionType,
+					args: oauthCodeConnection.connectionArgs,
+					resolve: oauthCodeConnection.resolve
 				},
 				oauthAccessTokens: {
-					type: oauthClientOauthAccessTokenConnection.connectionType,
-					args: oauthClientOauthAccessTokenConnection.connectionArgs,
-					resolve: oauthClientOauthAccessTokenConnection.resolve
+					type: oauthAccessTokenConnection.connectionType,
+					args: oauthAccessTokenConnection.connectionArgs,
+					resolve: oauthAccessTokenConnection.resolve
 				},
 				oauthRedirectUris: {
-					type: oauthClientOauthRedirectUriConnection.connectionType,
-					args: oauthClientOauthRedirectUriConnection.connectionArgs,
-					resolve: oauthClientOauthRedirectUriConnection.resolve
+					type: oauthRedirectUriConnection.connectionType,
+					args: oauthRedirectUriConnection.connectionArgs,
+					resolve: oauthRedirectUriConnection.resolve
 				}
 			})
 		});

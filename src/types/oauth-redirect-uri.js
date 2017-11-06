@@ -45,15 +45,10 @@ const OauthRedirectUriType = new GraphQLObjectType({
 	fields: () => {
 		const OauthClientType = require("./oauth-client");
 
-		const oauthRedirectUriConnection = sequelizeConnection({
-			name: "oauthRedirectUriOauthClient",
+		const oauthClientConnection = sequelizeConnection({
+			name: "OauthRedirectUriOauthClient",
 			nodeType: OauthClientType,
-			target: OauthRedirectUri.OauthClient,
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {},
-			edgeFields: {}
+			target: OauthRedirectUri.OauthClient
 		});
 
 		return {
@@ -66,9 +61,9 @@ const OauthRedirectUriType = new GraphQLObjectType({
 				"authentication.graphql.type.oauth-redirect-uri.association",
 				{
 					oauthClients: {
-						type: oauthRedirectUriConnection.connectionType,
-						arsg: oauthRedirectUriConnection.connectionArgs,
-						resolve: oauthRedirectUriConnection.resolve
+						type: oauthClientConnection.connectionType,
+						arsg: oauthClientConnection.connectionArgs,
+						resolve: oauthClientConnection.resolve
 					}
 				}
 			)

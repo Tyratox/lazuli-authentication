@@ -43,28 +43,12 @@ const OauthScopeType = new GraphQLObjectType({
 	name: OauthScope.name,
 	description: "An oauth scope",
 	fields: () => {
-		const AccessTokenType = require("./oauth-access-token");
+		const OauthAccessTokenType = require("./oauth-access-token");
 
-		const scopeAccessTokenConnection = sequelizeConnection({
-			name: "scopeAccessTokens",
-			nodeType: AccessTokenType,
-			target: OauthScope.OauthAccessTokens,
-			orderBy: new GraphQLEnumType({
-				name: "ScopeAccessTokensOrderBy",
-				values: {
-					ID: { value: ["id", "ASC"] }
-				}
-			}),
-			where: (key, value, currentWhere) => {
-				return { [key]: value };
-			},
-			connectionFields: {
-				total: {
-					type: GraphQLInt,
-					resolve: ({ source }) => source.countOauthAccessTokens()
-				}
-			},
-			edgeFields: {}
+		const oauthAccessTokenConnection = sequelizeConnection({
+			name: "OauthScopeAccessToken",
+			nodeType: OauthAccessTokenType,
+			target: OauthScope.OauthAccessTokens
 		});
 
 		return {
@@ -77,9 +61,9 @@ const OauthScopeType = new GraphQLObjectType({
 				"authentication.graphql.type.oauth-scope.association",
 				{
 					users: {
-						type: scopeAccessTokenConnection.connectionType,
-						arsg: scopeAccessTokenConnection.connectionArgs,
-						resolve: scopeAccessTokenConnection.resolve
+						type: oauthAccessTokenConnection.connectionType,
+						arsg: oauthAccessTokenConnection.connectionArgs,
+						resolve: oauthAccessTokenConnection.resolve
 					}
 				}
 			)
