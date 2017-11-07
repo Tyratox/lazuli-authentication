@@ -1,3 +1,4 @@
+const Promise = require("bluebird");
 const { STRING } = require("sequelize");
 
 const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");

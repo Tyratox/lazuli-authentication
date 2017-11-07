@@ -1,3 +1,4 @@
+const Promise = require("bluebird");
 const { validate } = require("lazuli-require")("lazuli-core/express");
 
 const User = require("./models/user");

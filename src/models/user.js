@@ -1,3 +1,4 @@
+const Promise = require("bluebird");
 const path = require("path");
 const { STRING, DATE, Op } = require("sequelize");
 

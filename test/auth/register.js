@@ -1,4 +1,4 @@
-const request = require("request-promise-native");
+const request = require("request-promise");
 
 const app = require("lazuli-core/express");
 

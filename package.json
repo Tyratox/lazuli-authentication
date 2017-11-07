@@ -29,6 +29,7 @@
 	},
 	"homepage": "https://lazuli.tyratox.ch",
 	"dependencies": {
+		"bluebird": "^3.5.1",
 		"ejs": "^2.5.2",
 		"express": "^4.15.4",
 		"express-graphql": "^0.6.11",
@@ -36,13 +37,12 @@
 		"graphql-relay": "^0.5.2",
 		"graphql-sequelize": "^5.4.2",
 		"joi": "^11.0.1",
-		"lazuli-core": "tyratox/lazuli-core",
 		"lazuli-require": "tyratox/lazuli-require",
 		"oauth2orize": "^1.5.1",
 		"passport": "^0.3.2",
 		"passport-http-bearer": "^1.0.1",
 		"passport-local": "^1.0.0",
-		"request-promise-native": "^1.0.5",
+		"request-promise": "^4.2.2",
 		"sequelize": "^4.7.5"
 	},
 	"peerDependencies": {

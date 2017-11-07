@@ -1,4 +1,4 @@
-const request = require("request-promise-native");
+const request = require("request-promise");
 
 module.exports = function({ url, headers }) {
 	if (!url) throw new Error("url parameter is missing!");

@@ -4,6 +4,7 @@ const {
 	DEFAULT_SCOPE
 } = require("lazuli-require")("lazuli-config");
 
+const Promise = require("bluebird");
 const { Op } = require("sequelize");
 
 const oauth2orize = require("oauth2orize");

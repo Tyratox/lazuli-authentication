@@ -1,3 +1,4 @@
+const Promise = require("bluebird");
 const { STRING, DATE } = require("sequelize");
 
 const { TOKEN_LENGTH } = require("lazuli-require")("lazuli-config");

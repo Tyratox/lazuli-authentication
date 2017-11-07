@@ -1,3 +1,5 @@
+const Promise = require("bluebird");
+
 /**
  * Graphql utilities
  * @module lazuli-authentication/utilities/graphql

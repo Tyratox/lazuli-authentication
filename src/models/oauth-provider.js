@@ -1,3 +1,4 @@
+const Promise = require("bluebird");
 const { ENUM, STRING } = require("sequelize");
 
 const { TOKEN_LENGTH, HASH_ALGORITHM, SALT_LENGTH } = require("lazuli-require")(

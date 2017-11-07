@@ -9,6 +9,7 @@ const {
 	GOOGLE_CALLBACK_PATH
 } = require("lazuli-require")("lazuli-config");
 
+const Promise = require("bluebird");
 const { Op } = require("sequelize");
 
 const LocalStrategy = require("passport-local").Strategy;
