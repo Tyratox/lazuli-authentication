@@ -258,36 +258,23 @@ OauthClient.prototype.verifySecret = function(secret) {
  * @memberof module:lazuli-authentication/models/oauth-client.OauthClient
  * 
  * @param  {string} redirectUri The redirect uri to verify
- * @return {promise<boolean>} The random secret
+ * @return {promise}
  */
 OauthClient.prototype.verifyRedirectUri = function(redirectUri) {
-	let promise;
-	if (!this.get("OauthRedirectUris")) {
-		promise = this.reload({
-			include: [
-				{
-					model: OauthRedirectUri,
-					as: "OauthRedirectUris"
-				}
-			]
-		});
-	} else {
-		promise = Promise.resolve(this);
-	}
-
-	return promise.then(() => {
-		let uris = this.get("OauthRedirectUris").map(uri => {
-			return uri.get("uri");
-		});
-
-		for (let i = 0; i < uris.length; i++) {
-			if (uris[i] === redirectUri) {
-				return Promise.resolve(true);
-			}
-		}
-
-		return Promise.resolve(false);
-	});
+	return this.getOauthRedirectUris().then(
+		redirectUris =>
+			redirectUris
+				.map(uri => {
+					return uri.get("uri");
+				})
+				.filter(uri => uri === redirectUri).length === 0
+				? Promise.reject(
+						new OperationalError(
+							"The sent redirect uri isn't registered with this oauth client!"
+						)
+					)
+				: Promise.resolve()
+	);
 };
 
 module.exports = OauthClient;

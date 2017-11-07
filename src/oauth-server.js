@@ -31,30 +31,26 @@ const initOauthServerGrant = oauth2Server => {
 		oauth2orize.grant.code((client, redirectUri, user, ares, done) => {
 			// Create a new authorization code
 
-			if (!client.verifyRedirectUri(redirectUri)) {
-				return done(
-					new OperationalError(
-						"The sent redirect uri isn't registered with this oauth client!"
+			client
+				.verifyRedirectUri(redirectUri)
+				.then(() => {
+					const scope = ares.scope ? ares.scope : [DEFAULT_SCOPE];
+
+					return OauthCode.generateCode(
+						user.get("id"),
+						client.get("id"),
+						Date.now() + AUTH_CODE_LIFETIME * 1000
 					)
-				);
-			}
-
-			const scope = ares.scope ? ares.scope : [DEFAULT_SCOPE];
-
-			return OauthCode.generateCode(
-				user.get("id"),
-				client.get("id"),
-				Date.now() + AUTH_CODE_LIFETIME * 1000
-			)
-				.then(({ model: oauthCode, code }) => {
-					return oauthCode
-						.setScopeArray(
-							Array.isArray(scope) ? scope : scope ? scope.split(" ") : []
-						)
-						.then(() => Promise.resolve(code));
-				})
-				.then(code => {
-					return done(null, code);
+						.then(({ model: oauthCode, code }) => {
+							return oauthCode
+								.setScopeArray(
+									Array.isArray(scope) ? scope : scope ? scope.split(" ") : []
+								)
+								.then(() => Promise.resolve(code));
+						})
+						.then(code => {
+							return done(null, code);
+						});
 				})
 				.catch(done);
 		})
@@ -186,23 +182,15 @@ const verifyOauthClient = oauth2Server => {
 			}
 
 			OauthClient.findOne({
-				where: { id: clientId },
-				include: [
-					{
-						model: OauthRedirectUri,
-						as: "OauthRedirectUris"
-					}
-				]
+				where: { id: clientId }
 			})
 				.then(client => {
-					if (client && client.verifyRedirectUri(redirectUri)) {
-						return done(null, client, redirectUri);
+					if (client) {
+						return client
+							.verifyRedirectUri(redirectUri)
+							.then(() => done(null, client, redirectUri));
 					} else {
-						return done(
-							new OperationalError(
-								"The sent redirect uri isn't registered with this oauth client!"
-							)
-						);
+						return Promise.reject(new OperationalError("Unauthorized"));
 					}
 				})
 				.catch(done);

@@ -44,12 +44,15 @@ module.exports = (test, initPromise) => {
 					.then(() => {
 						return clientModel.verifyRedirectUri(uri);
 					})
-					.then(verified => {
-						t.true(verified, "The redirect uri wasn't verified");
+					.then(() => {
+						t.pass();
 						return clientModel.verifyRedirectUri(uri + "$");
 					})
-					.then(verified => {
-						t.false(verified, "A wrong redirect uri was verified");
+					.then(() => {
+						t.fail("A wrong redirect uri was verified");
+					})
+					.catch(() => {
+						t.pass();
 					});
 			});
 		});
