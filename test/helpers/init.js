@@ -21,8 +21,6 @@ let adminToken, nonPrivToken;
 
 let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 
-process.on("uncaughtException", logger.log.bind(logger, "error"));
-
 const initPromise = lazuli
 	.emit("init")
 	.then(() => {

@@ -1,8 +1,22 @@
 import test from "ava";
 
+const logger = require("lazuli-core/logger");
+global.OperationalError = require("lazuli-core/operational-error");
+
 const { initPromise } = require("./helpers/init.js");
 
 let adminUserModel, adminClient, anonClient;
+
+process.on("uncaughtException", logger.log.bind(logger, "error"));
+process.on("unhandledRejection", (error, promise) => {
+	logger.log(
+		"error",
+		"Unhandled rejection at: Promise",
+		promise,
+		"error:",
+		error
+	);
+});
 
 test.before(t =>
 	initPromise.then(data => {
