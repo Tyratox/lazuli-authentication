@@ -33,7 +33,7 @@ module.exports.protectGraphqlSchemaFields = (
 				.then(() => {
 					if (!request.user) {
 						return Promise.reject(
-							new Error(
+							new OperationalError(
 								"Access Denied! You have to be logged in to access this field!"
 							)
 						);

@@ -467,7 +467,7 @@ User.prototype.verifyPassword = function(password) {
 			return Promise.resolve();
 		});
 	} else {
-		return Promise.reject(new Error("Unauthorized"));
+		return Promise.reject(new OperationalError("Unauthorized"));
 	}
 };
 
@@ -504,11 +504,13 @@ User.prototype.updatePassword = function(password, passwordResetCode) {
 			return this.save();
 		} else {
 			return Promise.reject(
-				new Error("The password reset code has already expired!")
+				new OperationalError("The password reset code has already expired!")
 			);
 		}
 	} else {
-		return Promise.reject(new Error("The password reset code is invalid!"));
+		return Promise.reject(
+			new OperationalError("The password reset code is invalid!")
+		);
 	}
 };
 
@@ -635,7 +637,9 @@ User.prototype.verifyEmail = function(
 
 		return this.save();
 	} else {
-		return Promise.reject(new Error("The email verification code is invalid!"));
+		return Promise.reject(
+			new OperationalError("The email verification code is invalid!")
+		);
 	}
 };
 
@@ -679,7 +683,7 @@ User.prototype.can = function(permissionsNeeded = []) {
 
 		return missing.length === 0
 			? Promise.resolve()
-			: Promise.reject(new Error("Unauthorized"));
+			: Promise.reject(new OperationalError("Unauthorized"));
 	});
 };
 

@@ -42,7 +42,9 @@ module.exports.passwordReset = [
 				} else {
 					//Return always the same error to not leak whether this email
 					//is registered
-					return next(new Error("The password reset code was invalid!"));
+					return next(
+						new OperationalError("The password reset code was invalid!")
+					);
 				}
 			})
 			.catch(next);
@@ -72,7 +74,7 @@ module.exports.initPasswordReset = [
 						.catch(next);
 				} else {
 					return Promise.reject(
-						new Error("The given email is not registered!")
+						new OperationalError("The given email is not registered!")
 					);
 				}
 			})
@@ -210,6 +212,6 @@ module.exports.isUserLoggedIn = (request, response, next) => {
 	if (request.user && request.user.get("id")) {
 		return next();
 	} else {
-		next(new Error("Unauthorized"));
+		next(new OperationalError("Unauthorized"));
 	}
 };

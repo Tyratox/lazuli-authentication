@@ -33,7 +33,7 @@ const initOauthServerGrant = oauth2Server => {
 
 			if (!client.verifyRedirectUri(redirectUri)) {
 				return done(
-					new Error(
+					new OperationalError(
 						"The sent redirect uri isn't registered with this oauth client!"
 					)
 				);
@@ -73,7 +73,7 @@ const initOauthServerExchange = oauth2Server => {
 				.then(authCode => {
 					if (!authCode) {
 						return Promise.reject(
-							new Error("The sent auth code has already expired!")
+							new OperationalError("The sent auth code has already expired!")
 						);
 					}
 					if (authCode.get("expires") < Date.now()) {
@@ -81,7 +81,9 @@ const initOauthServerExchange = oauth2Server => {
 							.destroy()
 							.then(() =>
 								Promise.reject(
-									new Error("The sent auth code has already expired!")
+									new OperationalError(
+										"The sent auth code has already expired!"
+									)
 								)
 							);
 					}
@@ -179,7 +181,7 @@ const verifyOauthClient = oauth2Server => {
 						scopes[i]
 					) === -1
 				) {
-					return done(new Error("Invalid scope!"));
+					return done(new OperationalError("Invalid scope!"));
 				}
 			}
 
@@ -197,7 +199,7 @@ const verifyOauthClient = oauth2Server => {
 						return done(null, client, redirectUri);
 					} else {
 						return done(
-							new Error(
+							new OperationalError(
 								"The sent redirect uri isn't registered with this oauth client!"
 							)
 						);

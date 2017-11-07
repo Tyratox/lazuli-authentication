@@ -286,7 +286,7 @@ module.exports.mutation = {
 				return OauthClient.findById(id).then(oauthClientModel => {
 					if (!oauthClientModel) {
 						return Promise.reject(
-							new Error("The given oauth client couldn't be found!")
+							new OperationalError("The given oauth client couldn't be found!")
 						);
 					}
 					return user

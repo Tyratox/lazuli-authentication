@@ -243,7 +243,7 @@ module.exports.mutation = {
 				User.findById(id).then(userModel => {
 					if (!userModel) {
 						return Promise.reject(
-							new Error("The given user couldn't be found!")
+							new OperationalError("The given user couldn't be found!")
 						);
 					}
 					//triggers hooks and deletes associations
