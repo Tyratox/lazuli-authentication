@@ -1,7 +1,9 @@
 import test from "ava";
 
+const path = require("path");
+global.APP_ROOT = path.resolve(__dirname, "..");
+
 const logger = require("lazuli-core/logger");
-global.OperationalError = require("lazuli-core/operational-error");
 
 const { initPromise } = require("./helpers/init.js");
 

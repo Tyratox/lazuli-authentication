@@ -1,11 +1,12 @@
 const Promise = require("bluebird");
 const { STRING, BOOLEAN } = require("sequelize");
 
-const { CLIENT_SECRET_LENGTH } = require("lazuli-require")("lazuli-config");
+const { CLIENT_SECRET_LENGTH } = require("lazuli-config");
 
-const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");
-const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
-const sequelize = require("lazuli-require")("lazuli-core/sequelize");
+const eventEmitter = require("lazuli-core/event-emitter");
+const valueFilter = require("lazuli-core/value-filter");
+const sequelize = require("lazuli-core/sequelize");
+const OperationalError = require("lazuli-core/operational-error");
 
 const {
 	generateRandomString,

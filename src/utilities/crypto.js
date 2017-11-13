@@ -1,8 +1,6 @@
 const crypto = require("crypto");
 
-const { HASH_ALGORITHM, SALT_LENGTH } = require("lazuli-require")(
-	"lazuli-config"
-);
+const { HASH_ALGORITHM, SALT_LENGTH } = require("lazuli-config");
 
 /**
  * Crypto utilities

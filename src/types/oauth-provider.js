@@ -13,11 +13,12 @@ const {
 	relay: { sequelizeConnection }
 } = require("graphql-sequelize");
 
-const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");
-const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
-const { nodeInterface, attributeFieldsCache } = require("lazuli-require")(
-	"lazuli-core/sequelize"
-);
+const eventEmitter = require("lazuli-core/event-emitter");
+const valueFilter = require("lazuli-core/value-filter");
+const {
+	nodeInterface,
+	attributeFieldsCache
+} = require("lazuli-core/sequelize");
 
 const OauthProvider = require("../models/oauth-provider");
 

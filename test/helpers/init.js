@@ -58,7 +58,8 @@ const initPromise = lazuli
 			query: new GraphQLObjectType({
 				name: "RootQuery",
 				fields: Object.assign(
-					{ node: sequelize.nodeField },
+					{},
+					//{ node: sequelize.nodeField },
 					UserSchema.query,
 					OauthClientSchema.query
 				)

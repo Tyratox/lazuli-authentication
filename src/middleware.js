@@ -1,5 +1,7 @@
 const Promise = require("bluebird");
-const { validate } = require("lazuli-require")("lazuli-core/express");
+
+const { validate } = require("lazuli-core/express");
+const OperationalError = require("lazuli-core/operational-error");
 
 const User = require("./models/user");
 const { passport } = require("./passport");

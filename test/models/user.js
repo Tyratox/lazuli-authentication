@@ -1,6 +1,6 @@
 const { toGlobalId, fromGlobalId } = require("graphql-relay");
 
-const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");
+const eventEmitter = require("lazuli-core/event-emitter");
 
 const User = require("../../src/models/user");
 const OauthAccessToken = require("../../src/models/oauth-access-token");

@@ -1,4 +1,5 @@
 const Promise = require("bluebird");
+const OperationalError = require("lazuli-core/operational-error");
 
 /**
  * Graphql utilities

@@ -1,4 +1,4 @@
-const { LOCALES } = require("lazuli-require")("lazuli-config");
+const { LOCALES } = require("lazuli-config");
 
 const Joi = require("joi");
 

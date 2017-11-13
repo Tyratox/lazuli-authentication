@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { LOCALES } = require("lazuli-require")("lazuli-config");
+const { LOCALES } = require("lazuli-config");
 
 /**
  * Validates the graphql input for an user type in detail

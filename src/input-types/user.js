@@ -11,7 +11,7 @@ const {
 
 const OauthProviderInputType = require("./oauth-provider");
 
-const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
+const valueFilter = require("lazuli-core/value-filter");
 
 /**
  * The user input type module

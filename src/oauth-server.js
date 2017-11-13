@@ -2,7 +2,9 @@ const {
 	AUTH_CODE_LIFETIME,
 	ACCESS_TOKEN_LIFETIME,
 	DEFAULT_SCOPE
-} = require("lazuli-require")("lazuli-config");
+} = require("lazuli-config");
+
+const OperationalError = require("lazuli-core/operational-error");
 
 const Promise = require("bluebird");
 const { Op } = require("sequelize");

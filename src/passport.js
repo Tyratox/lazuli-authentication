@@ -7,7 +7,9 @@ const {
 	GOOGLE_CLIENT_ID,
 	GOOGLE_CLIENT_SECRET,
 	GOOGLE_CALLBACK_PATH
-} = require("lazuli-require")("lazuli-config");
+} = require("lazuli-config");
+
+const OperationalError = require("lazuli-core/operational-error");
 
 const Promise = require("bluebird");
 const { Op } = require("sequelize");

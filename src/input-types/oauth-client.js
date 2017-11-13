@@ -9,7 +9,7 @@ const {
 	GraphQLInputObjectType
 } = require("graphql");
 
-const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
+const valueFilter = require("lazuli-core/value-filter");
 
 /**
  * The oauth client input type module

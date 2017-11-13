@@ -1,9 +1,9 @@
 const Promise = require("bluebird");
 const { STRING } = require("sequelize");
 
-const eventEmitter = require("lazuli-require")("lazuli-core/event-emitter");
-const valueFilter = require("lazuli-require")("lazuli-core/value-filter");
-const sequelize = require("lazuli-require")("lazuli-core/sequelize");
+const eventEmitter = require("lazuli-core/event-emitter");
+const valueFilter = require("lazuli-core/value-filter");
+const sequelize = require("lazuli-core/sequelize");
 
 const {
 	generateRandomString,
