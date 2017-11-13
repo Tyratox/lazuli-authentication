@@ -21,15 +21,10 @@ let adminToken, nonPrivToken;
 
 let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 
-const initPromise = lazuli
-	.emit("init")
+const models = Object.assign({}, Authentication.models);
+
+const initPromise = Authentication.associateModels()
 	.then(() => {
-		const models = Object.assign({}, Authentication.models);
-		return Authentication.associateModels().then(() => {
-			return Promise.resolve(models);
-		});
-	})
-	.then(models => {
 		const types = Object.assign(
 			{},
 			...Object.values(models)
