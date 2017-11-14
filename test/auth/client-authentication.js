@@ -5,11 +5,11 @@ const app = require("lazuli-core/express");
 const logger = require("lazuli-core/logger");
 const eventEmitter = require("lazuli-core/event-emitter");
 
-const OauthClient = require("../../src/models/oauth-client");
+const OauthClient = require("../../models/oauth-client");
 
-const { authenticateOauthClient } = require("../../src/middleware");
+const { authenticateOauthClient } = require("../../middleware");
 
-let { generateRandomAlphanumString } = require("../../src/utilities/crypto");
+let { generateRandomAlphanumString } = require("../../utilities/crypto");
 
 let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 

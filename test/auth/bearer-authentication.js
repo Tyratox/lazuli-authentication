@@ -5,16 +5,16 @@ const app = require("lazuli-core/express");
 const logger = require("lazuli-core/logger");
 const eventEmitter = require("lazuli-core/event-emitter");
 
-const User = require("../../src/models/user");
-const OauthClient = require("../../src/models/oauth-client");
-const OauthAccessToken = require("../../src/models/oauth-access-token");
+const User = require("../../models/user");
+const OauthClient = require("../../models/oauth-client");
+const OauthAccessToken = require("../../models/oauth-access-token");
 
 const {
 	authenticateBearer,
 	authenticateBearerSoft
-} = require("../../src/middleware");
+} = require("../../middleware");
 
-let { generateRandomAlphanumString } = require("../../src/utilities/crypto");
+let { generateRandomAlphanumString } = require("../../utilities/crypto");
 
 let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 

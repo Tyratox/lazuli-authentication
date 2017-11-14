@@ -8,14 +8,14 @@ const app = require("lazuli-core/express");
 const sequelize = require("lazuli-core/sequelize");
 const logger = require("lazuli-core/logger");
 
-const Authentication = require("../../src/lazuli-authentication");
+const Authentication = require("../../lazuli-authentication");
 
-const { authenticateBearerSoft } = require("../../src/middleware");
-const User = require("../../src/models/user");
-const OauthAccessToken = require("../../src/models/oauth-access-token");
-const Permission = require("../../src/models/permission");
+const { authenticateBearerSoft } = require("../../middleware");
+const User = require("../../models/user");
+const OauthAccessToken = require("../../models/oauth-access-token");
+const Permission = require("../../models/permission");
 
-const { passport } = require("../../src/passport");
+const { passport } = require("../../passport");
 
 let adminToken, nonPrivToken;
 
@@ -46,8 +46,8 @@ const initPromise = Authentication.associateModels()
 		});
 	})
 	.then(() => {
-		const UserSchema = require("../../src/schemas/user");
-		const OauthClientSchema = require("../../src/schemas/oauth-client");
+		const UserSchema = require("../../schemas/user");
+		const OauthClientSchema = require("../../schemas/oauth-client");
 
 		const schema = new GraphQLSchema({
 			query: new GraphQLObjectType({

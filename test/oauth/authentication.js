@@ -6,22 +6,22 @@ const app = require("lazuli-core/express");
 const logger = require("lazuli-core/logger");
 const eventEmitter = require("lazuli-core/event-emitter");
 
-const User = require("../../src/models/user");
-const OauthClient = require("../../src/models/oauth-client");
-const OauthRedirectUri = require("../../src/models/oauth-redirect-uri");
-const OauthAccessToken = require("../../src/models/oauth-access-token");
-const OauthScope = require("../../src/models/oauth-scope");
-const OauthCode = require("../../src/models/oauth-code");
+const User = require("../../models/user");
+const OauthClient = require("../../models/oauth-client");
+const OauthRedirectUri = require("../../models/oauth-redirect-uri");
+const OauthAccessToken = require("../../models/oauth-access-token");
+const OauthScope = require("../../models/oauth-scope");
+const OauthCode = require("../../models/oauth-code");
 
-const { verifyOauthClient, oauthServer } = require("../../src/oauth-server");
+const { verifyOauthClient, oauthServer } = require("../../oauth-server");
 
 const {
 	authenticateUser,
 	authenticateOauthClient,
 	isUserLoggedIn
-} = require("../../src/middleware");
+} = require("../../middleware");
 
-let { generateRandomAlphanumString } = require("../../src/utilities/crypto");
+let { generateRandomAlphanumString } = require("../../utilities/crypto");
 
 let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 

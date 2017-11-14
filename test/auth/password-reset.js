@@ -5,11 +5,11 @@ const app = require("lazuli-core/express");
 const logger = require("lazuli-core/logger");
 const eventEmitter = require("lazuli-core/event-emitter");
 
-const User = require("../../src/models/user");
+const User = require("../../models/user");
 
-const { initPasswordReset, passwordReset } = require("../../src/middleware");
+const { initPasswordReset, passwordReset } = require("../../middleware");
 
-let { generateRandomAlphanumString } = require("../../src/utilities/crypto");
+let { generateRandomAlphanumString } = require("../../utilities/crypto");
 
 let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 
