@@ -2,7 +2,7 @@
 	"name": "lazuli-authentication",
 	"version": "1.0.0",
 	"description": "A lazuli authentication module",
-	"main": "src/lazuli-authentication.js",
+	"main": "./lazuli-authentication.js",
 	"scripts": {
 		"docs": "rm -rf docs/* && jsdoc src -c jsdoc.json",
 		"test": "ava test/test.js"
