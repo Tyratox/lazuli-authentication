@@ -115,16 +115,8 @@ module.exports = (test, initPromise) => {
 					t.deepEqual(
 						response,
 						{
-							status: 400,
-							statusText: "Bad Request",
-							errors: [
-								{
-									field: ["email"],
-									location: "body",
-									messages: ['"email" must be a valid email'],
-									types: ["string.email"]
-								}
-							]
+							message:
+								'child "email" fails because ["email" must be a valid email]'
 						},
 						"The server didn't reject the invalid input"
 					);
@@ -210,30 +202,8 @@ module.exports = (test, initPromise) => {
 					t.deepEqual(
 						response,
 						{
-							status: 400,
-							statusText: "Bad Request",
-							errors: [
-								{
-									field: ["email"],
-									location: "body",
-									messages: ['"email" must be a valid email'],
-									types: ["string.email"]
-								},
-								{
-									field: ["resetCode"],
-									location: "body",
-									messages: ['"resetCode" is required'],
-									types: ["any.required"]
-								},
-								{
-									field: ["password"],
-									location: "body",
-									messages: [
-										'"password" length must be at least 8 characters long'
-									],
-									types: ["string.min"]
-								}
-							]
+							message:
+								'child "email" fails because ["email" must be a valid email]'
 						},
 						"The server didn't respond with the right error"
 					);

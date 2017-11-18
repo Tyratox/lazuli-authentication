@@ -152,35 +152,11 @@ module.exports = (test, initPromise) => {
 			})
 			.then(response => {
 				t.deepEqual(
-					response,
-					JSON.stringify({
-						status: 400,
-						statusText: "Bad Request",
-						errors: [
-							{
-								field: ["nameFirst"],
-								location: "body",
-								messages: [
-									'"nameFirst" length must be at least 2 characters long'
-								],
-								types: ["string.min"]
-							},
-							{
-								field: ["email"],
-								location: "body",
-								messages: ['"email" must be a valid email'],
-								types: ["string.email"]
-							},
-							{
-								field: ["locale"],
-								location: "body",
-								messages: [
-									'"locale" with value "en" fails to match the required pattern: /en-us/'
-								],
-								types: ["string.regex.base"]
-							}
-						]
-					}),
+					JSON.parse(response),
+					{
+						message:
+							'child "nameFirst" fails because ["nameFirst" length must be at least 2 characters long]'
+					},
 					"The server didn't validate the input correctly"
 				);
 
@@ -204,24 +180,8 @@ module.exports = (test, initPromise) => {
 				t.deepEqual(
 					response,
 					{
-						status: 400,
-						statusText: "Bad Request",
-						errors: [
-							{
-								field: ["nameFirst"],
-								location: "body",
-								messages: [
-									'"nameFirst" length must be less than or equal to 256 characters long'
-								],
-								types: ["string.max"]
-							},
-							{
-								field: ["email"],
-								location: "body",
-								messages: ['"email" must be a valid email'],
-								types: ["string.email"]
-							}
-						]
+						message:
+							'child "nameFirst" fails because ["nameFirst" length must be less than or equal to 256 characters long]'
 					},
 					"The server didn't validate the input correctly"
 				);

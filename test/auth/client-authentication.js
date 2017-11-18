@@ -97,16 +97,8 @@ module.exports = (test, initPromise) => {
 				t.deepEqual(
 					response,
 					{
-						status: 400,
-						statusText: "Bad Request",
-						errors: [
-							{
-								field: ["clientId"],
-								location: "body",
-								messages: ['"clientId" must be a number'],
-								types: ["number.base"]
-							}
-						]
+						message:
+							'child "clientId" fails because ["clientId" must be a number]'
 					},
 					"The server didn't respond with 'success'"
 				);

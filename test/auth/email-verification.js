@@ -163,16 +163,8 @@ module.exports = (test, initPromise) => {
 							t.deepEqual(
 								response,
 								{
-									status: 400,
-									statusText: "Bad Request",
-									errors: [
-										{
-											field: ["email"],
-											location: "body",
-											messages: ['"email" must be a valid email'],
-											types: ["string.email"]
-										}
-									]
+									message:
+										'child "email" fails because ["email" must be a valid email]'
 								},
 								"The server didn't respond with 'success'"
 							);

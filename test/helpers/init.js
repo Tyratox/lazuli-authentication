@@ -3,6 +3,8 @@ const graphqlHTTP = require("express-graphql");
 
 const { toGlobalId, fromGlobalId } = require("graphql-relay");
 
+const { errors: celebrateErrors } = require("celebrate");
+
 const lazuli = require("lazuli-core/event-emitter");
 const app = require("lazuli-core/express");
 const sequelize = require("lazuli-core/sequelize");
@@ -87,6 +89,8 @@ const initPromise = Authentication.associateModels()
 				};
 			})
 		);
+
+		app.use(celebrateErrors());
 	})
 	.then(() => {
 		return User.create({

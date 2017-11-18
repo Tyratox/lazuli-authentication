@@ -1,19 +1,12 @@
 const Promise = require("bluebird");
+const { celebrate, Joi } = require("celebrate");
 
-const { validate } = require("lazuli-core/express");
 const OperationalError = require("lazuli-core/operational-error");
+
+const { LOCALES } = require("lazuli-config");
 
 const User = require("./models/user");
 const { passport } = require("./passport");
-
-const {
-	login,
-	clientLogin,
-	registration,
-	initPasswordReset,
-	passwordReset,
-	emailVerification
-} = require("./validation");
 
 /**
  * A set of general authentication middlewares
@@ -30,7 +23,17 @@ const {
  * @return {void}
  */
 module.exports.passwordReset = [
-	validate(passwordReset),
+	celebrate({
+		body: {
+			email: Joi.string()
+				.email()
+				.required(),
+			resetCode: Joi.string().required(),
+			password: Joi.string()
+				.min(8)
+				.max(255)
+		}
+	}),
 	(request, response, next) => {
 		User.findOne({
 			where: { emailVerified: request.body.email }
@@ -63,7 +66,13 @@ module.exports.passwordReset = [
  * @return {void}
  */
 module.exports.initPasswordReset = [
-	validate(initPasswordReset),
+	celebrate({
+		body: {
+			email: Joi.string()
+				.email()
+				.required()
+		}
+	}),
 	(request, response, next) => {
 		User.findOne({
 			where: { emailVerified: request.body.email }
@@ -93,7 +102,18 @@ module.exports.initPasswordReset = [
  * @return {void}
  */
 module.exports.verifyEmail = [
-	validate(emailVerification),
+	celebrate({
+		body: {
+			email: Joi.string()
+				.email()
+				.required(),
+			emailVerificationCode: Joi.string().required(),
+			password: Joi.string()
+				.min(8)
+				.max(255)
+				.allow("", null)
+		}
+	}),
 	(request, response, next) => {
 		const { email, password, emailVerificationCode } = request.body;
 
@@ -124,7 +144,19 @@ module.exports.verifyEmail = [
  * @return {void}
  */
 module.exports.registration = [
-	validate(registration),
+	celebrate({
+		body: {
+			nameFirst: Joi.string()
+				.regex(/[A-z]+/)
+				.min(2)
+				.max(256)
+				.required(),
+			email: Joi.string()
+				.email()
+				.required(),
+			locale: Joi.string().regex(new RegExp(LOCALES.join("|")))
+		}
+	}),
 	(request, response, next) => {
 		let { nameFirst, email, locale } = request.body;
 
@@ -185,7 +217,14 @@ module.exports.authenticateBearerSoft = [
  * @return {void}
  */
 module.exports.authenticateUser = [
-	validate(login),
+	celebrate({
+		body: {
+			email: Joi.string()
+				.email()
+				.required(),
+			password: Joi.string().required()
+		}
+	}),
 	passport.authenticate("local-user")
 ];
 
@@ -198,7 +237,14 @@ module.exports.authenticateUser = [
  * @return {void}
  */
 module.exports.authenticateOauthClient = [
-	validate(clientLogin),
+	celebrate({
+		body: {
+			clientId: Joi.number().required(),
+			clientSecret: Joi.string().required(),
+			code: Joi.string(),
+			grant_type: Joi.string()
+		}
+	}),
 	passport.authenticate("local-client", { session: false })
 ];
 
