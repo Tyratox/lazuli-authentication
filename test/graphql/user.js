@@ -1,6 +1,9 @@
 const { toGlobalId, fromGlobalId } = require("graphql-relay");
 
 const eventEmitter = require("lazuli-core/event-emitter");
+const {
+	generateRandomAlphanumString
+} = require("lazuli-core/utilities/crypto");
 
 const User = require("../../models/user");
 const OauthAccessToken = require("../../models/oauth-access-token");
@@ -8,8 +11,6 @@ const Permission = require("../../models/permission");
 const OauthProvider = require("../../models/oauth-provider");
 
 const { validateAccessDenied } = require("../helpers/graphql");
-
-let { generateRandomAlphanumString } = require("../../utilities/crypto");
 
 let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 

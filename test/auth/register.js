@@ -1,14 +1,15 @@
 const request = require("request-promise");
 
 const app = require("lazuli-core/express");
+const {
+	generateRandomAlphanumString
+} = require("lazuli-core/utilities/crypto");
 
 const User = require("../../models/user");
 const OauthClient = require("../../models/oauth-client");
 const OauthRedirectUri = require("../../models/oauth-redirect-uri");
 
 const { registration } = require("../../middleware");
-
-let { generateRandomAlphanumString } = require("../../utilities/crypto");
 
 let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 

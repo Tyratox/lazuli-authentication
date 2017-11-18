@@ -6,11 +6,10 @@ const { TOKEN_LENGTH } = require("lazuli-config");
 const eventEmitter = require("lazuli-core/event-emitter");
 const valueFilter = require("lazuli-core/value-filter");
 const sequelize = require("lazuli-core/sequelize");
-
 const {
 	generateRandomString,
 	generateHash
-} = require("../utilities/crypto.js");
+} = require("lazuli-core/utilities/crypto.js");
 
 const OauthScope = require("./oauth-scope");
 

@@ -4,6 +4,9 @@ const sinon = require("sinon");
 const app = require("lazuli-core/express");
 const logger = require("lazuli-core/logger");
 const eventEmitter = require("lazuli-core/event-emitter");
+const {
+	generateRandomAlphanumString
+} = require("lazuli-core/utilities/crypto");
 
 const User = require("../../models/user");
 const OauthClient = require("../../models/oauth-client");
@@ -13,8 +16,6 @@ const {
 	authenticateBearer,
 	authenticateBearerSoft
 } = require("../../middleware");
-
-let { generateRandomAlphanumString } = require("../../utilities/crypto");
 
 let adminUserModel, nonPrivUserModel, adminClient, nonPrivClient, anonClient;
 

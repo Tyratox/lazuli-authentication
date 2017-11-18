@@ -4,11 +4,10 @@ const { STRING } = require("sequelize");
 const eventEmitter = require("lazuli-core/event-emitter");
 const valueFilter = require("lazuli-core/value-filter");
 const sequelize = require("lazuli-core/sequelize");
-
 const {
 	generateRandomString,
 	generateHash
-} = require("../utilities/crypto.js");
+} = require("lazuli-core/utilities/crypto.js");
 
 /**
  * The oauth redirect uri sequelize module

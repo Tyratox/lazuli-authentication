@@ -4,7 +4,7 @@
 	"description": "A lazuli authentication module",
 	"main": "./lazuli-authentication.js",
 	"scripts": {
-		"docs": "rm -rf docs/* && jsdoc src -c jsdoc.json",
+		"docs": "rm -rf docs/* && jsdoc . -c jsdoc.json",
 		"test": "ava test/test.js"
 	},
 	"repository": {

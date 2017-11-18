@@ -7,11 +7,10 @@ const eventEmitter = require("lazuli-core/event-emitter");
 const valueFilter = require("lazuli-core/value-filter");
 const sequelize = require("lazuli-core/sequelize");
 const OperationalError = require("lazuli-core/operational-error");
-
 const {
 	generateRandomString,
 	generateHash
-} = require("../utilities/crypto.js");
+} = require("lazuli-core/utilities/crypto.js");
 
 const OauthRedirectUri = require("./oauth-redirect-uri");
 
