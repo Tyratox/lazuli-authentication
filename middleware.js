@@ -1,9 +1,10 @@
 const Promise = require("bluebird");
 const { celebrate, Joi } = require("celebrate");
 
+const CsrfToken = require("lazuli-core/models/csrf-token");
 const OperationalError = require("lazuli-core/operational-error");
 
-const { LOCALES } = require("lazuli-config");
+const { LOCALES, HTTP_ORIGIN } = require("lazuli-config");
 
 const User = require("./models/user");
 const { passport } = require("./passport");
@@ -12,6 +13,59 @@ const { passport } = require("./passport");
  * A set of general authentication middlewares
  * @module lazuli-authentication/middleware
  */
+
+/**
+ * Express middleware that checks whether the user is currently logged in
+ * If an error is passed to the callback, the authentication failed.
+ * @param  {object} request The express request object
+ * @param  {object} response The express response object
+ * @param  {function} next The middleware callback function
+ * @return {void}
+ */
+const isUserLoggedIn = (request, response, next) => {
+	if (request.user && request.user.get("id")) {
+		return next();
+	} else {
+		next(new OperationalError("Unauthorized"));
+	}
+};
+module.exports.isUserLoggedIn = isUserLoggedIn;
+
+/**
+ * Express middleware that verifies csrf tokens
+ * Also fails if the user isn't authenticated as this makes
+ * csrf tokens useless
+ * @type {Array}
+ */
+const verifyCsrfToken = [
+	isUserLoggedIn,
+	(request, response, next) => {
+		CsrfToken.verifyToken(request.body.csrfToken, request.user.get("id"))
+			.then(() => {
+				next();
+			})
+			.catch(() => {
+				next(new OperationalError("Invalid csrf token!"));
+			});
+	}
+];
+module.exports.verifyCsrfToken = verifyCsrfToken;
+
+/**
+ * Express middleware that checks verifies that the request
+ * comes from the server itself
+ * @param {object} request The express request object
+ * @param {object} response The express response object
+ * @param {object} next The middleware callback function
+ */
+const verifySameOrigin = (request, response, next) => {
+	if (request.get("origin") === HTTP_ORIGIN) {
+		return next();
+	}
+
+	next(new OperationalError("The origin header didn't match"));
+};
+module.exports.verifySameOrigin = verifySameOrigin;
 
 /**
  * An express middleware that resets a users password
@@ -23,6 +77,7 @@ const { passport } = require("./passport");
  * @return {void}
  */
 module.exports.passwordReset = [
+	verifySameOrigin,
 	celebrate({
 		body: {
 			email: Joi.string()
@@ -66,6 +121,7 @@ module.exports.passwordReset = [
  * @return {void}
  */
 module.exports.initPasswordReset = [
+	verifySameOrigin,
 	celebrate({
 		body: {
 			email: Joi.string()
@@ -102,6 +158,7 @@ module.exports.initPasswordReset = [
  * @return {void}
  */
 module.exports.verifyEmail = [
+	verifySameOrigin,
 	celebrate({
 		body: {
 			email: Joi.string()
@@ -144,6 +201,7 @@ module.exports.verifyEmail = [
  * @return {void}
  */
 module.exports.registration = [
+	verifySameOrigin,
 	celebrate({
 		body: {
 			nameFirst: Joi.string()
@@ -217,6 +275,7 @@ module.exports.authenticateBearerSoft = [
  * @return {void}
  */
 module.exports.authenticateUser = [
+	verifySameOrigin,
 	celebrate({
 		body: {
 			email: Joi.string()
@@ -247,19 +306,3 @@ module.exports.authenticateOauthClient = [
 	}),
 	passport.authenticate("local-client", { session: false })
 ];
-
-/**
- * Express middleware that checks whether the user is currently logged in
- * If an error is passed to the callback, the authentication failed.
- * @param  {object} request The express request object
- * @param  {object} response The express response object
- * @param  {function} next The middleware callback function
- * @return {void}
- */
-module.exports.isUserLoggedIn = (request, response, next) => {
-	if (request.user && request.user.get("id")) {
-		return next();
-	} else {
-		next(new OperationalError("Unauthorized"));
-	}
-};

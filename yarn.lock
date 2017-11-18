@@ -2286,7 +2286,7 @@ latest-version@^3.0.0:
 
 lazuli-core@tyratox/lazuli-core:
   version "1.2.5"
-  resolved "https://codeload.github.com/tyratox/lazuli-core/tar.gz/6c7aa678aa7aa86b921713680e4c6f67872994ea"
+  resolved "https://codeload.github.com/tyratox/lazuli-core/tar.gz/62726744c1c9e98984f018597961d47f65602230"
   dependencies:
     body-parser "^1.17.2"
     compression "^1.7.0"
